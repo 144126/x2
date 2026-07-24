@@ -1,0 +1,18 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "x2-ws",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-07-18",
+	"compatibility_flags": ["nodejs_compat_v2"],
+	"durable_objects": {
+		"bindings": [{ "name": "CHAT_HUB", "class_name": "ChatHub" }]
+	},
+	"migrations": [{ "tag": "v1", "new_classes": ["ChatHub"] }],
+	"dev": { "port": 8787 },
+	"secrets_store_secrets": [
+		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" }
+	],
+	"workers_dev": true,
+	"preview_urls": true,
+	"observability": { "enabled": true, "head_sampling_rate": 1 }
+}

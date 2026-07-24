@@ -1,0 +1,139 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/space-grotesk';
+
+/* ===== Design tokens (Tailwind v4 CSS-first) ===== */
+@theme {
+	/* ground + ink */
+	--color-base: #0b0b0c;
+	--color-base-2: #111113;
+	--color-panel: rgba(236, 231, 221, 0.022);
+	--color-panel-solid: #151517;
+	--color-ink: #ece7dd;
+	--color-ink-soft: #b8b2a6;
+	--color-mute: #6f6a60;
+	--color-faint: #43403a;
+
+	/* one restrained accent — warm ember */
+	--color-accent: #d98b5f;
+	--color-accent-soft: rgba(217, 139, 95, 0.14);
+	--color-accent-ink: #1a110b;
+
+	/* hairlines */
+	--color-line: rgba(236, 231, 221, 0.1);
+	--color-line-2: rgba(236, 231, 221, 0.18);
+
+	/* fonts */
+	--font-display: 'Fraunces Variable', 'Times New Roman', serif;
+	--font-ui: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+
+	/* motion */
+	--ease-studio: cubic-bezier(0.16, 1, 0.3, 1);
+
+	/* keyframes */
+	--animate-reveal: reveal 0.9s var(--ease-studio) both;
+}
+
+@keyframes reveal {
+	from {
+		opacity: 0;
+		transform: translateY(14px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* ===== Reusable design-system classes (components layer) ===== */
+@layer components {
+	.wrap {
+		@apply mx-auto w-full max-w-[1080px] px-8;
+	}
+
+	.eyebrow {
+		@apply text-[10.5px] font-medium uppercase tracking-[0.32em] text-mute;
+	}
+
+	.display {
+		@apply font-display font-normal leading-[0.98] tracking-[-0.02em];
+		font-optical-sizing: auto;
+	}
+
+	/* outline / ghost premium button */
+	.btn {
+		@apply inline-flex items-center justify-center gap-2.5 rounded-full border border-line-2 bg-transparent px-6 py-3.5 text-[13.5px] text-ink transition-all duration-[400ms] ease-studio;
+	}
+	.btn:hover {
+		@apply -translate-y-px border-ink;
+	}
+
+	.btn-amber {
+		@apply border-accent bg-accent font-semibold text-accent-ink;
+	}
+	.btn-amber:hover {
+		@apply border-[#e79a6c] bg-[#e79a6c] text-accent-ink;
+	}
+
+	.card {
+		@apply rounded-[18px] border border-line bg-panel p-5.5 transition-all duration-[400ms] ease-studio;
+	}
+
+	/* clickable person/thread cards */
+	.person {
+		@apply flex cursor-pointer flex-col gap-1.5;
+	}
+	.person:hover {
+		@apply border-accent bg-accent-soft;
+	}
+
+	/* form fields */
+	input,
+	textarea {
+		@apply w-full rounded-[12px] border border-line bg-panel-solid px-4 py-3.5 text-[14px] text-ink outline-none transition-colors duration-300 placeholder:text-mute;
+	}
+	input:focus,
+	textarea:focus {
+		@apply border-accent;
+	}
+	select {
+		@apply w-full rounded-[12px] border border-line bg-panel-solid px-4 py-3.5 text-[14px] text-ink outline-none transition-colors duration-300;
+	}
+	select:focus {
+		@apply border-accent;
+	}
+
+	/* staggered reveal (use style="--i:N") */
+	.reveal {
+		@apply opacity-0;
+		animation: reveal 0.9s var(--ease-studio) forwards;
+		animation-delay: calc((var(--i, 0)) * 90ms);
+	}
+}
+
+/* base canvas */
+body {
+	background-color: var(--color-base);
+	background-image: linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+	background-size: 25vw 100%;
+	background-attachment: fixed;
+	color: var(--color-ink);
+	font-family: var(--font-ui);
+	-webkit-font-smoothing: antialiased;
+	letter-spacing: -0.01em;
+	font-feature-settings: 'ss01';
+}
+
+::selection {
+	background: var(--color-accent);
+	color: var(--color-accent-ink);
+}
+
+@media (max-width: 640px) {
+	body {
+		background-size: 50vw 100%;
+	}
+	.wrap {
+		@apply px-5;
+	}
+}
