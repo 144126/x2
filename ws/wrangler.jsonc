@@ -11,8 +11,8 @@
 		]
 	},
 	"migrations": [
-		{ "tag": "v1", "new_classes": ["ChatHub"] },
-		{ "tag": "v2", "new_classes": ["MatchLobby"] }
+		{ "tag": "v1", "new_sqlite_classes": ["ChatHub"] },
+		{ "tag": "v2", "new_sqlite_classes": ["MatchLobby"] }
 	],
 	"dev": { "port": 8787 },
 	"secrets_store_secrets": [
