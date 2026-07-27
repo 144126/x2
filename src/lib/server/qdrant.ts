@@ -60,11 +60,17 @@ export type Cond =
 	| { key: string; match: { value: string | number } }
 	| { key: string; range: { gte?: number; lte?: number } };
 export const eq = (key: string, value: string | number): Cond => ({ key, match: { value } });
+export const range = (key: string, gte?: number, lte?: number): Cond => ({
+	key,
+	range: { ...(gte !== undefined ? { gte } : {}), ...(lte !== undefined ? { lte } : {}) }
+});
 export const f = (...conds: Cond[]) => ({ must: conds });
 
 type Pt = { id: string | number; vector?: number[]; payload: Record<string, unknown> | null; score?: number };
 
-// idempotent: create collection + keyword indexes if missing (once per instance)
+// idempotent: create collection + payload indexes if missing (once per instance)
+// Qdrant strict_mode on this collection rejects filtering on any unindexed field, so every
+// key ever used in a filter (eq/range) below MUST be indexed here.
 let ensured = false;
 export async function ensure(env: QEnv): Promise<void> {
 	if (ensured) return;
@@ -72,8 +78,9 @@ export async function ensure(env: QEnv): Promise<void> {
 	await c
 		.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } })
 		.catch(() => {});
-	for (const key of ['s', 't', 'r'])
+	for (const key of ['s', 't', 'r', 'c', 'f', 'co', 'st'])
 		await c.createPayloadIndex(C, { field_name: key, field_schema: 'keyword' }).catch(() => {});
+	await c.createPayloadIndex(C, { field_name: 'ag', field_schema: 'integer' }).catch(() => {});
 	ensured = true;
 }
 
@@ -88,8 +95,8 @@ export async function scroll(
 	return r.points as Pt[];
 }
 
-export async function retrieve_one(env: QEnv, id: string): Promise<Pt | null> {
-	const r = await (await qc(env)).retrieve(C, { ids: [id] }).catch(() => []);
+export async function retrieve_one(env: QEnv, id: string, with_vector = false): Promise<Pt | null> {
+	const r = await (await qc(env)).retrieve(C, { ids: [id], with_vector }).catch(() => []);
 	return (r[0] as Pt) ?? null;
 }
 

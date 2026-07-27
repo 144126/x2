@@ -20,6 +20,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		interests?: string[];
 		age?: number;
 		gender?: string;
+		country?: string;
+		state?: string;
+		city?: string;
 	};
 	await save_profile(env, locals.user.id, {
 		name: locals.user.name,
@@ -27,7 +30,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		about: b.about,
 		interests: b.interests,
 		age: b.age,
-		gender: b.gender
+		gender: b.gender,
+		country: b.country,
+		state: b.state,
+		city: b.city
 	});
 	return json({ ok: true });
 };

@@ -13,6 +13,9 @@ export interface User {
 	i?: string[]; // interests (tokens)
 	ag?: number; // age
 	r?: string; // gender
+	co?: string; // country iso code
+	st?: string; // state iso code
+	ci?: string; // city (free text)
 }
 
 export interface Message {
@@ -23,4 +26,13 @@ export interface Message {
 	t: string; // to uid
 	x: string; // text
 	d: number; // ts
+}
+
+// records that two users were paired by random match, so the thread shows up
+// in their conversation list even before either sends a message
+export interface Match {
+	s: 'x';
+	f: string; // uid a
+	t: string; // uid b
+	d: number; // matched ts
 }

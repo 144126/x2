@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
-import { ensure, search, f, eq, type Cond } from '$lib/server/qdrant';
+import { ensure, search, f, eq, range, type Cond } from '$lib/server/qdrant';
 import { embed } from '$lib/server/or';
 import type { User } from '$lib/types';
 
@@ -14,6 +14,14 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const conds: Cond[] = [eq('s', 'u')];
 	const gender = url.searchParams.get('gender')?.trim();
 	if (gender) conds.push(eq('r', gender));
+	const country = url.searchParams.get('country')?.trim();
+	if (country) conds.push(eq('co', country));
+	const state = url.searchParams.get('state')?.trim();
+	if (state) conds.push(eq('st', state));
+	const age_min = Number(url.searchParams.get('age_min'));
+	const age_max = Number(url.searchParams.get('age_max'));
+	if (age_min || age_max)
+		conds.push(range('ag', age_min || undefined, age_max || undefined));
 	const hits = await search(env, vec, f(...conds), 20);
 	const r = hits
 		.map((h) => {
@@ -24,6 +32,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				a: u.a,
 				g: u.ag,
 				r: u.r,
+				co: u.co,
+				st: u.st,
+				ci: u.ci,
 				s: h.score
 			};
 		})

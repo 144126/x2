@@ -3,6 +3,9 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"pnpm": {
+		"onlyBuiltDependencies": ["workerd", "sharp", "esbuild"]
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"dev:ws": "wrangler dev -c ws/wrangler.jsonc",
@@ -21,7 +24,8 @@
 		"@fontsource-variable/fraunces": "^5.2.9",
 		"@fontsource-variable/space-grotesk": "^5.2.10",
 		"@qdrant/js-client-rest": "^1.18.0",
-		"arctic": "^3.7.0"
+		"arctic": "^3.7.0",
+		"country-state-city": "^3.2.1"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^5.20260724.1",

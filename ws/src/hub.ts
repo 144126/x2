@@ -1,6 +1,8 @@
+import { get_secret, type SecretVal } from '../../src/lib/server/qdrant';
+
 interface Env {
 	CHAT_HUB: DurableObjectNamespace;
-	SECRET: string;
+	SECRET: SecretVal;
 }
 
 export class ChatHub implements DurableObject {
@@ -17,7 +19,8 @@ export class ChatHub implements DurableObject {
 		if (request.headers.get('upgrade') === 'websocket') {
 			const uid = url.searchParams.get('uid') ?? '';
 			const token = url.searchParams.get('t') ?? '';
-			if (!(await verify_token(this.env.SECRET, uid, token))) return new Response('denied', { status: 403 });
+			if (!(await verify_token(await get_secret(this.env.SECRET), uid, token)))
+				return new Response('denied', { status: 403 });
 			const pair = new WebSocketPair();
 			const [client, server] = Object.values(pair) as unknown as [WebSocket, WebSocket];
 			this.state.acceptWebSocket(server, [uid]);

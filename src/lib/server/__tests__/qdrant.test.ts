@@ -120,6 +120,28 @@ describe('eq / f', () => {
 	});
 });
 
+describe('range', () => {
+	it('builds a range condition with both bounds', async () => {
+		const { range } = await import('../qdrant');
+		expect(range('ag', 21, 35)).toEqual({ key: 'ag', range: { gte: 21, lte: 35 } });
+	});
+
+	it('omits an unset lower bound', async () => {
+		const { range } = await import('../qdrant');
+		expect(range('ag', undefined, 35)).toEqual({ key: 'ag', range: { lte: 35 } });
+	});
+
+	it('omits an unset upper bound', async () => {
+		const { range } = await import('../qdrant');
+		expect(range('ag', 21, undefined)).toEqual({ key: 'ag', range: { gte: 21 } });
+	});
+
+	it('produces an empty range object when neither bound is set', async () => {
+		const { range } = await import('../qdrant');
+		expect(range('ag')).toEqual({ key: 'ag', range: {} });
+	});
+});
+
 describe('qc (client caching)', () => {
 	it('creates a single client instance and reuses it while the key is unchanged', async () => {
 		vi.resetModules();
@@ -140,7 +162,7 @@ describe('qc (client caching)', () => {
 });
 
 describe('ensure', () => {
-	it('creates the collection and keyword indexes for s/t/r, tolerating failures', async () => {
+	it('creates the collection and every field ever used in a filter, tolerating failures', async () => {
 		vi.resetModules();
 		createCollectionMock.mockRejectedValueOnce(new Error('already exists'));
 		const { ensure } = await import('../qdrant');
@@ -149,8 +171,18 @@ describe('ensure', () => {
 			'x2',
 			expect.objectContaining({ vectors: { size: 4096, distance: 'Cosine' } })
 		);
-		const indexedFields = createPayloadIndexMock.mock.calls.map((c) => c[1].field_name);
-		expect(indexedFields).toEqual(['s', 't', 'r']);
+		const calls = createPayloadIndexMock.mock.calls.map((c) => c[1]);
+		const byField = Object.fromEntries(calls.map((c) => [c.field_name, c.field_schema]));
+		expect(byField).toEqual({
+			s: 'keyword',
+			t: 'keyword',
+			r: 'keyword',
+			c: 'keyword',
+			f: 'keyword',
+			co: 'keyword',
+			st: 'keyword',
+			ag: 'integer'
+		});
 	});
 
 	it('only runs once per module instance (idempotent)', async () => {
@@ -190,7 +222,7 @@ describe('retrieve_one', () => {
 		vi.resetModules();
 		const { retrieve_one } = await import('../qdrant');
 		const pt = await retrieve_one(ENV, '1');
-		expect(retrieveMock).toHaveBeenCalledWith('x2', { ids: ['1'] });
+		expect(retrieveMock).toHaveBeenCalledWith('x2', { ids: ['1'], with_vector: false });
 		expect(pt).toEqual({ id: '1', payload: { s: 'u' } });
 	});
 

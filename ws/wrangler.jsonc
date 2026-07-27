@@ -5,12 +5,20 @@
 	"compatibility_date": "2026-07-18",
 	"compatibility_flags": ["nodejs_compat_v2"],
 	"durable_objects": {
-		"bindings": [{ "name": "CHAT_HUB", "class_name": "ChatHub" }]
+		"bindings": [
+			{ "name": "CHAT_HUB", "class_name": "ChatHub" },
+			{ "name": "MATCH_LOBBY", "class_name": "MatchLobby" }
+		]
 	},
-	"migrations": [{ "tag": "v1", "new_classes": ["ChatHub"] }],
+	"migrations": [
+		{ "tag": "v1", "new_classes": ["ChatHub"] },
+		{ "tag": "v2", "new_classes": ["MatchLobby"] }
+	],
 	"dev": { "port": 8787 },
 	"secrets_store_secrets": [
-		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" }
+		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" },
+		{ "binding": "QDRANT_URL", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_URL" },
+		{ "binding": "QDRANT_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_KEY" }
 	],
 	"workers_dev": true,
 	"preview_urls": true,

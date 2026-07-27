@@ -13,6 +13,6 @@ export const GET: RequestHandler = async ({ locals }) => {
 	const sig = await crypto.subtle.digest('SHA-256', raw);
 	const t = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
 	const ws_origin = (await get_secret(env.WS_ORIGIN)) || 'ws://localhost:8787';
-	const ws_url = `${ws_origin}/ws?uid=${encodeURIComponent(locals.user.id)}&t=${t}`;
-	return json({ t, ws: ws_url });
+	const qs = `uid=${encodeURIComponent(locals.user.id)}&t=${t}`;
+	return json({ t, ws: `${ws_origin}/ws?${qs}`, match: `${ws_origin}/match?${qs}` });
 };

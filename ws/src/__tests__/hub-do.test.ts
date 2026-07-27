@@ -68,6 +68,31 @@ describe('ChatHub.fetch', () => {
 		expect(state.acceptWebSocket).not.toHaveBeenCalled();
 	});
 
+	it('unwraps a secrets-store-style SECRET binding (not a plain string) before verifying', async () => {
+		// production SECRET is bound via secrets_store_secrets, i.e. an object with .get(), not a
+		// raw string — this guards against passing that object straight into verify_token, which
+		// previously stringified to "[object Object]" and made every token check fail.
+		vi.stubGlobal(
+			'WebSocketPair',
+			class {
+				0 = new FakeSocket();
+				1 = new FakeSocket();
+			}
+		);
+		const bound_env = { ...env, SECRET: { get: async () => SECRET } };
+		const raw = new TextEncoder().encode(`uid-1.${SECRET}`);
+		const sig = await crypto.subtle.digest('SHA-256', raw);
+		const t = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, bound_env as any);
+		// the 101-upgrade Response construction itself is workerd-only (see note above) and throws
+		// under Node — what we're actually verifying is that we got PAST the auth check, i.e.
+		// get_secret correctly unwrapped the bound SECRET before verify_token compared it.
+		await hub.fetch(req(`https://dummy/ws?uid=uid-1&t=${t}`, { headers: { upgrade: 'websocket' } })).catch(() => {});
+		expect(state.acceptWebSocket).toHaveBeenCalledWith(expect.anything(), ['uid-1']);
+		vi.unstubAllGlobals();
+	});
+
 	// Note: the successful 101-upgrade path constructs a `new Response(null, { status: 101,
 	// webSocket })`, a Cloudflare-Workers-only Response extension that Node's fetch impl rejects
 	// (RangeError: status must be 200-599). That leg can only run under real workerd (e.g.

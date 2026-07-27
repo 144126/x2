@@ -1,20 +1,29 @@
 <script lang="ts">
 	import type { User } from '$lib/types';
+	import LocationPicker from '$lib/LocationPicker.svelte';
 	let { data } = $props();
 	let p = $state(data.p as User);
 
 	let about = $state(p.a ?? '');
 	let username = $state(p.u ?? '');
-	let interests_text = $state((p.i ?? []).join(', '));
+	let interests = $state<string[]>(p.i ?? []);
+	let interestInput = $state('');
 	let age = $state(p.ag ?? '');
 	let gender = $state(p.r ?? '');
+	let country = $state(p.co ?? '');
+	let region = $state(p.st ?? '');
+	let city = $state(p.ci ?? '');
 	let saved = $state(false);
 
-	const to_tokens = (s: string) =>
-		s
-			.split(/[,\n]/)
-			.map((t) => t.trim())
-			.filter(Boolean);
+	function addInterest() {
+		const t = interestInput.trim();
+		if (t && !interests.includes(t)) interests = [...interests, t];
+		interestInput = '';
+	}
+
+	function removeInterest(t: string) {
+		interests = interests.filter((i) => i !== t);
+	}
 
 	async function save() {
 		saved = false;
@@ -24,9 +33,12 @@
 			body: JSON.stringify({
 				about,
 				username,
-				interests: to_tokens(interests_text),
+				interests,
 				age: age ? Number(age) : undefined,
-				gender
+				gender,
+				country,
+				state: region,
+				city
 			})
 		});
 		saved = res.ok;
@@ -42,11 +54,30 @@
 		<input id="p-username" bind:value={username} placeholder="display handle" />
 
 		<label class="eyebrow mt-6" for="p-interests">interests</label>
-		<input
-			id="p-interests"
-			bind:value={interests_text}
-			placeholder="ceramics, generative art, long walks"
-		/>
+		<div
+			class="flex min-h-[48px] flex-wrap items-center gap-2 rounded-[12px] border border-line bg-panel-solid px-3 py-2 transition-colors duration-300 focus-within:border-accent"
+		>
+			{#each interests as t}
+				<span
+					class="flex items-center gap-1 rounded-full border border-line bg-panel px-3 py-1 text-[13px] text-ink"
+				>
+					{t}
+					<button
+						type="button"
+						onclick={() => removeInterest(t)}
+						class="text-[15px] leading-none text-faint transition-colors hover:text-accent"
+						aria-label="remove {t}"
+					>&times;</button>
+				</span>
+			{/each}
+			<input
+				id="p-interests"
+				class="min-w-[100px] flex-1 border-none bg-transparent px-1 py-1 text-[14px] text-ink outline-none placeholder:text-mute"
+				bind:value={interestInput}
+				onkeydown={(e) => { if (e.key === 'Enter') e.preventDefault(), addInterest(); }}
+				placeholder={interests.length ? '' : 'add an interest…'}
+			/>
+		</div>
 
 		<label class="eyebrow mt-6" for="p-about">more about me</label>
 		<textarea id="p-about" rows="4" bind:value={about} placeholder="tell people more about yourself — what you're into, what you're building…"></textarea>
@@ -65,6 +96,11 @@
 					<option value="o">other</option>
 				</select>
 			</div>
+		</div>
+
+		<label class="eyebrow mt-6" for="p-country">location</label>
+		<div id="p-country">
+			<LocationPicker bind:country bind:region bind:city anyLabel="country" />
 		</div>
 
 		<div class="mt-8 flex items-center gap-4">

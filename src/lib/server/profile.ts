@@ -7,7 +7,17 @@ import { embed as embed_text } from './or';
 export async function save_profile(
 	env: QEnv,
 	uid: string,
-	data: { name?: string; username?: string; about?: string; interests?: string[]; age?: number; gender?: string }
+	data: {
+		name?: string;
+		username?: string;
+		about?: string;
+		interests?: string[];
+		age?: number;
+		gender?: string;
+		country?: string;
+		state?: string;
+		city?: string;
+	}
 ): Promise<void> {
 	await ensure(env);
 	const cur = await get_user(env, uid);
@@ -19,7 +29,10 @@ export async function save_profile(
 		a: data.about ?? cur.a,
 		i: data.interests ?? cur.i,
 		ag: data.age ?? cur.ag,
-		r: data.gender ?? cur.r
+		r: data.gender ?? cur.r,
+		co: data.country ?? cur.co,
+		st: data.state ?? cur.st,
+		ci: data.city ?? cur.ci
 	};
 	// embed structured profile: about_user + user_interests tokens (only when there's real content)
 	const about = merged.a?.trim();
