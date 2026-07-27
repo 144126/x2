@@ -40,7 +40,7 @@
 </script>
 
 <section class="mx-auto max-w-[480px] reveal">
-	<div class="eyebrow">random</div>
+	<div class="eyebrow">discover</div>
 	<h1 class="display mt-3 mb-9 text-[clamp(36px,6vw,56px)] leading-[0.98]">
 		meet someone<br /><em class="italic text-accent">new</em>.
 	</h1>
@@ -66,7 +66,7 @@
 		</div>
 		<button class="btn btn-amber mt-8 w-full" onclick={start}>find someone</button>
 	{:else if phase === 'searching'}
-		<p class="text-[15px] text-ink-soft">searching for someone to match with…</p>
+		<p class="text-[15px] text-ink-soft">looking for a kindred spirit…</p>
 		<button class="btn btn-ghost mt-6" onclick={cancel}>cancel</button>
 	{:else}
 		<p class="text-[15px] text-[#e2674c]">couldn't reach the matching service — try again.</p>

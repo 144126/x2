@@ -16,6 +16,7 @@ export interface User {
 	co?: string; // country iso code
 	st?: string; // state iso code
 	ci?: string; // city (free text)
+	w?: string; // whatsapp number (subscriber number, stripped of country code / leading 0)
 }
 
 export interface Message {

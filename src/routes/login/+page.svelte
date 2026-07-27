@@ -27,6 +27,11 @@
 	<h1 class="display mt-4 whitespace-pre-line text-[clamp(44px,8vw,72px)] leading-[0.96]">
 		{mode === 'login' ? 'welcome\nback' : 'begin\nhere'}
 	</h1>
+	<p class="mt-5 text-[14px] leading-[1.6] text-ink-soft">
+		{mode === 'login'
+			? 'your threads are waiting.'
+			: 'one card. real conversations. no algorithms.'}
+	</p>
 
 	<a class="btn btn-amber mt-9 w-full" href="/google">continue with google</a>
 
@@ -44,7 +49,7 @@
 			minlength="6"
 		/>
 		<button class="btn btn-amber mt-1.5 w-full" type="submit"
-			>{mode === 'login' ? 'log in' : 'create'}</button
+			>{mode === 'login' ? 'log in' : 'create account'}</button
 		>
 	</form>
 

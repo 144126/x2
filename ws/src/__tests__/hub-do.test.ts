@@ -16,6 +16,7 @@ function makeState() {
 	const socketsByTag = new Map<string, FakeSocket[]>();
 	const allSockets: FakeSocket[] = [];
 	const tagsBySocket = new Map<FakeSocket, string[]>();
+	const store = new Map<string, unknown>();
 	return {
 		acceptWebSocket: vi.fn((ws: FakeSocket, tags: string[]) => {
 			allSockets.push(ws);
@@ -24,6 +25,10 @@ function makeState() {
 		}),
 		getWebSockets: vi.fn((tag?: string) => (tag ? (socketsByTag.get(tag) ?? []) : allSockets)),
 		getTags: vi.fn((ws: FakeSocket) => tagsBySocket.get(ws) ?? []),
+		storage: {
+			get: vi.fn(async (k: string) => store.get(k)),
+			put: vi.fn(async (k: string, v: unknown) => { store.set(k, v); })
+		},
 		_socketsByTag: socketsByTag
 	};
 }

@@ -46,6 +46,10 @@
 			.then((r) => r.json())
 			.then((j) => {
 				ws = new WebSocket(j.ws);
+				ws.onopen = () => {
+					ws!.send(JSON.stringify({ type: 'watch', peer: data.peer }));
+					ws!.send(JSON.stringify({ type: 'check', peer: data.peer }));
+				};
 				ws.onmessage = (ev) => {
 					const m = JSON.parse(ev.data);
 					if (m.type === 'presence' && m.uid === data.peer) online = m.online;
@@ -172,6 +176,7 @@
 	});
 
 	onDestroy(() => {
+		if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'unwatch', peer: data.peer }));
 		endCall();
 		ws?.close();
 	});
@@ -202,11 +207,11 @@
 		</div>
 		<div class="ml-auto flex items-center gap-2">
 			{#if callState === 'idle' && online}
-				<button class="btn btn-ghost text-[13px]" onclick={startCall} aria-label="call">📞</button>
+				<button class="btn btn-ghost text-[13px]" onclick={startCall}>call</button>
 			{/if}
 			{#if callState === 'calling'}
 				<span class="text-[12px] text-faint">calling…</span>
-				<button class="btn btn-ghost text-[13px]" onclick={endCall}>✕</button>
+				<button class="btn btn-ghost text-[13px]" onclick={endCall}>cancel</button>
 			{/if}
 			{#if callState === 'ringing'}
 				<span class="text-[12px] text-accent">incoming call</span>
@@ -214,8 +219,8 @@
 				<button class="btn btn-ghost text-[13px]" onclick={endCall}>decline</button>
 			{/if}
 			{#if callState === 'connected'}
-				<button class="btn btn-ghost text-[13px]" onclick={toggleMic}>{micOn ? '🎤' : '🔇'}</button>
-				<button class="btn btn-ghost text-[13px]" onclick={toggleVideo}>{videoOn ? '📹' : '📷'}</button>
+				<button class="btn btn-ghost text-[13px]" onclick={toggleMic}>{micOn ? 'mic on' : 'muted'}</button>
+				<button class="btn btn-ghost text-[13px]" onclick={toggleVideo}>{videoOn ? 'video on' : 'video off'}</button>
 				<button class="btn btn-ghost text-[13px] text-red-500" onclick={endCall}>hang up</button>
 			{/if}
 			{#if auto}
@@ -257,6 +262,6 @@
 		}}
 	>
 		<input class="text-[15px]" bind:value={text} placeholder="write something considered…" autocomplete="off" />
-		<button class="btn btn-amber" type="submit">send</button>
+		<button class="btn btn-amber" type="submit">drop into thread</button>
 	</form>
 </section>

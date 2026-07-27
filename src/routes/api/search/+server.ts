@@ -23,9 +23,13 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	if (age_min || age_max)
 		conds.push(range('ag', age_min || undefined, age_max || undefined));
 	const hits = await search(env, vec, f(...conds), 20);
+	const { Country } = await import('country-state-city');
 	const r = hits
 		.map((h) => {
 			const u = h.payload as unknown as User;
+			const wu = u.w && u.co
+				? `https://wa.me/${Country.getCountryByCode(u.co)?.phonecode ?? ''}${u.w}`
+				: undefined;
 			return {
 				id: String(h.id),
 				n: u.u ?? u.n,
@@ -35,6 +39,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				co: u.co,
 				st: u.st,
 				ci: u.ci,
+				w: u.w,
+				wu,
 				s: h.score
 			};
 		})

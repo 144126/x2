@@ -3,6 +3,17 @@ import { ZV, ensure, upsert, type QEnv } from './qdrant';
 import { get_user } from './user';
 import { embed as embed_text } from './or';
 
+async function cleanWhatsApp(num: string, country?: string): Promise<string | undefined> {
+	const s = num.trim();
+	if (!s) return undefined;
+	const { Country } = await import('country-state-city');
+	const phonecode = country ? Country.getCountryByCode(country)?.phonecode : undefined;
+	let cleaned = s;
+	if (phonecode && cleaned.startsWith(`+${phonecode}`)) cleaned = cleaned.slice(phonecode.length + 1);
+	else if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+	return cleaned || undefined;
+}
+
 // save editable profile fields; re-embeds about+interests+username for search
 export async function save_profile(
 	env: QEnv,
@@ -17,6 +28,7 @@ export async function save_profile(
 		country?: string;
 		state?: string;
 		city?: string;
+		whatsapp?: string;
 	}
 ): Promise<void> {
 	await ensure(env);
@@ -32,7 +44,12 @@ export async function save_profile(
 		r: data.gender ?? cur.r,
 		co: data.country ?? cur.co,
 		st: data.state ?? cur.st,
-		ci: data.city ?? cur.ci
+		ci: data.city ?? cur.ci,
+		w: data.whatsapp !== undefined
+			? data.whatsapp
+				? await cleanWhatsApp(data.whatsapp, data.country ?? cur.co)
+				: undefined
+			: cur.w
 	};
 	// embed structured profile: about_user + user_interests tokens (only when there's real content)
 	const about = merged.a?.trim();

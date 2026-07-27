@@ -10,7 +10,7 @@
 	let country = $state('');
 	let region = $state('');
 	let results = $state<
-		{ id: string; n: string; a?: string; g?: number; r?: string; co?: string; st?: string; ci?: string; s: number }[]
+		{ id: string; n: string; a?: string; g?: number; r?: string; co?: string; st?: string; ci?: string; w?: string; wu?: string; s: number }[]
 	>([]);
 	let searching = $state(false);
 
@@ -30,7 +30,7 @@
 </script>
 
 <section class="mb-[72px]">
-	<div class="eyebrow">the index</div>
+	<div class="eyebrow">the index — find people by meaning, not keywords</div>
 	<h2 class="display mt-3.5 mb-9 text-[clamp(34px,5.5vw,60px)] leading-[0.98]">
 		find someone<br />by what they <em class="italic text-accent">mean</em>.
 	</h2>
@@ -43,7 +43,7 @@
 			onkeydown={(e) => e.key === 'Enter' && search()}
 		/>
 		<button class="btn btn-amber whitespace-nowrap" onclick={search} disabled={searching}>
-			{searching ? 'searching' : 'search'}
+			{searching ? 'searching' : 'find people'}
 		</button>
 	</div>
 
@@ -92,8 +92,21 @@
 						{/if}
 					</div>
 					{#if u.a}<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">{u.a}</p>{/if}
-					<div class="self-end font-display text-[15px] tracking-[0.02em] text-accent">
-						{(u.s * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span> match
+					<div class="mt-3 flex items-center gap-3 self-end">
+						{#if u.wu}
+							<a
+								href={u.wu}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="btn text-[12px] py-1.5 px-3 no-underline"
+								onclick={(e) => e.stopPropagation()}
+							>
+								chat on whatsapp
+							</a>
+						{/if}
+						<div class="font-display text-[15px] tracking-[0.02em] text-accent">
+							{(u.s * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span> match
+						</div>
 					</div>
 				</li>
 			{/each}
@@ -119,6 +132,6 @@
 			{/each}
 		</ul>
 	{:else}
-		<p class="mt-4 text-[14.5px] text-faint">no threads yet — search above to begin one.</p>
+		<p class="mt-4 text-[14.5px] text-faint">no conversations yet. search for someone with the same vibe.</p>
 	{/if}
 </section>

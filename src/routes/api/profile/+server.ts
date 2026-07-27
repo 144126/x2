@@ -23,6 +23,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		country?: string;
 		state?: string;
 		city?: string;
+		whatsapp?: string;
 	};
 	await save_profile(env, locals.user.id, {
 		name: locals.user.name,
@@ -33,7 +34,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		gender: b.gender,
 		country: b.country,
 		state: b.state,
-		city: b.city
+		city: b.city,
+		whatsapp: b.whatsapp
 	});
 	return json({ ok: true });
 };

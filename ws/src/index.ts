@@ -16,12 +16,19 @@ const worker: ExportedHandler<Env> = {
 			return stub.fetch(request);
 		}
 
-		if (url.pathname === '/ws' || url.pathname === '/relay') {
-			const uid = url.pathname === '/ws' ? url.searchParams.get('uid') ?? '' : '';
-			const to = url.searchParams.get('to') ?? '';
-			const target = uid || to;
-			if (!target) return new Response('no target', { status: 400 });
-			const id = env.CHAT_HUB.idFromName(target);
+		if (url.pathname === '/ws') {
+			const uid = url.searchParams.get('uid') ?? '';
+			if (!uid) return new Response('no uid', { status: 400 });
+			const id = env.CHAT_HUB.idFromName(uid);
+			const stub = env.CHAT_HUB.get(id);
+			return stub.fetch(request);
+		}
+
+		if (url.pathname === '/relay') {
+			const body = await request.json().catch(() => null) as { to?: string } | null;
+			const to = body?.to ?? '';
+			if (!to) return new Response('no target', { status: 400 });
+			const id = env.CHAT_HUB.idFromName(to);
 			const stub = env.CHAT_HUB.get(id);
 			return stub.fetch(request);
 		}

@@ -37,7 +37,7 @@
 						? 'text-ink'
 						: 'text-mute')}"
 				>
-					random
+					discover
 					<span
 						class="absolute -bottom-px left-0 h-px w-full origin-left scale-x-0 bg-accent transition-transform duration-[400ms] ease-studio group-hover:scale-x-100 {$page
 							.url.pathname === '/app/random'

@@ -13,6 +13,7 @@
 	let country = $state(p.co ?? '');
 	let region = $state(p.st ?? '');
 	let city = $state(p.ci ?? '');
+	let whatsapp = $state(p.w ?? '');
 	let saved = $state(false);
 
 	function addInterest() {
@@ -38,7 +39,8 @@
 				gender,
 				country,
 				state: region,
-				city
+				city,
+				whatsapp
 			})
 		});
 		saved = res.ok;
@@ -103,13 +105,24 @@
 			<LocationPicker bind:country bind:region bind:city anyLabel="country" />
 		</div>
 
+		<label class="eyebrow mt-6" for="p-whatsapp">whatsapp number (optional)</label>
+		<input
+			id="p-whatsapp"
+			type="tel"
+			bind:value={whatsapp}
+			placeholder="e.g. +1234567890"
+		/>
+
 		<div class="mt-8 flex items-center gap-4">
-			<button class="btn btn-amber" type="submit">save changes</button>
+			<button class="btn btn-amber" type="submit">save card</button>
 			{#if saved}<span class="text-[13px] tracking-[0.04em] text-accent">saved</span>{/if}
 		</div>
 	</form>
-	<p class="mt-7 max-w-[46ch] text-[13.5px] leading-[1.6] text-faint">
-		your <em class="italic text-ink-soft">about</em>, <em class="italic text-ink-soft">interests</em> +
-		username are embedded, so others find you by meaning — not just a keyword.
-	</p>
+	<div class="mt-7 rounded-[12px] border border-line bg-panel px-5 py-4">
+		<p class="text-[13.5px] leading-[1.6] text-ink-soft">
+			your <em class="italic text-ink">about</em>, <em class="italic text-ink">interests</em> +
+			username are embedded into a semantic fingerprint — so others find you by
+			<span class="text-ink">the shape of what you're about</span>, not just a keyword.
+		</p>
+	</div>
 </section>

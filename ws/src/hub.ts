@@ -6,7 +6,7 @@ interface Env {
 }
 
 export class ChatHub implements DurableObject {
-	private 	state: DurableObjectState;
+	private state: DurableObjectState;
 	private env: Env;
 
 	constructor(state: DurableObjectState, env: Env) {
@@ -25,6 +25,7 @@ export class ChatHub implements DurableObject {
 			const [client, server] = Object.values(pair) as unknown as [WebSocket, WebSocket];
 			this.state.acceptWebSocket(server, [uid]);
 			this.announce(uid, true);
+			await this.notify_watchers(uid, true);
 			return new Response(null, { status: 101, webSocket: client });
 		}
 		if (url.pathname === '/relay' && request.method === 'POST') {
@@ -37,22 +38,81 @@ export class ChatHub implements DurableObject {
 			this.deliver(msg.to, msg);
 			return new Response('ok');
 		}
+		if (url.pathname === '/check') {
+			const online = this.state.getWebSockets().length > 0;
+			return new Response(JSON.stringify({ online }));
+		}
+		if (url.pathname === '/watch' && request.method === 'POST') {
+			const { uid } = (await request.json()) as { uid: string };
+			const watchers = (await this.state.storage.get<string[]>('watchers')) ?? [];
+			if (!watchers.includes(uid)) {
+				watchers.push(uid);
+				await this.state.storage.put('watchers', watchers);
+			}
+			return new Response('ok');
+		}
+		if (url.pathname === '/unwatch' && request.method === 'POST') {
+			const { uid } = (await request.json()) as { uid: string };
+			const watchers = (await this.state.storage.get<string[]>('watchers')) ?? [];
+			const next = watchers.filter((w) => w !== uid);
+			if (next.length !== watchers.length) await this.state.storage.put('watchers', next);
+			return new Response('ok');
+		}
+		if (url.pathname === '/notify' && request.method === 'POST') {
+			const { uid, online } = (await request.json()) as { uid: string; online: boolean };
+			this.announce(uid, online);
+			return new Response('ok');
+		}
 		return new Response('bad', { status: 400 });
 	}
 
 	async webSocketMessage(ws: WebSocket, data: string): Promise<void> {
 		const msg = JSON.parse(data);
-		if (msg.type !== 'signal') return;
-		msg.from = this.state.getTags(ws)[0];
-		const id = this.env.CHAT_HUB.idFromName(msg.to);
-		const stub = this.env.CHAT_HUB.get(id);
-		await stub.fetch('https://dummy/signal', { method: 'POST', body: JSON.stringify(msg) });
+		const self = this.state.getTags(ws)[0];
+		if (!self) return;
+		if (msg.type === 'signal') {
+			msg.from = self;
+			const id = this.env.CHAT_HUB.idFromName(msg.to);
+			const stub = this.env.CHAT_HUB.get(id);
+			await stub.fetch('https://dummy/signal', { method: 'POST', body: JSON.stringify(msg) });
+		} else if (msg.type === 'watch') {
+			const id = this.env.CHAT_HUB.idFromName(msg.peer);
+			const stub = this.env.CHAT_HUB.get(id);
+			await stub.fetch('https://dummy/watch', { method: 'POST', body: JSON.stringify({ uid: self }) });
+		} else if (msg.type === 'unwatch') {
+			const id = this.env.CHAT_HUB.idFromName(msg.peer);
+			const stub = this.env.CHAT_HUB.get(id);
+			await stub.fetch('https://dummy/unwatch', { method: 'POST', body: JSON.stringify({ uid: self }) });
+		} else if (msg.type === 'check') {
+			const id = this.env.CHAT_HUB.idFromName(msg.peer);
+			const stub = this.env.CHAT_HUB.get(id);
+			const res = await stub.fetch('https://dummy/check');
+			const body = (await res.json()) as { online: boolean };
+			ws.send(JSON.stringify({ type: 'presence', uid: msg.peer, online: body.online }));
+		}
 	}
 
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const uid = this.state.getTags(ws)[0];
-		if (uid) this.announce(uid, false);
+		if (uid) {
+			this.announce(uid, false);
+			await this.notify_watchers(uid, false);
+		}
 		ws.close();
+	}
+
+	private async notify_watchers(uid: string, online: boolean): Promise<void> {
+		const watchers = (await this.state.storage.get<string[]>('watchers')) ?? [];
+		for (const watcher of watchers) {
+			try {
+				const id = this.env.CHAT_HUB.idFromName(watcher);
+				const stub = this.env.CHAT_HUB.get(id);
+				await stub.fetch('https://dummy/notify', {
+					method: 'POST',
+					body: JSON.stringify({ uid, online })
+				});
+			} catch {}
+		}
 	}
 
 	private deliver(uid: string, payload: unknown): void {
