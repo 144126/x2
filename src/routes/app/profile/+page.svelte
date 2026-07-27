@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { User } from '$lib/types';
 	import LocationPicker from '$lib/LocationPicker.svelte';
+	import PhoneInput from '$lib/PhoneInput.svelte';
 	let { data } = $props();
 	let p = $state(data.p as User);
 
@@ -106,11 +107,10 @@
 		</div>
 
 		<label class="eyebrow mt-6" for="p-whatsapp">whatsapp number (optional)</label>
-		<input
-			id="p-whatsapp"
-			type="tel"
-			bind:value={whatsapp}
-			placeholder="e.g. +1234567890"
+		<PhoneInput
+			value={whatsapp}
+			defaultCountry={country}
+			onChange={(v) => (whatsapp = v)}
 		/>
 
 		<div class="mt-8 flex items-center gap-4">
