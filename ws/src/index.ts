@@ -25,12 +25,16 @@ const worker: ExportedHandler<Env> = {
 		}
 
 		if (url.pathname === '/relay') {
-			const body = await request.json().catch(() => null) as { to?: string } | null;
-			const to = body?.to ?? '';
+			const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+			const to = body?.to as string | undefined;
 			if (!to) return new Response('no target', { status: 400 });
 			const id = env.CHAT_HUB.idFromName(to);
 			const stub = env.CHAT_HUB.get(id);
-			return stub.fetch(request);
+			return stub.fetch(new Request('https://dummy/relay', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify(body)
+			}));
 		}
 
 		return new Response('x2-ws relay+presence worker', { status: 200 });
