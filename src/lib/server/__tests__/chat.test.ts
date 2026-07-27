@@ -136,9 +136,9 @@ describe('record_match', () => {
 });
 
 describe('get_user_name', () => {
-	it('returns the stored display name', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'uid', payload: { s: 'u', n: 'Ada' } });
-		expect(await get_user_name(ENV, 'uid')).toBe('Ada');
+	it('returns the username', async () => {
+		retrieveOneMock.mockResolvedValue({ id: 'uid', payload: { s: 'u', n: 'Ada Lovelace', u: 'ada' } });
+		expect(await get_user_name(ENV, 'uid')).toBe('ada');
 	});
 
 	it('falls back to the uid when the user cannot be found', async () => {

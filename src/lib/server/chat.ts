@@ -73,5 +73,5 @@ export async function list_conversations(env: QEnv, uid: string): Promise<{ peer
 
 export async function get_user_name(env: QEnv, uid: string): Promise<string> {
 	const u = (await retrieve_one(env, uid))?.payload as unknown as User | undefined;
-	return u?.n ?? uid;
+	return u?.u ?? uid;
 }

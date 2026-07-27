@@ -50,7 +50,7 @@
 
 <section class="prof reveal mx-auto max-w-[560px]">
 	<div class="eyebrow">your studio card</div>
-	<h1 class="display mt-3 mb-10 text-[clamp(40px,6vw,64px)]">{p.n ?? 'profile'}</h1>
+	<h1 class="display mt-3 mb-10 text-[clamp(40px,6vw,64px)]">{username || p.m?.split('@')[0] || 'profile'}</h1>
 
 	<form onsubmit={(e) => (e.preventDefault(), save())} class="flex flex-col gap-2">
 		<label class="eyebrow mt-6" for="p-username">username</label>

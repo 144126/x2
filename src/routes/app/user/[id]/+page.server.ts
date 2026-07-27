@@ -9,5 +9,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	await ensure(env);
 	const u = (await retrieve_one(env, params.id))?.payload as unknown as User | undefined;
 	if (!u) throw error(404, 'not found');
-	return { id: params.id, u };
+	const { Country } = await import('country-state-city');
+	const wu = u.w && u.co
+		? `https://wa.me/${Country.getCountryByCode(u.co)?.phonecode ?? ''}${u.w}`
+		: undefined;
+	return { id: params.id, u, wu };
 };
