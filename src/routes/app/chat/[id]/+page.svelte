@@ -192,7 +192,7 @@
 			aria-label="back">←</button
 		>
 		<div class="flex flex-col gap-0.5">
-			<div class="font-display text-[21px] font-medium tracking-[-0.01em]">{data.peer_name}</div>
+			<a href="/app/user/{data.peer}" class="font-display text-[21px] font-medium tracking-[-0.01em] hover:text-accent transition-colors duration-300">{data.peer_name}</a>
 			<div
 				class="flex items-center gap-[7px] text-[10.5px] uppercase tracking-[0.2em] {online
 					? 'text-accent'
