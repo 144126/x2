@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	let { data } = $props();
 	let messages = $state(data.messages as { f: string; x: string; d: number }[]);
@@ -181,7 +181,7 @@
 		ws?.close();
 	});
 
-	connect();
+	onMount(() => connect());
 </script>
 
 <section class="chat mx-auto flex h-[calc(100dvh-90px)] max-w-[760px] flex-col">
