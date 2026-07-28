@@ -1,3 +1,5 @@
+import { relay } from './relay';
+
 interface Env {
 	CHAT_HUB: DurableObjectNamespace;
 	MATCH_LOBBY: DurableObjectNamespace;
@@ -27,27 +29,10 @@ const worker: ExportedHandler<Env> = {
 		}
 
 		if (url.pathname === '/relay') {
-			console.log(`[WS-RELAY] received relay request`);
-			const body = await request.json().catch(() => null) as Record<string, unknown> | null;
-			console.log(`[WS-RELAY] body:`, JSON.stringify(body).slice(0, 300));
-			// 1:1 sends carry `to`; group sends carry `members` (already filtered to
-			// everyone but the sender) and fan out to one hub each.
-			const to = body?.to as string | undefined;
-			const members = body?.members as string[] | undefined;
-			const targets = to ? [to] : (members ?? []);
-			if (!targets.length) { console.log(`[WS-RELAY] no target, rejecting`); return new Response('no target', { status: 400 }); }
-			console.log(`[WS-RELAY] routing to ${targets.length} hub(s)`);
-			const results = await Promise.all(targets.map(async (uid) => {
-				const stub = env.CHAT_HUB.get(env.CHAT_HUB.idFromName(uid));
-				const resp = await stub.fetch(new Request('https://dummy/relay', {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ ...body, to: uid })
-				})).catch(() => null);
-				return resp?.status ?? 0;
-			}));
-			console.log(`[WS-RELAY] DO statuses=${results.join(',')}`);
-			return new Response('ok', { status: results.some((s) => s === 200) ? 200 : 502 });
+			const body = await request.json().catch(() => null);
+			const result = await relay(body, env.CHAT_HUB);
+			if (!result) return new Response('no target', { status: 400 });
+			return Response.json(result, { status: result.ok ? 200 : 502 });
 		}
 
 		return new Response('x2-ws relay+presence worker', { status: 200 });

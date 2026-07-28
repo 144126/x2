@@ -1,0 +1,59 @@
+{
+	"id": "/app",
+	"name": "x2",
+	"short_name": "x2",
+	"description": "Chat, meet people, and find your match — x2 is a real-time messaging app for making connections.",
+	"lang": "en",
+	"dir": "ltr",
+	"categories": ["social"],
+	"start_url": "/app",
+	"scope": "/",
+	"display": "standalone",
+	"display_override": ["standalone", "minimal-ui"],
+	"launch_handler": { "client_mode": "navigate-existing" },
+	"theme_color": "#0b0b0c",
+	"background_color": "#0b0b0c",
+	"prefer_related_applications": false,
+	"icons": [
+		{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+		{ "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+		{
+			"src": "/icons/icon-192-maskable.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "/icons/icon-512-maskable.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "/icons/badge-96.png",
+			"sizes": "96x96",
+			"type": "image/png",
+			"purpose": "monochrome"
+		}
+	],
+	"screenshots": [
+		{ "src": "/icons/screenshot-wide.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide" },
+		{ "src": "/icons/screenshot-narrow.png", "sizes": "720x1280", "type": "image/png", "form_factor": "narrow" }
+	],
+	"shortcuts": [
+		{ "name": "Chats", "url": "/app" },
+		{ "name": "Groups", "url": "/app/groups" },
+		{ "name": "Random match", "url": "/app/random" }
+	],
+	"share_target": {
+		"action": "/app/share",
+		"method": "POST",
+		"enctype": "multipart/form-data",
+		"params": {
+			"title": "title",
+			"text": "text",
+			"url": "url",
+			"files": [{ "name": "image", "accept": ["image/*"] }]
+		}
+	}
+}

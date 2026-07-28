@@ -4,13 +4,13 @@
 type Msg = Record<string, unknown> & { type: string };
 
 const subs = new Set<(m: Msg) => void>();
-// messages sent before the socket is open, replayed on every (re)connect — this is what
-// keeps `watch`/`check` handshakes alive across a reconnect.
 const handshake: string[] = [];
 let sock: WebSocket | null = null;
 let tries = 0;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let intentionallyClosed = false;
+let heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
+let lastMessage = 0;
 
 async function open() {
 	if (sock || intentionallyClosed || typeof window === 'undefined') return;
@@ -20,10 +20,18 @@ async function open() {
 	const s = new WebSocket(ws);
 	sock = s;
 	s.onopen = () => {
+		lastMessage = Date.now();
 		tries = 0;
 		for (const m of handshake) s.send(m);
+		clearTimeout(heartbeatTimer!);
+		heartbeatTimer = setTimeout(function tick() {
+			if (sock?.readyState === WebSocket.OPEN) sock.send(JSON.stringify({ type: 'ping' }));
+			if (Date.now() - lastMessage > 60_000) { sock?.close(); return; }
+			heartbeatTimer = setTimeout(tick, 30_000);
+		}, 30_000);
 	};
 	s.onmessage = (ev) => {
+		lastMessage = Date.now();
 		let m: Msg;
 		try {
 			m = JSON.parse(ev.data);
@@ -33,6 +41,8 @@ async function open() {
 		for (const fn of subs) fn(m);
 	};
 	s.onclose = () => {
+		clearTimeout(heartbeatTimer!);
+		heartbeatTimer = null;
 		if (sock === s) sock = null;
 		for (const fn of subs) fn({ type: 'ws_down' });
 		retry();
@@ -86,6 +96,8 @@ export function _reset(): void {
 	intentionallyClosed = true;
 	if (timer) clearTimeout(timer);
 	timer = null;
+	if (heartbeatTimer) clearTimeout(heartbeatTimer);
+	heartbeatTimer = null;
 	sock?.close();
 	sock = null;
 	subs.clear();

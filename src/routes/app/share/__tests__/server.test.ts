@@ -27,7 +27,7 @@ const form = (fields: Record<string, string | Blob>) => {
 const png = (bytes = 10) => new Blob([new Uint8Array(bytes)], { type: 'image/png' });
 
 /** SvelteKit's `redirect` throws; catch it and read the Location */
-async function location_of(p: Promise<unknown>): Promise<string> {
+async function location_of(p: unknown): Promise<string> {
 	try {
 		await p;
 	} catch (e) {

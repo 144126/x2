@@ -40,11 +40,13 @@ const rfc_sub: WebPushSub = {
 
 // ── an independent receiver-side implementation of RFC 8291 + RFC 8188 ────────
 // If encrypt_payload and this decryptor agree, the sender half is correct.
+const bs = (u: Uint8Array): BufferSource => u as unknown as BufferSource;
+
 async function hmac(key: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
-	const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, [
+	const k = await crypto.subtle.importKey('raw', bs(key), { name: 'HMAC', hash: 'SHA-256' }, false, [
 		'sign'
 	]);
-	return new Uint8Array(await crypto.subtle.sign('HMAC', k, data));
+	return new Uint8Array(await crypto.subtle.sign('HMAC', k, bs(data)));
 }
 const cat = (...parts: Uint8Array[]): Uint8Array => {
 	const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
@@ -215,7 +217,7 @@ describe('vapid_auth — RFC 8292', () => {
 		const [head, body, sig] = jwt.split('.');
 		const pub = await crypto.subtle.importKey(
 			'raw',
-			dec(keys.public),
+			bs(dec(keys.public)),
 			{ name: 'ECDSA', namedCurve: 'P-256' },
 			false,
 			['verify']
@@ -223,8 +225,8 @@ describe('vapid_auth — RFC 8292', () => {
 		const ok = await crypto.subtle.verify(
 			{ name: 'ECDSA', hash: 'SHA-256' },
 			pub,
-			dec(sig),
-			ascii(`${head}.${body}`)
+			bs(dec(sig)),
+			bs(ascii(`${head}.${body}`))
 		);
 		expect(ok).toBe(true);
 	});

@@ -4,6 +4,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
+	import { mark_first_send } from '$lib/notify-trigger';
 
 	let { data } = $props();
 	let messages = $state(data.messages as { id: string; f: string; x: string; im?: string; d: number }[]);
@@ -56,6 +57,7 @@
 		});
 		busy = false;
 		if (res.ok) {
+			mark_first_send();
 			const { m } = await res.json();
 			add_msg({ id: m.id, f: m.from, x: m.text, im: m.image, d: m.ts });
 		}

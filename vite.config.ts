@@ -8,7 +8,28 @@ export default defineConfig({
 	},
 	plugins: [tailwindcss(), sveltekit()],
 	test: {
-		environment: 'node',
-		include: ['src/**/*.{test,spec}.ts', 'ws/**/*.{test,spec}.ts']
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'node',
+					environment: 'node',
+					include: ['src/**/*.{test,spec}.ts', 'ws/**/*.{test,spec}.ts'],
+					exclude: ['src/lib/components/**']
+				}
+			},
+			{
+				extends: true,
+				resolve: {
+					conditions: ['browser']
+				},
+				test: {
+					name: 'component',
+					environment: 'jsdom',
+					include: ['src/lib/components/**/*.{test,spec}.ts'],
+					setupFiles: ['./vitest-setup-client.ts']
+				}
+			}
+		]
 	}
 });

@@ -1,9 +1,36 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import '../app.css';
+	import NotifyPrompt from '$lib/components/NotifyPrompt.svelte';
+	import InstallBanner from '$lib/components/InstallBanner.svelte';
+	import { sync_badge } from '$lib/badge';
+	import { sync_subscription } from '$lib/push-client';
 
 	let { children, data } = $props();
+	let vapid_key = $state('');
+
+	onMount(async () => {
+		if (!data.user) return;
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+		}
+		try {
+			const res = await fetch('/api/push');
+			if (res.ok) {
+				const { key } = (await res.json()) as { key: string };
+				vapid_key = key;
+				await sync_subscription(key);
+			}
+		} catch {
+			/* push unavailable — the app still works without it */
+		}
+		await sync_badge();
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'visible') sync_badge();
+		});
+	});
 
 	const nav = [
 		{ href: '/app', label: 'people' },
@@ -81,4 +108,8 @@
 			</a>
 		{/each}
 	</nav>
+	<InstallBanner />
+	{#if vapid_key}
+		<NotifyPrompt {vapid_key} />
+	{/if}
 {/if}

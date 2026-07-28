@@ -4,6 +4,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { ws_on } from '$lib/ws';
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
+	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
 
 	let { data } = $props();
@@ -51,6 +52,7 @@
 		});
 		busy = false;
 		if (res.ok) {
+			mark_first_send();
 			const { m } = await res.json();
 			messages = [...messages, { s: 'm', id: m.id, c: '', f: m.from, t: '', gr: g.id, x: m.text, im: m.image, d: m.ts }];
 			scroll_down();

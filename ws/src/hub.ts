@@ -33,8 +33,8 @@ export class ChatHub implements DurableObject {
 		}
 		if (url.pathname === '/relay' && request.method === 'POST') {
 			const m = (await request.json()) as { id: string; to: string; from: string; text: string; ts: number; from_name?: string; group?: string; image?: string };
-			this.deliver(m.to, { type: 'msg', id: m.id, from: m.from, from_name: m.from_name, text: m.text, image: m.image, group: m.group, ts: m.ts });
-			return new Response('ok');
+			const delivered = this.deliver(m.to, { type: 'msg', id: m.id, from: m.from, from_name: m.from_name, text: m.text, image: m.image, group: m.group, ts: m.ts });
+			return Response.json({ delivered });
 		}
 		if (url.pathname === '/signal') {
 			const msg = (await request.json()) as { to: string };
@@ -73,16 +73,14 @@ export class ChatHub implements DurableObject {
 		const msg = JSON.parse(data);
 		const self = this.state.getTags(ws)[0];
 		if (!self) return;
-		if (msg.type === 'signal') {
+		if (msg.type === 'ping') {
+			try { ws.send(JSON.stringify({ type: 'pong' })); } catch {}
+		} else if (msg.type === 'signal') {
 			msg.from = self;
 			const id = this.env.CHAT_HUB.idFromName(msg.to);
 			const stub = this.env.CHAT_HUB.get(id);
 			await stub.fetch('https://dummy/signal', { method: 'POST', body: JSON.stringify(msg) });
 		} else if (msg.type === 'watch') {
-			const id = this.env.CHAT_HUB.idFromName(msg.peer);
-			const stub = this.env.CHAT_HUB.get(id);
-			await stub.fetch('https://dummy/watch', { method: 'POST', body: JSON.stringify({ uid: self }) });
-		} else if (msg.type === 'unwatch') {
 			const id = this.env.CHAT_HUB.idFromName(msg.peer);
 			const stub = this.env.CHAT_HUB.get(id);
 			await stub.fetch('https://dummy/unwatch', { method: 'POST', body: JSON.stringify({ uid: self }) });
@@ -118,22 +116,20 @@ export class ChatHub implements DurableObject {
 		}
 	}
 
-	private deliver(uid: string, payload: unknown): void {
+	private deliver(uid: string, payload: unknown): boolean {
 		const data = JSON.stringify(payload);
 		const sockets = this.state.getWebSockets(uid);
-		console.log(`[HUB-DELIVER] uid=${uid} sockets_with_tag=${sockets.length} all_sockets=${this.state.getWebSockets().length}`);
+		let sent = false;
 		for (const ws of sockets) {
 			try {
-				console.log(`[HUB-DELIVER] sending to socket readyState=${ws.readyState}`);
 				ws.send(data);
-				console.log(`[HUB-DELIVER] sent OK`);
+				sent = true;
 			} catch (e) {
-				console.error(`[HUB-DELIVER] send FAILED:`, e);
+				console.error(`[HUB-DELIVER] send FAILED for uid=${uid}:`, e);
+				try { ws.close(1011, 'delivery failed'); } catch {}
 			}
 		}
-		if (sockets.length === 0) {
-			console.log(`[HUB-DELIVER] NO SOCKETS FOUND for uid=${uid} — message dropped!`);
-		}
+		return sent;
 	}
 
 	private announce(uid: string, online: boolean): void {
