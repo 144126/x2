@@ -119,7 +119,23 @@ https://svelte.dev/e/non_reactive_update
 https://svelte.dev/e/non_reactive_update
 7:10:18 AM [vite] (client) hmr update /src/routes/app/chat/[id]/+page.svelte, /src/app.css
 7:10:18 AM [vite] (ssr) page reload src/routes/app/chat/[id]/+page.svelte
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        6:07:40 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+7:17:10 AM [vite] (client) hmr update /src/app.css
+7:17:10 AM [vite] (ssr) page reload src/lib/server/chat.ts
+7:17:19 AM [vite] (client) hmr update /src/app.css
+7:17:19 AM [vite] (ssr) page reload src/lib/server/chat.ts
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/root.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        6:07:40 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
 6:07:40 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
 6:07:40 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
 6:07:40 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
@@ -209,3 +225,21 @@ https://svelte.dev/e/non_reactive_update
 https://svelte.dev/e/non_reactive_update
 7:10:19 AM [vite] (client) hmr update /src/routes/app/chat/[id]/+page.svelte, /src/app.css, /@fs/home/ed/i/x2/src/app.css?direct
 7:10:19 AM [vite] (ssr) page reload src/routes/app/chat/[id]/+page.svelte
+7:17:10 AM [vite] (client) hmr update /src/app.css, /@fs/home/ed/i/x2/src/app.css?direct
+7:17:10 AM [vite] (ssr) page reload src/lib/server/chat.ts
+7:17:19 AM [vite] (client) hmr update /src/app.css, /@fs/home/ed/i/x2/src/app.css?direct
+7:17:19 AM [vite] (ssr) page reload src/lib/server/chat.ts
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/root.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte

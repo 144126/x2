@@ -69,3 +69,65 @@ env.DEV_SECRET ("(hidden)")                                           Environmen
 [HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
 [HUB-ANNOUNCE] sending presence to socket readyState=1
 [wrangler:info] GET /ws 101 Switching Protocols (25ms)
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=false broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=2
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (10ms)
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=false broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=2
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (13ms)
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mBuild failed with 1 error:[0m
+
+  [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mMultiple exports with the same name "get_user_name"[0m
+  
+      ../src/lib/server/chat.ts:106:22:
+  [37m      106 │ export async function [32mget_user_name[37m(env: QEnv, uid: string): Prom...
+            ╵                       [32m~~~~~~~~~~~~~[0m
+  
+    The name "get_user_name" was originally exported here:
+  
+      ../src/lib/server/chat.ts:3:9:
+  [37m      3 │ export { [32mget_user_name[37m } from './user';
+          ╵          [32m~~~~~~~~~~~~~[0m
+  
+  
+
+
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (24ms)
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=e7bb811d-4c81-4a23-8870-63d4ba299573
+[HUB-ANNOUNCE] uid=e7bb811d-4c81-4a23-8870-63d4ba299573 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (12ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (33ms)
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=false broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=2
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (16ms)
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=e7bb811d-4c81-4a23-8870-63d4ba299573
+[HUB-ANNOUNCE] uid=e7bb811d-4c81-4a23-8870-63d4ba299573 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (18ms)

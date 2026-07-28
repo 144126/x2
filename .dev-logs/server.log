@@ -93,3 +93,42 @@ https://svelte.dev/e/element_invalid_self_closing_tag
 https://svelte.dev/e/non_reactive_update
 7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:186:5 `localVideo` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
 https://svelte.dev/e/non_reactive_update
+7:17:10 AM [vite] (client) hmr update /src/app.css
+7:17:10 AM [vite] (ssr) page reload src/lib/server/chat.ts
+7:17:19 AM [vite] (client) hmr update /src/app.css
+7:17:19 AM [vite] (ssr) page reload src/lib/server/chat.ts
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/9.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+7:18:21 AM [vite] (client) page reload .svelte-kit/generated/root.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+7:18:21 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+7:18:22 AM [vite-plugin-svelte] src/routes/app/+page.svelte:11:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+7:18:22 AM [vite-plugin-svelte] src/routes/app/+page.svelte:104:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+7:18:22 AM [vite-plugin-svelte] src/routes/app/+page.svelte:104:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+7:18:22 AM [vite-plugin-svelte] src/routes/app/+page.svelte:147:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+7:18:22 AM [vite-plugin-svelte] src/routes/app/+page.svelte:147:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+7:18:22 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:10:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+7:18:22 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:11:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+7:18:22 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:12:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+7:18:22 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:24:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+7:18:22 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:25:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally

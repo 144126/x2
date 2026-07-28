@@ -1,5 +1,6 @@
-import type { User, Message, Match } from '../types';
-import { ensure, upsert, retrieve_one, new_id, type QEnv, f, eq, scroll } from './qdrant';
+import type { Message, Match } from '../types';
+import { ensure, upsert, new_id, type QEnv, f, eq, scroll } from './qdrant';
+export { get_user_name } from './user';
 
 export { ensure };
 
@@ -102,7 +103,3 @@ export async function record_match(env: QEnv, a: string, b: string): Promise<voi
   await upsert(env, [{ id: `match:${conv_id(a, b)}`, vector: new Array(4096).fill(0), payload: match as unknown as Record<string, unknown> }]);
 }
 
-export async function get_user_name(env: QEnv, uid: string): Promise<string> {
-  const u = (await retrieve_one(env, uid))?.payload as unknown as User | undefined;
-  return u?.u ?? uid;
-}
