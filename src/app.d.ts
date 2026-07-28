@@ -11,7 +11,8 @@ declare global {
 		}
 
 		interface Locals {
-			user?: { id: string; name: string; picture?: string; email?: string } | null;
+			user?: { id: string; username: string; picture?: string; email?: string } | null;
+			x2_ws: Fetcher;
 		}
 	}
 }

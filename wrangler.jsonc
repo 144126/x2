@@ -20,6 +20,8 @@
 	// Local dev falls back to ws://localhost:8787 (see ws/wrangler.jsonc dev port) when unset.
 	"vars": { "WS_ORIGIN": "" },
 	"services": [{ "binding": "X2_WS", "service": "x2-ws" }],
+	// chat image uploads; create once with: wrangler r2 bucket create x2-media
+	"r2_buckets": [{ "binding": "MEDIA", "bucket_name": "x2-media" }],
 	"workers_dev": true,
 	"preview_urls": true,
 	"observability": { "enabled": true, "head_sampling_rate": 1 }

@@ -4,6 +4,7 @@ import { conv_id, record_match, get_user_name } from '../../src/lib/server/chat'
 
 interface Env extends QEnv {
 	SECRET: SecretVal;
+	DEV_SECRET?: SecretVal; // local dev only (ws/.dev.vars); see get_secret
 }
 
 type WaitingEntry = { uid: string; name: string };
@@ -33,7 +34,7 @@ export class MatchLobby implements DurableObject {
 		if (request.headers.get('upgrade') === 'websocket') {
 			const uid = url.searchParams.get('uid') ?? '';
 			const token = url.searchParams.get('t') ?? '';
-			if (!(await verify_token(await get_secret(this.env.SECRET), uid, token)))
+			if (!(await verify_token(await get_secret(this.env.SECRET, this.env.DEV_SECRET), uid, token)))
 				return new Response('denied', { status: 403 });
 			const pair = new WebSocketPair();
 			const [client, server] = Object.values(pair) as unknown as [WebSocket, WebSocket];

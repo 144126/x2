@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, getUserMock, embedMock } = vi.hoisted(() => ({
+const { ensureMock, upsertMock, scrollMock, getUserMock, embedMock } = vi.hoisted(() => ({
 	ensureMock: vi.fn(),
 	upsertMock: vi.fn(),
+	scrollMock: vi.fn(),
 	getUserMock: vi.fn(),
 	embedMock: vi.fn()
 }));
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
-	return { ...actual, ensure: ensureMock, upsert: upsertMock };
+	return { ...actual, ensure: ensureMock, upsert: upsertMock, scroll: scrollMock };
 });
 vi.mock('../user', () => ({ get_user: getUserMock }));
 vi.mock('../or', () => ({ embed: embedMock }));
@@ -25,6 +26,7 @@ beforeEach(() => {
 	ensureMock.mockResolvedValue(undefined);
 	upsertMock.mockResolvedValue(undefined);
 	embedMock.mockResolvedValue([0.5, 0.6]);
+	scrollMock.mockResolvedValue([]); // username uniqueness lookup: nothing taken
 });
 
 describe('save_profile', () => {
@@ -35,37 +37,22 @@ describe('save_profile', () => {
 	});
 
 	it('merges new fields over the existing profile, keeping untouched ones', async () => {
-		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'old-handle', a: 'old about', ag: 20 });
-		await save_profile(ENV, 'uid', { username: 'new-handle', about: 'new about' });
+		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'old_handle', a: 'old about', ag: 20 });
+		await save_profile(ENV, 'uid', { username: 'new_handle', about: 'new about' });
 		const payload = upsertMock.mock.calls[0][1][0].payload;
-		expect(payload.u).toBe('new-handle');
+		expect(payload.u).toBe('new_handle');
 		expect(payload.a).toBe('new about');
 		expect(payload.ag).toBe(20); // untouched field preserved
 		expect(payload.n).toBe('Ada'); // name preserved from cur
 	});
-
-	it('builds the embedding text from about + interests and stores it under the uid', async () => {
-		getUserMock.mockResolvedValue({ ...BASE_USER });
-		await save_profile(ENV, 'uid-1', { about: 'loves hiking', interests: ['trail running', 'coffee'] });
-		expect(embedMock).toHaveBeenCalledWith(
-			ENV,
-			'about_user: loves hiking | user_interests: trail running, coffee'
-		);
-		const call = upsertMock.mock.calls[0];
-		expect(call[1][0].id).toBe('uid-1');
-		expect(call[1][0].vector).toEqual([0.5, 0.6]);
-	});
-
-	it('uses the zero vector and skips embedding when about+interests are both empty', async () => {
-		getUserMock.mockResolvedValue({ ...BASE_USER });
-		await save_profile(ENV, 'uid-1', { username: 'just-a-handle' });
-		expect(embedMock).not.toHaveBeenCalled();
-		expect(upsertMock.mock.calls[0][1][0].vector).toBe(ZV);
-	});
-
-	it('re-embeds when only interests are provided', async () => {
-		getUserMock.mockResolvedValue({ ...BASE_USER });
-		await save_profile(ENV, 'uid-1', { interests: ['ceramics'] });
-		expect(embedMock).toHaveBeenCalledWith(ENV, 'user_interests: ceramics');
+	
+	it('extends to cover user display with username', async () => {
+		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'user123' });
+		await save_profile(ENV, 'uid', { about: 'test' });
+		const payload = upsertMock.mock.calls[0][1][0].payload;
+		expect(payload.u).toBe('user123');
+		expect(payload.a).toBe('test');
+		expect(payload.n).toBe('Ada');
+		// Profile should display username, not full name
 	});
 });

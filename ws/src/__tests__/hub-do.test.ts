@@ -121,6 +121,31 @@ describe('ChatHub.fetch', () => {
 		]);
 	});
 
+	it('reports the relay as delivered when a socket was there to take it', async () => {
+		state.acceptWebSocket(new FakeSocket(), ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 123 })
+			})
+		);
+		expect(await res.json()).toEqual({ delivered: true });
+	});
+
+	it('reports the relay as undelivered when nobody was connected — this is what triggers a push', async () => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 123 })
+			})
+		);
+		expect(await res.json()).toEqual({ delivered: false });
+	});
+
 	it('does not relay when the request is not a POST', async () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);

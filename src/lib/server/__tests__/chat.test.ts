@@ -136,7 +136,7 @@ describe('record_match', () => {
 });
 
 describe('get_user_name', () => {
-	it('returns the username', async () => {
+	it('returns the username (not full name)', async () => {
 		retrieveOneMock.mockResolvedValue({ id: 'uid', payload: { s: 'u', n: 'Ada Lovelace', u: 'ada' } });
 		expect(await get_user_name(ENV, 'uid')).toBe('ada');
 	});
@@ -144,5 +144,10 @@ describe('get_user_name', () => {
 	it('falls back to the uid when the user cannot be found', async () => {
 		retrieveOneMock.mockResolvedValue(null);
 		expect(await get_user_name(ENV, 'ghost-uid')).toBe('ghost-uid');
+	});
+
+	it('shows username in chat header instead of full name', async () => {
+		retrieveOneMock.mockResolvedValue({ id: 'uid', payload: { s: 'u', n: 'Ada Lovelace', u: 'ada_lovelace' } });
+		expect(await get_user_name(ENV, 'uid')).toBe('ada_lovelace');
 	});
 });

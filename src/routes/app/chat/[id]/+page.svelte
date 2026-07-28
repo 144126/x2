@@ -2,12 +2,20 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
+	import { ws_on, ws_send, ws_drop } from '$lib/ws';
+	import { upload_image, media_src, image_from_event } from '$lib/attach';
 
 	let { data } = $props();
-	let messages = $state(data.messages as { f: string; x: string; d: number }[]);
+	let messages = $state(data.messages as { id: string; f: string; x: string; im?: string; d: number }[]);
+	function add_msg(m: { id: string; f: string; x: string; im?: string; d: number }) {
+		if (messages.some((e) => e.id === m.id)) return;
+		messages = [...messages, m];
+	}
+	let pending: File | null = $state(null);
+	let busy = $state(false);
 	let text = $state('');
-	let ws: WebSocket | null = $state(null);
 	let online = $state(false);
+	let unsub: (() => void) | null = null;
 	let me = $derived($page.data.user?.id);
 
 	// present when we landed here from a random match (/app/random): 'text' | 'voice' | 'video'.
@@ -28,47 +36,56 @@
 
 	async function send() {
 		const body = text.trim();
-		if (!body) return;
+		if ((!body && !pending) || busy) return;
+		busy = true;
+		let image: string | undefined;
+		if (pending) {
+			const r = await upload_image(pending);
+			if (r.error) {
+				busy = false;
+				return;
+			}
+			image = r.key;
+			pending = null;
+		}
 		text = '';
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ to: data.peer, text: body })
+			body: JSON.stringify({ to: data.peer, text: body, image })
 		});
+		busy = false;
 		if (res.ok) {
 			const { m } = await res.json();
-			messages = [...messages, { f: m.from, x: m.text, d: m.ts }];
+			add_msg({ id: m.id, f: m.from, x: m.text, im: m.image, d: m.ts });
 		}
 	}
 
+	// `watch` is kept across reconnects; `check` re-runs on each connect via the same queue
+	const watch = { type: 'watch', peer: data.peer };
+	const check = { type: 'check', peer: data.peer };
+
 	function connect() {
-		fetch('/api/wstoken')
-			.then((r) => r.json())
-			.then((j) => {
-				ws = new WebSocket(j.ws);
-				ws.onopen = () => {
-					ws!.send(JSON.stringify({ type: 'watch', peer: data.peer }));
-					ws!.send(JSON.stringify({ type: 'check', peer: data.peer }));
-				};
-				ws.onmessage = (ev) => {
-					const m = JSON.parse(ev.data);
-					if (m.type === 'presence' && m.uid === data.peer) online = m.online;
-					else if (m.type === 'msg' && m.from === data.peer)
-						messages = [...messages, { f: m.from, x: m.text, d: m.ts }];
-					else if (m.type === 'signal') handleSignal(m);
-				};
-				ws.onclose = () => {
-					online = false;
-					endCall();
-				};
-			});
+		unsub = ws_on((m) => {
+			if (m.type === 'ws_down') {
+				online = false;
+				endCall();
+			} else if (m.type === 'presence' && m.uid === data.peer) {
+				online = m.online as boolean;
+			}
+			else if (m.type === 'msg' && m.from === data.peer) {
+				add_msg({ id: m.id as string, f: m.from as string, x: (m.text as string) ?? '', im: m.image as string | undefined, d: m.ts as number });
+			} else if (m.type === 'signal') handleSignal(m as never);
+		});
+		ws_send(watch, true);
+		ws_send(check, true);
 	}
 
 	function createPC() {
 		pc = new RTCPeerConnection({ iceServers: [stun] });
 		pc.onicecandidate = (e) => {
-			if (e.candidate && ws?.readyState === WebSocket.OPEN)
-				ws.send(JSON.stringify({ type: 'signal', to: data.peer, signal: { type: 'ice', candidate: e.candidate.toJSON() } }));
+			if (e.candidate)
+				ws_send({ type: 'signal', to: data.peer, signal: { type: 'ice', candidate: e.candidate.toJSON() } });
 		};
 		pc.ontrack = (e) => { remoteStream = e.streams[0]; };
 		if (localStream) for (const t of localStream.getTracks()) pc.addTrack(t, localStream);
@@ -111,7 +128,7 @@
 
 	function findNew() {
 		endCall();
-		ws?.close();
+		unsub?.();
 		goto('/app/random');
 	}
 
@@ -120,7 +137,7 @@
 		createPC();
 		const offer = await pc!.createOffer();
 		await pc!.setLocalDescription(offer);
-		ws!.send(JSON.stringify({ type: 'signal', to: data.peer, signal: { type: 'offer', sdp: offer } }));
+		ws_send({ type: 'signal', to: data.peer, signal: { type: 'offer', sdp: offer } });
 		callState = 'calling';
 	}
 
@@ -130,7 +147,7 @@
 		await pc!.setRemoteDescription(new RTCSessionDescription(pendingOffer!));
 		const answer = await pc!.createAnswer();
 		await pc!.setLocalDescription(answer);
-		ws!.send(JSON.stringify({ type: 'signal', to: data.peer, signal: { type: 'answer', sdp: answer } }));
+		ws_send({ type: 'signal', to: data.peer, signal: { type: 'answer', sdp: answer } });
 		callState = 'connected';
 	}
 
@@ -176,23 +193,25 @@
 	});
 
 	onDestroy(() => {
-		if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'unwatch', peer: data.peer }));
+		ws_drop(watch);
+		ws_drop(check);
+		ws_send({ type: 'unwatch', peer: data.peer });
 		endCall();
-		ws?.close();
+		unsub?.();
 	});
 
 	onMount(() => connect());
 </script>
 
-<section class="chat mx-auto flex h-[calc(100dvh-90px)] max-w-[760px] flex-col">
-	<header class="flex items-center gap-4 border-b border-line py-4">
+<section class="chat mx-auto flex h-[calc(100dvh-150px)] max-w-[760px] flex-col sm:h-[calc(100dvh-110px)]">
+	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
 		<button
 			class="bg-none text-[22px] leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
 			onclick={() => goto('/app')}
 			aria-label="back">←</button
 		>
-		<div class="flex flex-col gap-0.5">
-			<a href="/app/user/{data.peer}" class="font-display text-[21px] font-medium tracking-[-0.01em] hover:text-accent transition-colors duration-300">{data.peer_name}</a>
+		<div class="flex min-w-0 flex-col gap-0.5">
+			<a href="/app/user/{data.peer}" class="truncate font-display text-[21px] font-medium tracking-[-0.01em] transition-colors duration-300 hover:text-accent">{data.peer_name}</a>
 			<div
 				class="flex items-center gap-[7px] text-[10.5px] uppercase tracking-[0.2em] {online
 					? 'text-accent'
@@ -242,26 +261,62 @@
 	{/if}
 
 	<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7">
-		{#each messages as m (m.d + m.x)}
-			<div
-				class="max-w-[70%] rounded-[4px_18px_18px_18px] border border-line bg-panel-solid px-4 py-3 text-[15px] leading-[1.5] {m.f ===
-				me
-					? 'self-end rounded-[18px_4px_18px_18px] border-accent bg-accent text-accent-ink'
-					: 'self-start'}"
-			>
-				{m.x}
+		{#each messages as m (m.id)}
+			<div class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me ? 'self-end items-end' : 'self-start'}">
+				<div
+					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f ===
+					me
+						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
+						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+				>
+					{#if m.im}
+						<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
+							<img src={media_src(m.im)} alt="" class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover" />
+						</a>
+					{/if}
+					{#if m.x}{m.x}{/if}
+				</div>
 			</div>
 		{/each}
 	</div>
 
 	<form
-		class="flex gap-3 border-t border-line py-4"
+		class="flex flex-wrap items-center gap-2 border-t border-line py-4"
 		onsubmit={(e) => {
 			e.preventDefault();
 			send();
 		}}
+		ondragover={(e) => e.preventDefault()}
+		ondrop={(e) => {
+			const f = image_from_event(e);
+			if (f) {
+				e.preventDefault();
+				pending = f;
+			}
+		}}
 	>
-		<input class="text-[15px]" bind:value={text} placeholder="write something considered…" autocomplete="off" />
-		<button class="btn btn-amber" type="submit">drop into thread</button>
+		<label class="btn shrink-0 cursor-pointer px-4 py-3 text-[13px]">
+			{pending ? '1 image' : 'image'}
+			<input
+				type="file"
+				accept="image/*"
+				class="hidden"
+				onchange={(e) => {
+					const f = (e.currentTarget as HTMLInputElement).files?.[0];
+					if (f) pending = f;
+				}}
+			/>
+		</label>
+		<input
+			class="min-w-0 flex-1 text-[15px]"
+			bind:value={text}
+			placeholder="write something considered…"
+			autocomplete="off"
+			onpaste={(e) => {
+				const f = image_from_event(e);
+				if (f) pending = f;
+			}}
+		/>
+		<button class="btn btn-amber shrink-0" type="submit" disabled={busy}>{busy ? 'sending' : 'send'}</button>
 	</form>
 </section>

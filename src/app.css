@@ -138,7 +138,16 @@ body {
 		@apply px-4;
 	}
 	input, select, textarea {
+		/* 15px keeps iOS from zooming the viewport on focus */
 		@apply text-[15px];
+	}
+	/* filter rows and chat headers were flex rows of fixed-width children, which pushed the
+	   page wider than the viewport — the source of the horizontal scroll on phones */
+	.filters {
+		@apply grid grid-cols-2 gap-2.5;
+	}
+	.filters > * {
+		@apply w-full min-w-0;
 	}
 }
 @media (max-width: 480px) {

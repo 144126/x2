@@ -9,7 +9,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	await ensure(env);
 	const p = await get_user(env, locals.user.id);
-	return json({ p: p ?? { id: locals.user.id, n: locals.user.name } });
+	return json({ p: p ?? { id: locals.user.id, u: locals.user.username } });
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -26,7 +26,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		whatsapp?: string;
 	};
 	await save_profile(env, locals.user.id, {
-		name: locals.user.name,
 		username: b.username,
 		about: b.about,
 		interests: b.interests,

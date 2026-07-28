@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { encode_session, decode_session, type SessionUser } from '../session';
 
 const SECRET = 'session-secret-value';
-const USER: SessionUser = { id: 'uid-1', name: 'Ada', picture: 'pic.png', email: 'ada@example.com' };
+const USER: SessionUser = { id: 'uid-1', username: 'ada', picture: 'pic.png', email: 'ada@example.com' };
 
 afterEach(() => {
 	vi.useRealTimers();
@@ -17,10 +17,10 @@ describe('encode_session / decode_session', () => {
 	});
 
 	it('omits optional fields cleanly', async () => {
-		const token = await encode_session(SECRET, { id: 'uid-2', name: 'No Extras' });
+		const token = await encode_session(SECRET, { id: 'uid-2', username: 'no_extras' });
 		const decoded = await decode_session(SECRET, token);
 		expect(decoded!.user.id).toBe('uid-2');
-		expect(decoded!.user.name).toBe('No Extras');
+		expect(decoded!.user.username).toBe('no_extras');
 		expect(decoded!.user.picture).toBeUndefined();
 		expect(decoded!.user.email).toBeUndefined();
 	});

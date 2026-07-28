@@ -3,6 +3,7 @@ import { get_secret, type SecretVal } from '../../src/lib/server/qdrant';
 interface Env {
 	CHAT_HUB: DurableObjectNamespace;
 	SECRET: SecretVal;
+	DEV_SECRET?: SecretVal; // local dev only (ws/.dev.vars); see get_secret
 }
 
 export class ChatHub implements DurableObject {
@@ -19,8 +20,10 @@ export class ChatHub implements DurableObject {
 		if (request.headers.get('upgrade') === 'websocket') {
 			const uid = url.searchParams.get('uid') ?? '';
 			const token = url.searchParams.get('t') ?? '';
-			if (!(await verify_token(await get_secret(this.env.SECRET), uid, token)))
+			const secret = await get_secret(this.env.SECRET, this.env.DEV_SECRET);
+			if (!(await verify_token(secret, uid, token))) {
 				return new Response('denied', { status: 403 });
+			}
 			const pair = new WebSocketPair();
 			const [client, server] = Object.values(pair) as unknown as [WebSocket, WebSocket];
 			this.state.acceptWebSocket(server, [uid]);
@@ -29,8 +32,8 @@ export class ChatHub implements DurableObject {
 			return new Response(null, { status: 101, webSocket: client });
 		}
 		if (url.pathname === '/relay' && request.method === 'POST') {
-			const m = (await request.json()) as { to: string; from: string; text: string; ts: number; from_name?: string };
-			this.deliver(m.to, { type: 'msg', from: m.from, from_name: m.from_name, text: m.text, ts: m.ts });
+			const m = (await request.json()) as { id: string; to: string; from: string; text: string; ts: number; from_name?: string; group?: string; image?: string };
+			this.deliver(m.to, { type: 'msg', id: m.id, from: m.from, from_name: m.from_name, text: m.text, image: m.image, group: m.group, ts: m.ts });
 			return new Response('ok');
 		}
 		if (url.pathname === '/signal') {
@@ -117,17 +120,29 @@ export class ChatHub implements DurableObject {
 
 	private deliver(uid: string, payload: unknown): void {
 		const data = JSON.stringify(payload);
-		for (const ws of this.state.getWebSockets(uid)) {
+		const sockets = this.state.getWebSockets(uid);
+		console.log(`[HUB-DELIVER] uid=${uid} sockets_with_tag=${sockets.length} all_sockets=${this.state.getWebSockets().length}`);
+		for (const ws of sockets) {
 			try {
+				console.log(`[HUB-DELIVER] sending to socket readyState=${ws.readyState}`);
 				ws.send(data);
-			} catch {}
+				console.log(`[HUB-DELIVER] sent OK`);
+			} catch (e) {
+				console.error(`[HUB-DELIVER] send FAILED:`, e);
+			}
+		}
+		if (sockets.length === 0) {
+			console.log(`[HUB-DELIVER] NO SOCKETS FOUND for uid=${uid} — message dropped!`);
 		}
 	}
 
 	private announce(uid: string, online: boolean): void {
 		const data = JSON.stringify({ type: 'presence', uid, online });
-		for (const ws of this.state.getWebSockets()) {
+		const allSockets = this.state.getWebSockets();
+		console.log(`[HUB-ANNOUNCE] uid=${uid} online=${online} broadcasting to ${allSockets.length} sockets`);
+		for (const ws of allSockets) {
 			try {
+				console.log(`[HUB-ANNOUNCE] sending presence to socket readyState=${ws.readyState}`);
 				ws.send(data);
 			} catch {}
 		}

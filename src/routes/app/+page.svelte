@@ -1,7 +1,32 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import LocationPicker from '$lib/LocationPicker.svelte';
+	import { ws_on } from '$lib/ws';
+	import { onMount } from 'svelte';
 	let { data } = $props();
+
+	// thread list was server-rendered only, so a new message never showed up here without a
+	// reload — the literal "have to reload to see latest" symptom
+	type Conv = { peer: string; last: number; preview: string; name: string };
+	let convs = $state(data.convs as Conv[]);
+
+	onMount(() =>
+		ws_on((m) => {
+			if (m.type !== 'msg') return;
+			const peer = m.from as string;
+			const rest = convs.filter((c) => c.peer !== peer);
+			const prev = convs.find((c) => c.peer === peer);
+			convs = [
+				{
+					peer,
+					last: m.ts as number,
+					preview: m.text as string,
+					name: prev?.name ?? (m.from_name as string) ?? peer
+				},
+				...rest
+			];
+		})
+	);
 
 	let q = $state('');
 	let gender = $state('');
@@ -37,7 +62,7 @@
 
 	<div class="flex flex-col gap-3 sm:flex-row">
 		<input
-			class="text-[17px] py-4 px-[18px]"
+			class="min-w-0 px-[18px] py-4 text-[17px]"
 			placeholder="search by vibe, craft, interests…"
 			bind:value={q}
 			onkeydown={(e) => e.key === 'Enter' && search()}
@@ -47,15 +72,15 @@
 		</button>
 	</div>
 
-	<div class="mt-3.5 flex flex-wrap items-center gap-3">
-		<select class="w-auto flex-1" bind:value={gender}>
+	<div class="filters mt-3.5 flex flex-wrap items-center gap-3">
+		<select class="w-auto min-w-0 flex-1" bind:value={gender}>
 			<option value="">any gender</option>
 			<option value="m">male</option>
 			<option value="f">female</option>
 			<option value="o">other</option>
 		</select>
 		<input
-			class="w-[90px]"
+			class="w-[90px] min-w-0"
 			type="number"
 			placeholder="age min"
 			min="0"
@@ -63,7 +88,7 @@
 			aria-label="minimum age"
 		/>
 		<input
-			class="w-[90px]"
+			class="w-[90px] min-w-0"
 			type="number"
 			placeholder="age max"
 			min="0"
@@ -116,9 +141,9 @@
 
 <section>
 	<div class="eyebrow mb-1">recent threads</div>
-	{#if data.convs.length}
+	{#if convs.length}
 		<ul class="results mt-5 grid gap-3.5">
-			{#each data.convs as c, i (c.peer)}
+			{#each convs as c, i (c.peer)}
 				<li
 					class="card person reveal"
 					style="--i:{i}"

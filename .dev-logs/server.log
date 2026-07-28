@@ -2,157 +2,94 @@
 > x2@0.0.1 dev /home/ed/i/x2
 > vite dev
 
+6:35:31 AM [vite] (client) Re-optimizing dependencies because vite config has changed
+6:35:31 AM [vite] (ssr) Re-optimizing dependencies because vite config has changed
 
-  VITE v8.1.5  ready in 3246 ms
+  VITE v8.1.5  ready in 2018 ms
 
   ➜  Local:   http://localhost:7227/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
+6:35:32 AM [vite] (client) [optimizer] bundling dependencies...
 Using secrets defined in .env
 Using secrets defined in .env
-*** Fatal uncaught kj::Exception: workerd/util/sqlite.c++:844: failed: SENTRY_DO SQLite failed; NOSENTRY database is locked: SQLITE_BUSY (extended: SQLITE_BUSY_RECOVERY)
-stack: /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33af68b /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2010925 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206e2bc /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206dc76 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@202b09c /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@202aaf2 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1fe0a32 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@20680bf /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206b415 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1fb1339 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5432855 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5432d78 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@543082e /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@543062e /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f98d17 /usr/lib/libc.so.6@2abfb /usr/lib/libc.so.6@2acb4 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f98024
-5:49:20 AM [vite-plugin-svelte] src/routes/app/+page.svelte:79:4 Non-interactive element `<li>` cannot have interactive role 'button'
+6:48:00 AM [vite-plugin-svelte] src/routes/app/groups/+page.svelte:6:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:48:00 AM [vite-plugin-svelte] src/routes/app/groups/+page.svelte:128:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-5:49:20 AM [vite-plugin-svelte] src/routes/app/+page.svelte:79:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+6:48:00 AM [vite-plugin-svelte] src/routes/app/groups/+page.svelte:128:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-5:49:20 AM [vite-plugin-svelte] src/routes/app/+page.svelte:109:4 Non-interactive element `<li>` cannot have interactive role 'button'
+6:48:08 AM [vite-plugin-svelte] src/routes/app/groups/+page.svelte:6:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:48:08 AM [vite-plugin-svelte] src/routes/app/groups/+page.svelte:128:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-5:49:20 AM [vite-plugin-svelte] src/routes/app/+page.svelte:109:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+6:48:08 AM [vite-plugin-svelte] src/routes/app/groups/+page.svelte:128:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
 
 [1;31m[404] GET /favicon.ico[0m
-5:49:21 AM [vite-plugin-svelte] src/routes/app/+page.svelte:79:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-5:49:21 AM [vite-plugin-svelte] src/routes/app/+page.svelte:79:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-5:49:21 AM [vite-plugin-svelte] src/routes/app/+page.svelte:109:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-5:49:21 AM [vite-plugin-svelte] src/routes/app/+page.svelte:109:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:51:15 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:51:15 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:51:15 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:51:15 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:51:15 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:52:45 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:52:45 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:52:45 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:52:45 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:52:46 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:53:18 AM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:5:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+6:48:12 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:10:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:53:49 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:53:49 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:53:49 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:53:49 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:53:49 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:54:10 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:54:10 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:54:10 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:54:10 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:54:10 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:54:21 AM [vite] (client) page reload pnpm-workspace.yaml
-5:54:21 AM [vite] (ssr) page reload pnpm-workspace.yaml
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:54:31 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:54:31 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:54:31 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:54:31 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:54:31 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:55:27 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:55:27 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:55:27 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:55:27 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:55:27 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:55:34 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:55:34 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:55:34 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:55:34 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:55:34 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:55:37 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:55:37 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:55:37 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:55:37 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:55:37 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:55:42 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-5:55:42 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:55:42 AM [vite] (client) page reload .svelte-kit/generated/root.js
-5:55:42 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:55:42 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+6:48:12 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:11:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:48:12 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:12:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:48:12 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:24:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:48:12 AM [vite-plugin-svelte] src/routes/app/groups/[id]/+page.svelte:25:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:48:24 AM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:5:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:51:04 AM [vite-plugin-svelte] src/routes/app/+page.svelte:11:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:51:04 AM [vite-plugin-svelte] src/routes/app/+page.svelte:104:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+6:51:04 AM [vite-plugin-svelte] src/routes/app/+page.svelte:104:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+6:51:04 AM [vite-plugin-svelte] src/routes/app/+page.svelte:147:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+6:51:04 AM [vite-plugin-svelte] src/routes/app/+page.svelte:147:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+6:51:06 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:9:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+6:51:06 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:65:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+6:51:06 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:66:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+6:51:06 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:252:3 Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag
+6:51:06 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:256:4 Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag
+6:51:06 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:185:5 `remoteVideo` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update
+6:51:06 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:186:5 `localVideo` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:9:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:65:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:66:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:252:3 Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:256:4 Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:185:5 `remoteVideo` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:186:5 `localVideo` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update
+7:10:18 AM [vite] (client) hmr update /src/routes/app/chat/[id]/+page.svelte, /src/app.css
+7:10:18 AM [vite] (ssr) page reload src/routes/app/chat/[id]/+page.svelte
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:9:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:65:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:66:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:252:3 Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:256:4 Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:185:5 `remoteVideo` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update
+7:10:18 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:186:5 `localVideo` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update

@@ -1,14 +1,14 @@
 export interface User {
 	s: 'u';
 	g: string; // external id (google sub or email)
-	n: string; // display name
+	n?: string; // legacy display name; never render this as product identity
 	p?: string; // picture
 	m?: string; // email
 	d: number; // created ts
 	o?: 'google' | 'local'; // provider
 	h?: string; // pw hash (local only)
 	// profile
-	u?: string; // username
+	u: string; // username (the only user-facing identity)
 	a?: string; // about text
 	i?: string[]; // interests (tokens)
 	ag?: number; // age
@@ -22,10 +22,12 @@ export interface User {
 export interface Message {
 	s: 'm';
 	id: string;
-	c: string; // conversation id
+	c: string; // conversation id — `a|b` for 1:1, `g:<group id>` for a group
 	f: string; // from uid
-	t: string; // to uid
-	x: string; // text
+	t: string; // to uid ('' for group messages)
+	gr?: string; // group id, when this is a group message
+	im?: string; // media key in R2, when an image is attached
+	x: string; // text (may be empty when im is set)
 	d: number; // ts
 }
 

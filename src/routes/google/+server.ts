@@ -3,8 +3,9 @@ import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import { get_secret } from '$lib/server/qdrant';
-import { save_user } from '$lib/server/user';
+import { save_user, get_user } from '$lib/server/user';
 import { encode_session } from '$lib/server/session';
+import { uuid_from } from '$lib/server/qdrant';
 
 const google_client = async (origin: string) =>
 	new Google(
@@ -36,18 +37,18 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 			headers: { Authorization: `Bearer ${tokens.accessToken()}` }
 		});
 		if (!ures.ok) throw error(400, 'userinfo_failed');
-		const gu = (await ures.json()) as { sub: string; name: string; picture?: string; email?: string };
+		const gu = (await ures.json()) as { sub: string; picture?: string; email?: string };
+		if (!gu.email) throw error(400, 'email_required');
 		const id = await save_user(
 			env,
 			gu.sub,
-			gu.name,
 			gu.picture,
 			gu.email,
 			'google'
 		);
 		const session = await encode_session(env.SECRET, {
 			id,
-			name: gu.name,
+			username: gu.email.split('@')[0].toLowerCase(),
 			picture: gu.picture,
 			email: gu.email
 		});

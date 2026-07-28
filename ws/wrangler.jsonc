@@ -15,8 +15,8 @@
 		{ "tag": "v2", "new_sqlite_classes": ["MatchLobby"] }
 	],
 	"dev": { "port": 8787 },
+	"vars": { "SECRET": "" },
 	"secrets_store_secrets": [
-		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" },
 		{ "binding": "QDRANT_URL", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_URL" },
 		{ "binding": "QDRANT_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_KEY" }
 	],

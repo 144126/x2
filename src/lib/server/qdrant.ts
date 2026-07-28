@@ -2,10 +2,20 @@ import { QdrantClient } from '@qdrant/js-client-rest';
 
 export type SecretVal = string | { get?: () => Promise<string> } | undefined;
 
-export async function get_secret(v: SecretVal): Promise<string> {
-	if (v && typeof (v as { get?: unknown }).get === 'function')
-		return await (v as { get: () => Promise<string> }).get();
-	return (v as string) ?? '';
+// Reads a Secrets Store binding or a plain string. `fallback` covers local dev, where a
+// secrets_store_secrets binding exists but the local store is empty, so .get() throws
+// `Secret "X" not found` — .dev.vars cannot override a store binding, so callers pass a
+// separately-named plain var instead.
+export async function get_secret(v: SecretVal, fallback?: SecretVal): Promise<string> {
+	if (v && typeof (v as { get?: unknown }).get === 'function') {
+		try {
+			const s = await (v as { get: () => Promise<string> }).get();
+			if (s) return s;
+		} catch {
+			/* empty local store — fall through */
+		}
+	} else if (typeof v === 'string' && v) return v;
+	return fallback ? await get_secret(fallback) : '';
 }
 
 export const b64u = (buf: ArrayBuffer | Uint8Array): string => {
@@ -26,8 +36,8 @@ let q: QdrantClient | null = null;
 let q_key = '';
 
 export async function qc(env: QEnv): Promise<QdrantClient> {
-	const url = await get_secret(env.QDRANT_URL);
-	const key = await get_secret(env.QDRANT_KEY);
+	const url = await get_secret(env.QDRANT_URL, env.DEV_QDRANT_URL);
+	const key = await get_secret(env.QDRANT_KEY, env.DEV_QDRANT_KEY);
 	if (!q || q_key !== key)
 		q = new QdrantClient({ url, apiKey: key, checkCompatibility: false });
 	q_key = key;
@@ -41,6 +51,9 @@ export type QEnv = {
 	QDRANT_URL: SecretVal;
 	QDRANT_KEY: SecretVal;
 	VOXELL_KEY?: SecretVal;
+	// local dev only (ws/.dev.vars): the ws worker's Secrets Store is empty there
+	DEV_QDRANT_URL?: SecretVal;
+	DEV_QDRANT_KEY?: SecretVal;
 };
 
 
@@ -78,7 +91,7 @@ export async function ensure(env: QEnv): Promise<void> {
 	await c
 		.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } })
 		.catch(() => {});
-	for (const key of ['s', 't', 'r', 'c', 'f', 'co', 'st'])
+	for (const key of ['s', 't', 'r', 'c', 'f', 'co', 'st', 'u', 'ow', 'mb', 'gr'])
 		await c.createPayloadIndex(C, { field_name: key, field_schema: 'keyword' }).catch(() => {});
 	await c.createPayloadIndex(C, { field_name: 'ag', field_schema: 'integer' }).catch(() => {});
 	ensured = true;

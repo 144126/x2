@@ -1,0 +1,71 @@
+
+> x2@0.0.1 dev:ws /home/ed/i/x2
+> wrangler dev -c ws/wrangler.jsonc
+
+
+ ⛅️ wrangler 4.114.0
+────────────────────
+Using secrets defined in ws/.dev.vars
+Your Worker has access to the following bindings:
+Binding                                                               Resource                  Mode
+env.CHAT_HUB (ChatHub)                                                Durable Object            local
+env.MATCH_LOBBY (MatchLobby)                                          Durable Object            local
+env.QDRANT_URL (45748cb1c67946df943075fa14cb8815/QDRANT_URL)          Secrets Store Secret      local
+env.QDRANT_KEY (45748cb1c67946df943075fa14cb8815/QDRANT_KEY)          Secrets Store Secret      local
+env.SECRET ("")                                                       Environment Variable      local
+env.DEV_QDRANT_URL ("(hidden)")                                       Environment Variable      local
+env.DEV_QDRANT_KEY ("(hidden)")                                       Environment Variable      local
+env.DEV_SECRET ("(hidden)")                                           Environment Variable      local
+
+⎔ Starting local server...
+[wrangler:info] Ready on http://localhost:8787
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=e7bb811d-4c81-4a23-8870-63d4ba299573
+[HUB-ANNOUNCE] uid=e7bb811d-4c81-4a23-8870-63d4ba299573 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (27ms)
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (15ms)
+[WS-WORKER] POST /relay
+[WS-RELAY] received relay request
+[WS-RELAY] body: {"members":[],"group":"f3c0b147-6b87-4cd1-8cc7-1c77a49c9535","from":"e7bb811d-4c81-4a23-8870-63d4ba299573","from_name":"gold","text":"sss","ts":1785217706596}
+[WS-RELAY] no target, rejecting
+[WS-WORKER] POST /relay
+[WS-RELAY] received relay request
+[WS-RELAY] body: {"members":["9a060d39-fe46-47e6-825d-6a167da8a0e3"],"group":"f3c0b147-6b87-4cd1-8cc7-1c77a49c9535","from":"e7bb811d-4c81-4a23-8870-63d4ba299573","from_name":"gold","text":"sdw","ts":1785217716555}
+[WS-RELAY] routing to 1 hub(s)
+[HUB-DELIVER] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 sockets_with_tag=1 all_sockets=1
+[HUB-DELIVER] sending to socket readyState=1
+[HUB-DELIVER] sent OK
+[WS-RELAY] DO statuses=200
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=false broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=2
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (5ms)
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=false broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=2
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (22ms)
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=false broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=2
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (1138ms)
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=false broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=2
+[WS-WORKER] GET /ws
+[WS-WORKER] routing /ws to ChatHub DO for uid=9a060d39-fe46-47e6-825d-6a167da8a0e3
+[HUB-ANNOUNCE] uid=9a060d39-fe46-47e6-825d-6a167da8a0e3 online=true broadcasting to 1 sockets
+[HUB-ANNOUNCE] sending presence to socket readyState=1
+[wrangler:info] GET /ws 101 Switching Protocols (25ms)

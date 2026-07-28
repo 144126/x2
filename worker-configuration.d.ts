@@ -6,7 +6,26 @@ interface SecretVal {
 	get?: () => Promise<string>;
 }
 
+// Minimal shape of the bits of R2 we use — hand-rolled like the rest of this file so the
+// worker types don't collide with the DOM lib SvelteKit builds against.
+interface MediaObject {
+	body: ReadableStream;
+	httpEtag: string;
+	writeHttpMetadata(headers: Headers): void;
+}
+
+interface MediaBucket {
+	put(
+		key: string,
+		value: ArrayBuffer,
+		options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }
+	): Promise<unknown>;
+	get(key: string): Promise<MediaObject | null>;
+	delete(key: string): Promise<void>;
+}
+
 interface Env {
+	MEDIA: MediaBucket;
 	QDRANT_URL: string | SecretVal;
 	QDRANT_KEY: string | SecretVal;
 	VOXELL_KEY?: string | SecretVal;

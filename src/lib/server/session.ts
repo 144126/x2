@@ -8,10 +8,10 @@ async function get_key(secret: string): Promise<CryptoKey> {
 	]);
 }
 
-export type SessionUser = { id: string; name: string; picture?: string; email?: string };
+export type SessionUser = { id: string; username: string; picture?: string; email?: string };
 
 export async function encode_session(secret: SecretVal, data: SessionUser): Promise<string> {
-	const p = { u: data.id, n: data.name, p: data.picture, m: data.email, e: Date.now() + 604800000 };
+	const p = { u: data.id, n: data.username, p: data.picture, m: data.email, e: Date.now() + 604800000 };
 	const raw = b64u(new TextEncoder().encode(JSON.stringify(p)));
 	const k = await get_key(await get_secret(secret));
 	const sig = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(raw));
@@ -32,7 +32,7 @@ export async function decode_session(
 		if (!valid) return null;
 		const p = JSON.parse(new TextDecoder().decode(unb64u(raw)));
 		if (p.e < Date.now()) return null;
-		return { user: { id: p.u, name: p.n, picture: p.p, email: p.m } };
+		return { user: { id: p.u, username: p.n, picture: p.p, email: p.m } };
 	} catch {
 		return null;
 	}
