@@ -29,7 +29,18 @@
 	"vars": { "WS_ORIGIN": "wss://x2-ws.apexlinks.workers.dev" },
 	"services": [{ "binding": "X2_WS", "service": "x2-ws" }],
 	// chat image uploads; create once with: wrangler r2 bucket create x2-media
-	"r2_buckets": [{ "binding": "MEDIA", "bucket_name": "x2-media" }],
+	// `remote: true` keeps the Worker local in dev while proxying this binding to the real
+	// bucket — otherwise dev writes into Miniflare's on-disk emulation and nothing ever
+	// reaches x2-media. `wrangler dev` honors this automatically for any binding so marked;
+	// no extra CLI flag or script needed — `pnpm dev:full` (or `dev:ws`) already gets it.
+	// Plain `pnpm dev` (bare `vite dev`, no wrangler) never touches R2 at all, live or local.
+	// NOT verified end-to-end here: the CLOUDFLARE_API_TOKEN in this environment lacks R2
+	// read permission, so `wrangler r2 object get` couldn't confirm an upload actually lands
+	// in the real bucket. Config validated via `wrangler deploy --dry-run` (accepted with
+	// zero warnings) — `remote` is this wrangler version's schema-supported field name (see
+	// node_modules/wrangler/config-schema.json), not the older `experimental_remote`, which
+	// this binary (4.114.0) rejects outright with "Unexpected fields found in r2_buckets[0]".
+	"r2_buckets": [{ "binding": "MEDIA", "bucket_name": "x2-media", "remote": true }],
 	"workers_dev": true,
 	"preview_urls": true,
 	"observability": { "enabled": true, "head_sampling_rate": 1 }
