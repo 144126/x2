@@ -12,6 +12,25 @@ let intentionallyClosed = false;
 let heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
 let lastMessage = 0;
 
+function report_active(): void {
+	if (typeof document === 'undefined') return;
+	const on = document.visibilityState === 'visible';
+	ws_drop({ type: 'active', on: !on });
+	ws_send({ type: 'active', on }, true);
+}
+
+function report_active_handshake_only(): void {
+	if (typeof document === 'undefined') return;
+	const on = document.visibilityState === 'visible';
+	ws_drop({ type: 'active', on: !on });
+	const data = JSON.stringify({ type: 'active', on });
+	if (!handshake.includes(data)) handshake.push(data);
+}
+
+if (typeof document !== 'undefined') {
+	document.addEventListener('visibilitychange', report_active);
+}
+
 async function open() {
 	console.log('[WS-CLIENT] open() called', { sock: !!sock, intentionallyClosed, tries });
 	if (sock || intentionallyClosed || typeof window === 'undefined') {
@@ -33,6 +52,7 @@ async function open() {
 		console.log('[WS-CLIENT] socket OPEN', { url: ws, handshakeQueued: handshake.length });
 		lastMessage = Date.now();
 		tries = 0;
+		report_active_handshake_only();
 		for (const m of handshake) {
 			console.log('[WS-CLIENT] sending queued handshake msg', m);
 			s.send(m);

@@ -4,11 +4,18 @@ import { ChatHub } from '../hub';
 class FakeSocket {
 	sent: string[] = [];
 	closed = false;
+	_attachment: { active?: boolean } | null = null;
 	send(data: string) {
 		this.sent.push(data);
 	}
 	close() {
 		this.closed = true;
+	}
+	serializeAttachment(att: { active?: boolean }) {
+		this._attachment = att;
+	}
+	deserializeAttachment(): { active?: boolean } | null {
+		return this._attachment;
 	}
 }
 
@@ -166,6 +173,97 @@ describe('ChatHub.fetch', () => {
 		const res = await hub.fetch(req('https://dummy/signal', { method: 'POST', body: JSON.stringify(payload) }));
 		expect(res.status).toBe(200);
 		expect(recipient.sent).toEqual([JSON.stringify(payload)]);
+	});
+
+	it('records a socket as inactive when it reports type:active on:false', async () => {
+		const ws = new FakeSocket();
+		state.acceptWebSocket(ws, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.webSocketMessage(ws as unknown as WebSocket, JSON.stringify({ type: 'active', on: false }));
+		expect(ws._attachment).toEqual({ active: false });
+	});
+
+	it('reports delivered:false when every socket for the uid is backgrounded', async () => {
+		const bg = new FakeSocket();
+		bg.serializeAttachment({ active: false });
+		state.acceptWebSocket(bg, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(
+			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+		);
+		expect(await res.json()).toEqual({ delivered: false });
+	});
+
+	it('reports delivered:true when at least one socket is foregrounded', async () => {
+		const fg = new FakeSocket();
+		fg.serializeAttachment({ active: true });
+		const bg = new FakeSocket();
+		bg.serializeAttachment({ active: false });
+		state.acceptWebSocket(fg, ['bob']);
+		state.acceptWebSocket(bg, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(
+			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+		);
+		expect(await res.json()).toEqual({ delivered: true });
+	});
+
+	it('still sends the frame to backgrounded sockets', async () => {
+		const bg = new FakeSocket();
+		bg.serializeAttachment({ active: false });
+		state.acceptWebSocket(bg, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.fetch(
+			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+		);
+		expect(bg.sent.length).toBe(1);
+	});
+
+	it('treats a socket that never reported its state as active', async () => {
+		const legacy = new FakeSocket();
+		state.acceptWebSocket(legacy, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(
+			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+		);
+		expect(await res.json()).toEqual({ delivered: true });
+	});
+
+	it('survives a socket whose attachment is null', async () => {
+		const ws = new FakeSocket();
+		ws._attachment = null;
+		state.acceptWebSocket(ws, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(
+			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+		);
+		expect(await res.json()).toEqual({ delivered: true });
+	});
+
+	it('reports online:false from /check when every socket is backgrounded', async () => {
+		const bg = new FakeSocket();
+		bg.serializeAttachment({ active: false });
+		state.acceptWebSocket(bg, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(req('https://dummy/check'));
+		expect(await res.json()).toEqual({ online: false });
+	});
+
+	it('reports online:true from /check when one socket is foregrounded', async () => {
+		const fg = new FakeSocket();
+		fg.serializeAttachment({ active: true });
+		state.acceptWebSocket(fg, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		const res = await hub.fetch(req('https://dummy/check'));
+		expect(await res.json()).toEqual({ online: true });
 	});
 });
 

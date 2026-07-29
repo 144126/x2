@@ -48,6 +48,8 @@ export type NotifyPayload = {
 	ts?: number;
 	unread?: number;
 	image?: string;
+	kind?: 'u' | 'r';
+	reply_to?: string;
 } | null;
 
 export function notification_from(data: NotifyPayload): {
@@ -80,7 +82,7 @@ export function notification_from(data: NotifyPayload): {
 			icon: '/icons/icon-192.png',
 			badge: '/icons/badge-96.png',
 			...(has_image ? { image: p.image } : {}),
-			data: { url, conv: p.conv, id: p.id },
+			data: { url, conv: p.conv, id: p.id, kind: p.kind, ...(p.reply_to ? { reply_to: p.reply_to } : {}) },
 			...(p.ts !== undefined ? { timestamp: p.ts } : {}),
 			actions: p.conv
 				? [
@@ -121,4 +123,14 @@ export function should_notify(clients: SwClient[], target: string): boolean {
 		(c) => c.focused && c.visibilityState === 'visible' && conv_path(c.url) === target
 	);
 	return !on_target_and_focused;
+}
+
+export function reply_body(
+	data: { kind?: 'u' | 'r'; reply_to?: string } | null,
+	text: string
+): Record<string, unknown> | null {
+	if (!data?.reply_to) return null;
+	if (!text.trim()) return null;
+	if (data.kind === 'r') return { group: data.reply_to, text };
+	return { to: data.reply_to, text };
 }

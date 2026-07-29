@@ -6,12 +6,14 @@ import {
 	is_cacheable,
 	notification_from,
 	pick_client,
+	reply_body,
 	should_notify,
 	stale_caches,
 	target_url,
 	type SwClient
 } from '$lib/sw-core';
 import { drain, type Outgoing, type OutStore } from '$lib/outbox';
+import { set_badge } from '$lib/badge';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -104,6 +106,9 @@ self.addEventListener('push', (event) => {
 
 			const { title, options } = notification_from(data as Parameters<typeof notification_from>[0]);
 			await self.registration.showNotification(title, options as NotificationOptions);
+			if (typeof (data as { unread?: number } | null)?.unread === 'number') {
+				await set_badge((data as { unread: number }).unread);
+			}
 		})()
 	);
 });
@@ -113,26 +118,36 @@ self.addEventListener('notificationclick', (event) => {
 	const url = data?.url ?? '/app';
 
 	if (event.action === 'mark-read' && data?.conv) {
+		event.notification.close();
 		event.waitUntil(
 			fetch('/api/read', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ conv: data.conv })
-			}).catch(() => {})
+			})
+				.then((r) => (r.ok ? r.json() : null))
+				.then((b) => (b ? set_badge((b as { total: number }).total) : undefined))
+				.catch(() => {})
 		);
 		return;
 	}
 
-	if (event.action === 'reply' && data?.conv) {
+	if (event.action === 'reply' && data?.reply_to) {
 		const reply = (event as NotificationEvent & { reply?: string }).reply;
 		if (reply) {
-			event.waitUntil(
-				fetch('/api/send', {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ to: data.conv.split('|').find((u) => u !== data.id), text: reply })
-				}).catch(() => {})
+			const body = reply_body(
+				data as { kind?: 'u' | 'r'; reply_to?: string } | null,
+				reply
 			);
+			if (body) {
+				event.waitUntil(
+					fetch('/api/send', {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify(body)
+					}).catch(() => {})
+				);
+			}
 		}
 		return;
 	}

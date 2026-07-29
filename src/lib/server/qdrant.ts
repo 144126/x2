@@ -81,7 +81,9 @@ export async function ensure(env: QEnv): Promise<void> {
 	await c
 		.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } })
 		.catch(() => {});
-	for (const key of ['s', 't', 'r', 'c', 'f', 'co', 'st', 'u', 'ow', 'mb', 'gr', 'uid', 'ac'])
+	for (const key of [
+		's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k'
+	])
 		await c.createPayloadIndex(C, { field_name: key, field_schema: 'keyword' }).catch(() => {});
 	await c.createPayloadIndex(C, { field_name: 'ag', field_schema: 'integer' }).catch(() => {});
 	for (const key of ['at', 'sent'])
@@ -92,10 +94,11 @@ export async function ensure(env: QEnv): Promise<void> {
 export async function scroll(
 	env: QEnv,
 	filter: ReturnType<typeof f>,
-	limit = 1000
+	limit = 1000,
+	offset?: number
 ): Promise<Pt[]> {
 	const r = await (await qc(env))
-		.scroll(C, { filter, limit, with_payload: true, with_vector: false })
+		.scroll(C, { filter, limit, offset, with_payload: true, with_vector: false })
 		.catch(() => ({ points: [] as Pt[] }));
 	return r.points as Pt[];
 }
@@ -109,10 +112,11 @@ export async function search(
 	env: QEnv,
 	vector: number[],
 	filter: ReturnType<typeof f>,
-	limit = 12
+	limit = 12,
+	offset?: number
 ): Promise<Pt[]> {
 	const r = await (await qc(env))
-		.search(C, { vector, filter, limit, with_payload: true })
+		.search(C, { vector, filter, limit, offset, with_payload: true })
 		.catch(() => []);
 	return r as unknown as Pt[];
 }

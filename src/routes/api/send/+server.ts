@@ -6,6 +6,7 @@ import { get_group, is_member } from '$lib/server/group';
 import { notify } from '$lib/server/notify';
 import { total_unread } from '$lib/server/unread';
 import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
+import { is_muted, drop_muted } from '$lib/server/mute';
 
 // A relay that throws, or answers in some shape other than `{ok, undelivered}`, is treated
 // as if nobody received the message — better an extra push than a lost one.
@@ -96,16 +97,24 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			},
 			locals.x2_ws
 		);
-		const targets = undelivered.filter((u) => u !== me.id);
-		await push(env, targets, {
-			title: g.name,
-			body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
-			url: `/app/rooms/${group}`,
-			conv: group_conv_id(group),
-			id: m.id,
-			ts: m.d,
-			...(image ? { image: `/media/${image}` } : {})
-		});
+		const targets = await drop_muted(env, group, undelivered.filter((u) => u !== me.id));
+		await Promise.all(
+			targets.map(async (uid) => {
+				const unread = await total_unread(env, uid, [group_conv_id(group)]);
+				return push(env, [uid], {
+					title: g.name,
+					body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
+					url: `/app/rooms/${group}`,
+					conv: group_conv_id(group),
+					id: m.id,
+					ts: m.d,
+					kind: 'r',
+					reply_to: group,
+					unread,
+					...(image ? { image: `/media/${image}` } : {})
+				});
+			})
+		);
 		return json({ ok: true, m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d } });
 	}
 
@@ -117,7 +126,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		locals.x2_ws
 	);
 	console.log('[SEND] relay result', { to, undelivered });
-	if (undelivered.includes(to)) {
+	if (undelivered.includes(to) && !(await is_muted(env, to, me.id))) {
 		console.log('[SEND] recipient was undelivered live, falling back to push notification');
 		const unread = await total_unread(env, to);
 		await push(env, [to], {
@@ -127,6 +136,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			conv: conv_id(me.id, to),
 			id: m.id,
 			ts: m.d,
+			kind: 'u',
+			reply_to: me.id,
 			unread,
 			...(image ? { image: `/media/${image}` } : {})
 		});

@@ -20,7 +20,9 @@ export default defineConfig({
 					name: 'node',
 					environment: 'node',
 					include: ['src/**/*.{test,spec}.ts', 'ws/**/*.{test,spec}.ts'],
-					exclude: ['src/lib/components/**']
+					// *.svelte.test.ts is the jsdom project's territory — these render
+				// components and need a DOM, so keep them out of the node project.
+				exclude: ['src/lib/components/**', 'src/**/*.svelte.{test,spec}.ts']
 				}
 			},
 			{
@@ -31,7 +33,10 @@ export default defineConfig({
 				test: {
 					name: 'component',
 					environment: 'jsdom',
-					include: ['src/lib/components/**/*.{test,spec}.ts'],
+					include: [
+					'src/lib/components/**/*.{test,spec}.ts',
+					'src/**/*.svelte.{test,spec}.ts'
+				],
 					setupFiles: ['./vitest-setup-client.ts']
 				}
 			}

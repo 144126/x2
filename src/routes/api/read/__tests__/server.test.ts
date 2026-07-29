@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { markMock, byConvMock, totalMock, groupsMock } = vi.hoisted(() => ({
+const { markMock, byConvMock, totalMock, groupsMock, listMutesMock, mutedConvsMock } = vi.hoisted(() => ({
 	markMock: vi.fn(),
 	byConvMock: vi.fn(),
 	totalMock: vi.fn(),
-	groupsMock: vi.fn()
+	groupsMock: vi.fn(),
+	listMutesMock: vi.fn().mockResolvedValue([]),
+	mutedConvsMock: vi.fn().mockReturnValue([])
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
@@ -14,6 +16,10 @@ vi.mock('$lib/server/unread', () => ({
 	total_unread: totalMock
 }));
 vi.mock('$lib/server/group', () => ({ list_groups: groupsMock }));
+vi.mock('$lib/server/mute', () => ({
+	list_mutes: listMutesMock,
+	muted_convs: mutedConvsMock
+}));
 
 import { GET, POST } from '../+server';
 
@@ -45,7 +51,8 @@ describe('GET /api/read — what is still unread', () => {
 		byConvMock.mockResolvedValue({ 'a|me': 2, 'g:1': 1 });
 		expect(await (await GET(event())).json()).toEqual({
 			total: 3,
-			by_conv: { 'a|me': 2, 'g:1': 1 }
+			by_conv: { 'a|me': 2, 'g:1': 1 },
+			muted: []
 		});
 	});
 
@@ -56,7 +63,32 @@ describe('GET /api/read — what is still unread', () => {
 	});
 
 	it('reports zero for a user with nothing waiting', async () => {
-		expect(await (await GET(event())).json()).toEqual({ total: 0, by_conv: {} });
+		expect(await (await GET(event())).json()).toEqual({ total: 0, by_conv: {}, muted: [] });
+	});
+
+	it('returns the muted conversation ids alongside the counts', async () => {
+		listMutesMock.mockResolvedValue([{ s: 'mu', ow: 'me', tg: 'bob', k: 'u', until: 0, d: 1 }]);
+		mutedConvsMock.mockReturnValue(['me|bob']);
+		byConvMock.mockResolvedValue({ 'me|bob': 2, 'a|me': 1 });
+		const body = await (await GET(event())).json();
+		expect(body.muted).toContain('me|bob');
+		expect(body.by_conv['me|bob']).toBe(2);
+	});
+
+	it('returns an empty muted list when nothing is muted', async () => {
+		listMutesMock.mockResolvedValue([]);
+		mutedConvsMock.mockReturnValue([]);
+		byConvMock.mockResolvedValue({ 'a|me': 1 });
+		const body = await (await GET(event())).json();
+		expect(body.muted).toEqual([]);
+	});
+
+	it('still returns a total that matches the sum of unmuted counts', async () => {
+		listMutesMock.mockResolvedValue([{ s: 'mu', ow: 'me', tg: 'bob', k: 'u', until: 0, d: 1 }]);
+		mutedConvsMock.mockReturnValue(['me|bob']);
+		byConvMock.mockResolvedValue({ 'me|bob': 2, 'a|me': 1 });
+		const body = await (await GET(event())).json();
+		expect(body.total).toBe(1);
 	});
 });
 
@@ -85,7 +117,7 @@ describe('POST /api/read — mark a conversation read', () => {
 	});
 
 	it('returns the fresh total so the client can update the badge in one round trip', async () => {
-		byConvMock.mockResolvedValue({ 'b|me': 4 });
+		totalMock.mockResolvedValue(4);
 		expect(await (await POST(event({ conv: 'a|me' }))).json()).toMatchObject({ total: 4 });
 	});
 });

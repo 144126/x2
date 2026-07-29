@@ -166,6 +166,16 @@ describe('notification_from', () => {
 		expect(notification_from(p).options.timestamp).toBe(1_700_000_000_000);
 	});
 
+	it('carries kind and reply_to into notification data', () => {
+		const n = notification_from({ ...p, kind: 'r', reply_to: 'g1' });
+		expect(n.options.data).toMatchObject({ kind: 'r', reply_to: 'g1' });
+	});
+
+	it('omits reply_to from data when absent', () => {
+		const n = notification_from(p);
+		expect((n.options.data as { reply_to?: string }).reply_to).toBeUndefined();
+	});
+
 	it('offers inline reply and mark-read actions on a real conversation', () => {
 		const actions = notification_from(p).options.actions!;
 		const reply = actions.find((a) => a.action === 'reply')!;

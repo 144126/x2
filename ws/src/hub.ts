@@ -51,7 +51,10 @@ export class ChatHub implements DurableObject {
 			return new Response('ok');
 		}
 		if (url.pathname === '/check') {
-			const online = this.state.getWebSockets().length > 0;
+			const online = this.state.getWebSockets().some((ws) => {
+				const att = ws.deserializeAttachment() as { active?: boolean } | null;
+				return att?.active !== false;
+			});
 			return new Response(JSON.stringify({ online }));
 		}
 		if (url.pathname === '/watch' && request.method === 'POST') {
@@ -90,6 +93,8 @@ export class ChatHub implements DurableObject {
 			const id = this.env.CHAT_HUB.idFromName(msg.to);
 			const stub = this.env.CHAT_HUB.get(id);
 			await stub.fetch('https://dummy/signal', { method: 'POST', body: JSON.stringify(msg) });
+		} else if (msg.type === 'active') {
+			ws.serializeAttachment({ active: msg.on === true });
 		} else if (msg.type === 'watch') {
 			const id = this.env.CHAT_HUB.idFromName(msg.peer);
 			const stub = this.env.CHAT_HUB.get(id);
@@ -133,19 +138,20 @@ export class ChatHub implements DurableObject {
 		const data = JSON.stringify(payload);
 		const sockets = this.state.getWebSockets(uid);
 		console.log(`[HUB-DELIVER] uid=${uid} has ${sockets.length} open socket(s), payload=`, payload);
-		let sent = false;
+		let seen = false;
 		for (const ws of sockets) {
 			try {
 				console.log(`[HUB-DELIVER] sending to uid=${uid}, readyState=${ws.readyState}`);
 				ws.send(data);
-				sent = true;
+				const att = ws.deserializeAttachment() as { active?: boolean } | null;
+				if (att?.active !== false) seen = true;
 			} catch (e) {
 				console.error(`[HUB-DELIVER] send FAILED for uid=${uid}:`, e);
 				try { ws.close(1011, 'delivery failed'); } catch {}
 			}
 		}
-		console.log(`[HUB-DELIVER] uid=${uid} final sent=${sent}`);
-		return sent;
+		console.log(`[HUB-DELIVER] uid=${uid} final seen=${seen}`);
+		return seen;
 	}
 
 	private announce(uid: string, online: boolean): void {

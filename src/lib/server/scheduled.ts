@@ -1,8 +1,9 @@
 import type { ScheduledMessage, Message } from '../types';
-import { ensure, upsert, scroll, remove, new_id, f, eq, range, type QEnv } from './qdrant';
+import { ensure, upsert, scroll, remove, new_id, f, eq, range, ZV, type QEnv } from './qdrant';
 import { send_msg, send_group_msg, conv_id, group_conv_id } from './chat';
 import { get_group, is_member } from './group';
 import { notify } from './notify';
+import { is_muted, drop_muted } from './mute';
 
 export const MIN_LEAD_MS = 60_000; // schedule at least 1 minute out, otherwise just send now
 
@@ -101,7 +102,8 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 						file: sm.file,
 						ts: m.d
 					});
-					await push(env, g.members.filter((u) => u !== sm.f), {
+					const targets = await drop_muted(env, sm.group, g.members.filter((u) => u !== sm.f));
+					await push(env, targets, {
 						title: g.name,
 						body: sm.file ? `📎 ${sm.file.name}` : sm.text,
 						url: `/app/rooms/${sm.group}`,
@@ -113,14 +115,16 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 			} else if (sm.to) {
 				const m = await send_msg(env, sm.f, sm.to, sm.text, sm.image, sm.file);
 				await relay(ws, { id: m.id, to: sm.to, from: sm.f, text: sm.text, image: sm.image, file: sm.file, ts: m.d });
-				await push(env, [sm.to], {
-					title: sm.f,
-					body: sm.file ? `📎 ${sm.file.name}` : sm.text,
-					url: `/app/chat/${sm.f}`,
-					conv: conv_id(sm.f, sm.to),
-					id: m.id,
-					ts: m.d
-				});
+				if (!(await is_muted(env, sm.to, sm.f))) {
+					await push(env, [sm.to], {
+						title: sm.f,
+						body: sm.file ? `📎 ${sm.file.name}` : sm.text,
+						url: `/app/chat/${sm.f}`,
+						conv: conv_id(sm.f, sm.to),
+						id: m.id,
+						ts: m.d
+					});
+				}
 			}
 		} finally {
 			await mark_sent(env, sm);

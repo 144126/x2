@@ -1,10 +1,12 @@
-import { ensure, upsert, scroll, f, eq, type QEnv } from './qdrant';
+import { ensure, upsert, scroll, f, eq, uuid_from, ZV, type QEnv } from './qdrant';
 import type { Message } from '../types';
+import { conv_id, group_conv_id } from './chat';
+import { list_mutes } from './mute';
 
 export type Read = { s: 'rd'; f: string; c: string; d: number };
 
-export function read_id(uid: string, conv: string): string {
-	return `read:${uid}:${conv}`;
+export async function read_id(uid: string, conv: string): Promise<string> {
+	return uuid_from(`read:${uid}:${conv}`);
 }
 
 async function read_marker(env: QEnv, uid: string, conv: string): Promise<number> {
@@ -17,7 +19,7 @@ export async function mark_read(env: QEnv, uid: string, conv: string, ts: number
 	const prev = await read_marker(env, uid, conv);
 	const d = Math.max(prev, ts);
 	const r: Read = { s: 'rd', f: uid, c: conv, d };
-	await upsert(env, [{ id: read_id(uid, conv), vector: new Array(4096).fill(0), payload: r as unknown as Record<string, unknown> }]);
+	await upsert(env, [{ id: await read_id(uid, conv), vector: ZV, payload: r as unknown as Record<string, unknown> }]);
 }
 
 export async function unread_by_conv(
@@ -54,5 +56,11 @@ export async function unread_by_conv(
 
 export async function total_unread(env: QEnv, uid: string, group_convs: string[] = []): Promise<number> {
 	const by_conv = await unread_by_conv(env, uid, group_convs);
-	return Object.values(by_conv).reduce((a, b) => a + b, 0);
+	const mutes = await list_mutes(env, uid);
+	const silent = new Set(
+		mutes.map((m) => (m.k === 'r' ? group_conv_id(m.tg) : conv_id(uid, m.tg)))
+	);
+	return Object.entries(by_conv)
+		.filter(([conv]) => !silent.has(conv))
+		.reduce((n, [, count]) => n + count, 0);
 }

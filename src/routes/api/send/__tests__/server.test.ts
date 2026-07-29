@@ -1,14 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { sendMsgMock, sendGroupMsgMock, getGroupMock, notifyMock, totalUnreadMock, saveScheduledMock } =
-	vi.hoisted(() => ({
-		sendMsgMock: vi.fn(),
-		sendGroupMsgMock: vi.fn(),
-		getGroupMock: vi.fn(),
-		notifyMock: vi.fn(),
-		totalUnreadMock: vi.fn(),
-		saveScheduledMock: vi.fn()
-	}));
+const {
+	sendMsgMock,
+	sendGroupMsgMock,
+	getGroupMock,
+	notifyMock,
+	totalUnreadMock,
+	saveScheduledMock,
+	isMutedMock,
+	dropMutedMock
+} = vi.hoisted(() => ({
+	sendMsgMock: vi.fn(),
+	sendGroupMsgMock: vi.fn(),
+	getGroupMock: vi.fn(),
+	notifyMock: vi.fn(),
+	totalUnreadMock: vi.fn(),
+	saveScheduledMock: vi.fn(),
+	isMutedMock: vi.fn(),
+	dropMutedMock: vi.fn()
+}));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/chat', async () => {
@@ -22,6 +32,7 @@ vi.mock('$lib/server/group', async () => {
 vi.mock('$lib/server/notify', () => ({ notify: notifyMock }));
 vi.mock('$lib/server/unread', () => ({ total_unread: totalUnreadMock }));
 vi.mock('$lib/server/scheduled', () => ({ save_scheduled: saveScheduledMock, MIN_LEAD_MS: 60_000 }));
+vi.mock('$lib/server/mute', () => ({ is_muted: isMutedMock, drop_muted: dropMutedMock }));
 
 import { POST } from '../+server';
 
@@ -68,6 +79,8 @@ beforeEach(() => {
 	notifyMock.mockResolvedValue({ sent: 1, pruned: 0 });
 	totalUnreadMock.mockResolvedValue(3);
 	saveScheduledMock.mockResolvedValue({ id: 'sm1', sent: 0 });
+	isMutedMock.mockResolvedValue(false);
+	dropMutedMock.mockImplementation((_e, _t, uids: string[]) => Promise.resolve(uids));
 });
 
 describe('POST /api/send — scheduling', () => {
@@ -179,12 +192,40 @@ describe('POST /api/send — what the notification says', () => {
 		expect(note()[2].unread).toBe(3);
 	});
 
-	it('skips the per-recipient unread lookup on a group send — the badge increments locally', async () => {
+	it('includes the recipient\'s unread total in a room push', async () => {
+		await POST(
+			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
+		);
+		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob', ['g:g1']);
+		expect(note()[2].unread).toBe(3);
+	});
+
+	it('computes unread per recipient, not once for the room', async () => {
+		totalUnreadMock.mockResolvedValueOnce(2).mockResolvedValueOnce(5);
 		await POST(
 			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
 		);
-		expect(totalUnreadMock).not.toHaveBeenCalled();
-		expect(note()[2].unread).toBeUndefined();
+		expect(totalUnreadMock).toHaveBeenCalledTimes(2);
+		expect(notifyMock).toHaveBeenCalledTimes(2);
+		const calls = notifyMock.mock.calls;
+		expect(calls[0][2].unread).toBe(2);
+		expect(calls[1][2].unread).toBe(5);
+	});
+
+	it('still includes unread in a 1:1 push', async () => {
+		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob');
+		expect(note()[2].unread).toBe(3);
+	});
+
+	it('includes kind and reply_to in both push payloads', async () => {
+		await POST(
+			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
+		);
+		expect(note()[2]).toMatchObject({ kind: 'r', reply_to: 'g1' });
+
+		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		expect(notifyMock.mock.calls[1][2]).toMatchObject({ kind: 'u', reply_to: 'ada' });
 	});
 });
 
@@ -206,5 +247,47 @@ describe('POST /api/send — push must never break sending', () => {
 		const legacy = { fetch: vi.fn(async () => new Response('ok', { status: 200 })) };
 		const res = await POST(event({ to: 'bob', text: 'hi' }, 'ada', legacy));
 		expect((await res.json()).ok).toBe(true);
+	});
+});
+
+describe('POST /api/send — mutes suppress push at every send path', () => {
+	it('does not push to a recipient who muted the sender', async () => {
+		isMutedMock.mockResolvedValue(true);
+		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		expect(notifyMock).not.toHaveBeenCalled();
+	});
+
+	it('still pushes when the recipient muted someone else', async () => {
+		isMutedMock.mockResolvedValue(false);
+		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		expect(notifyMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('still relays the message over the socket to a muted recipient', async () => {
+		isMutedMock.mockResolvedValue(true);
+		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		expect(relay_body).toMatchObject({ to: 'bob', from: 'ada', text: 'hi' });
+	});
+
+	it('drops muted members from the room push fan-out', async () => {
+		dropMutedMock.mockImplementation((_e, _t, uids: string[]) =>
+			Promise.resolve((uids as string[]).filter((u) => u !== 'bob'))
+		);
+		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] })));
+		expect(notifyMock.mock.calls[0][1]).toEqual(['cid']);
+	});
+
+	it('still pushes to unmuted members when some muted the room', async () => {
+		dropMutedMock.mockImplementation((_e, _t, uids: string[]) =>
+			Promise.resolve((uids as string[]).filter((u) => u !== 'bob'))
+		);
+		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] })));
+		expect(notifyMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not push at all when every offline member muted the room', async () => {
+		dropMutedMock.mockResolvedValue([]);
+		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] })));
+		expect(notifyMock).not.toHaveBeenCalled();
 	});
 });

@@ -1,4 +1,4 @@
-import { ensure, upsert, scroll, remove, uuid_from, f, eq, type QEnv } from './qdrant';
+import { ensure, upsert, scroll, remove, uuid_from, f, eq, ZV, type QEnv } from './qdrant';
 import type { WebPushSub } from './push';
 
 export type PushSub = { s: 'ps'; f: string; ep: string; k: string; au: string; ua?: string; d: number };
@@ -17,7 +17,7 @@ export async function save_sub(env: QEnv, uid: string, sub: WebPushSub, ua?: str
 		d: Date.now()
 	};
 	await upsert(env, [
-		{ id: await uuid_from(sub.endpoint), vector: new Array(4096).fill(0), payload: p as unknown as Record<string, unknown> }
+		{ id: await uuid_from(sub.endpoint), vector: ZV, payload: p as unknown as Record<string, unknown> }
 	]);
 }
 

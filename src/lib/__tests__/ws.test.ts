@@ -28,10 +28,21 @@ class FakeWS {
 
 let ws: typeof import('../ws');
 
+function fakeDoc(visible: boolean) {
+	const listeners = new Map<string, () => void>();
+	return {
+		visibilityState: visible ? 'visible' : 'hidden',
+		addEventListener: vi.fn((e: string, fn: () => void) => listeners.set(e, fn)),
+		removeEventListener: vi.fn((e: string) => listeners.delete(e)),
+		_listeners: listeners
+	};
+}
+
 beforeEach(async () => {
 	vi.useFakeTimers();
 	vi.stubGlobal('WebSocket', FakeWS);
 	vi.stubGlobal('window', {});
+	vi.stubGlobal('document', fakeDoc(true));
 	vi.stubGlobal('fetch', async () => ({ ok: true, json: async () => ({ ws: 'ws://x/ws' }) }));
 	vi.resetModules();
 	ws = await import('../ws');
@@ -55,7 +66,7 @@ describe('shared ws', () => {
 		const sock = FakeWS.last!;
 		expect(sock.sent).toEqual([]); // not open yet — nothing sent
 		sock.open();
-		expect(sock.sent).toEqual([JSON.stringify({ type: 'watch', peer: 'p' })]);
+		expect(sock.sent).toContain(JSON.stringify({ type: 'watch', peer: 'p' }));
 
 		sock.onmessage!({ data: JSON.stringify({ type: 'msg', text: 'hi' }) });
 		expect(got).toEqual([{ type: 'msg', text: 'hi' }]);
@@ -75,19 +86,54 @@ describe('shared ws', () => {
 		const second = FakeWS.last!;
 		expect(second).not.toBe(first);
 		second.open();
-		expect(second.sent).toEqual([JSON.stringify({ type: 'watch', peer: 'p' })]);
+		expect(second.sent).toContain(JSON.stringify({ type: 'watch', peer: 'p' }));
 	});
 
-	it('ws_drop stops a subscription from being replayed', async () => {
+	it('sends active:true once the socket opens in a visible document', async () => {
 		ws.ws_on(() => {});
-		const watch = { type: 'watch', peer: 'p' };
-		ws.ws_send(watch, true);
 		await flush();
 		FakeWS.last!.open();
-		ws.ws_drop(watch);
+		expect(FakeWS.last!.sent).toContain(JSON.stringify({ type: 'active', on: true }));
+	});
+
+	it('sends active:false when the document is hidden', async () => {
+		ws.ws_on(() => {});
+		await flush();
+		FakeWS.last!.open();
+		const doc = (globalThis as unknown as { document: ReturnType<typeof fakeDoc> }).document;
+		doc.visibilityState = 'hidden';
+		doc._listeners.get('visibilitychange')!();
+		expect(FakeWS.last!.sent).toContain(JSON.stringify({ type: 'active', on: false }));
+	});
+
+	it('re-sends the current state on reconnect', async () => {
+		ws.ws_on(() => {});
+		await flush();
+		FakeWS.last!.open();
 		FakeWS.last!.close();
 		await vi.advanceTimersByTimeAsync(600);
 		FakeWS.last!.open();
-		expect(FakeWS.last!.sent).toEqual([]);
+		const activeMsgs = FakeWS.last!.sent.filter((s) => s.includes('active'));
+		expect(activeMsgs.length).toBeGreaterThanOrEqual(1);
+		expect(activeMsgs[activeMsgs.length - 1]).toBe(JSON.stringify({ type: 'active', on: true }));
+	});
+
+	it('does not accumulate both active:true and active:false in the handshake queue', async () => {
+		ws.ws_on(() => {});
+		await flush();
+		FakeWS.last!.open();
+		const doc = (globalThis as unknown as { document: ReturnType<typeof fakeDoc> }).document;
+		doc.visibilityState = 'hidden';
+		doc._listeners.get('visibilitychange')!();
+		doc.visibilityState = 'visible';
+		doc._listeners.get('visibilitychange')!();
+		doc.visibilityState = 'hidden';
+		doc._listeners.get('visibilitychange')!();
+		FakeWS.last!.close();
+		await vi.advanceTimersByTimeAsync(600);
+		FakeWS.last!.open();
+		const activeMsgs = FakeWS.last!.sent.filter((s) => s.startsWith('{"type":"active"'));
+		expect(activeMsgs.length).toBe(1);
+		expect(activeMsgs[0]).toBe(JSON.stringify({ type: 'active', on: false }));
 	});
 });
