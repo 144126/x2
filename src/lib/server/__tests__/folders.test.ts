@@ -31,6 +31,22 @@ describe('save_folder', () => {
 	});
 });
 
+describe('payload/filter coherence', () => {
+	it('writes every payload key that list_folders later filters on', async () => {
+		await save_folder(ENV, 'ada', 'close friends');
+		const payload = upsertMock.mock.calls[0][1][0].payload;
+
+		scrollMock.mockResolvedValue([]);
+		await list_folders(ENV, 'ada');
+		const filter = scrollMock.mock.calls[0][1] as { must: { key: string; match: { value: string } }[] };
+
+		// a filter key absent from the written payload matches nothing in Qdrant — silent data loss
+		for (const cond of filter.must) {
+			expect(payload).toHaveProperty(cond.key, cond.match.value);
+		}
+	});
+});
+
 describe('list_folders', () => {
 	it("returns only the owner's folders", async () => {
 		scrollMock.mockResolvedValue([{ id: '1', payload: { s: 'fo', owner: 'ada', name: 'x', convs: [], d: 1 } }]);
