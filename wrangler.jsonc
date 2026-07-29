@@ -21,9 +21,12 @@
 		{ "binding": "PAYSTACK_TEST", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "PAYSTACK_TEST" },
 		{ "binding": "GROQ", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GROQ" }
 	],
-	// WS_ORIGIN: the deployed x2-ws worker's public origin, e.g. "wss://x2-ws.<account>.workers.dev".
+	// WS_ORIGIN: the deployed x2-ws worker's public origin. Committed here (not left blank and
+	// patched via dashboard) because `wrangler deploy` overwrites dashboard-set vars with
+	// whatever wrangler.jsonc says on every deploy — a blank value here silently re-breaks
+	// realtime delivery (client never opens a websocket, /api/wstoken 503s) on the next push.
 	// Local dev falls back to ws://localhost:8787 (see ws/wrangler.jsonc dev port) when unset.
-	"vars": { "WS_ORIGIN": "" },
+	"vars": { "WS_ORIGIN": "wss://x2-ws.apexlinks.workers.dev" },
 	"services": [{ "binding": "X2_WS", "service": "x2-ws" }],
 	// chat image uploads; create once with: wrangler r2 bucket create x2-media
 	"r2_buckets": [{ "binding": "MEDIA", "bucket_name": "x2-media" }],
