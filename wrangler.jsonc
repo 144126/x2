@@ -55,7 +55,22 @@
 			"store_id": "45748cb1c67946df943075fa14cb8815",
 			"secret_name": "PAYSTACK_TEST"
 		},
-		{ "binding": "GROQ", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GROQ" }
+		{ "binding": "GROQ", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GROQ" },
+		{
+			"binding": "VAPID_PUBLIC",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "VAPID_PUBLIC"
+		},
+		{
+			"binding": "VAPID_PRIVATE",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "VAPID_PRIVATE"
+		},
+		{
+			"binding": "VAPID_SUBJECT",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "VAPID_SUBJECT"
+		}
 	],
 	// WS_ORIGIN: the deployed x2-ws worker's public origin. Committed here (not left blank and
 	// patched via dashboard) because `wrangler deploy` overwrites dashboard-set vars with

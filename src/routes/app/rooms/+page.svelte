@@ -3,7 +3,8 @@
 	import type { GroupView } from '$lib/server/group';
 	import Modal from '$lib/components/Modal.svelte';
 	import FolderBar from '$lib/components/FolderBar.svelte';
-	import { Search, Plus, Users } from '@lucide/svelte';
+	import LocationPicker from '$lib/LocationPicker.svelte';
+	import { Search, Plus, Users, SlidersHorizontal } from '@lucide/svelte';
 
 	type Folder = { id: string; name: string; convs: string[] };
 
@@ -27,11 +28,35 @@
 	let err = $state('');
 	let creatingOpen = $state(false);
 
+	let country = $state('');
+	let region = $state('');
+	let city = $state('');
+	let filtersOpen = $state(false);
+	let activeFilterCount = $derived(
+		[country, region, city].filter(Boolean).length
+	);
+
 	async function search() {
 		searching = true;
-		const res = await fetch(`/api/groups?q=${encodeURIComponent(q.trim())}`);
+		const p = new URLSearchParams();
+		if (q.trim()) p.set('q', q.trim());
+		if (country) p.set('country', country);
+		if (region) p.set('state', region);
+		if (city) p.set('city', city);
+		const res = await fetch(`/api/groups?${p}`);
 		results = res.ok ? ((await res.json()).r ?? []) : [];
 		searching = false;
+	}
+
+	function clearLocation() {
+		country = '';
+		region = '';
+		city = '';
+	}
+
+	function applyLocation() {
+		filtersOpen = false;
+		search();
 	}
 
 	async function create() {
@@ -41,7 +66,7 @@
 		const res = await fetch('/api/groups', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ name, description })
+			body: JSON.stringify({ name, description, country: country || undefined, state: region || undefined, city: city || undefined })
 		});
 		creating = false;
 		if (!res.ok) {
@@ -93,7 +118,31 @@
 			{#if !searching}<Search size={15} />{/if}
 			{searching ? 'searching' : 'find rooms'}
 		</button>
+		<button
+			class="btn relative shrink-0 !px-4"
+			onclick={() => (filtersOpen = true)}
+			aria-label="room filters"
+			title="location filters"
+		>
+			<SlidersHorizontal size={16} />
+			{#if activeFilterCount}
+				<span
+					class="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-accent-ink"
+					>{activeFilterCount}</span
+				>
+			{/if}
+		</button>
 	</div>
+
+	<Modal bind:open={filtersOpen} title="location">
+		<div class="filters flex flex-col gap-4">
+			<LocationPicker bind:country bind:region bind:city anyLabel="any country" />
+		</div>
+		<div class="mt-6 flex items-center gap-3 border-t border-line pt-5">
+			<button class="btn px-4 py-2 text-[13px]" onclick={clearLocation}>clear</button>
+			<button class="btn btn-amber ml-auto px-4 py-2 text-[13px]" onclick={applyLocation}>apply</button>
+		</div>
+	</Modal>
 
 	{#if results.length}
 		<ul class="mt-7 grid gap-3.5">
@@ -106,6 +155,11 @@
 							class="font-display text-[22px] font-medium tracking-[-0.01em] hover:text-accent"
 							>{g.name}</a
 						>
+						{#if g.country || g.state || g.city}
+							<div class="text-[12px] tracking-[0.04em] text-mute">
+								{[g.city, g.state, g.country].filter(Boolean).join(' · ')}
+							</div>
+						{/if}
 						{#if g.score !== undefined}
 							<span class="font-display text-[14px] text-accent"
 								>{(g.score * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span></span
@@ -150,6 +204,7 @@
 			bind:value={description}
 			rows="3"
 			placeholder="what is this room about? this is what people search against."></textarea>
+		<LocationPicker bind:country bind:region bind:city anyLabel="country" />
 		<button
 			class="btn btn-amber flex items-center gap-1.5 self-start"
 			type="submit"
@@ -184,6 +239,11 @@
 					tabindex="0"
 				>
 					<div class="font-display text-[22px] font-medium tracking-[-0.01em]">{g.name}</div>
+					{#if g.country || g.state || g.city}
+						<div class="text-[12px] tracking-[0.04em] text-mute mt-1">
+							{[g.city, g.state, g.country].filter(Boolean).join(' · ')}
+						</div>
+					{/if}
 					{#if g.description}
 						<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">
 							{g.description}

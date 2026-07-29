@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { dev } from '$app/environment';
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import NotifyPrompt from '$lib/components/NotifyPrompt.svelte';
@@ -15,7 +16,9 @@
 	onMount(async () => {
 		if (!data.user) return;
 		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+			navigator.serviceWorker
+				.register('/service-worker.js', { type: dev ? 'module' : 'classic' })
+				.catch(() => {});
 		}
 		try {
 			const res = await fetch('/api/push');

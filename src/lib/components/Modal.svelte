@@ -20,7 +20,7 @@
 
 <dialog
 	bind:this={el}
-	class="modal-dialog max-h-[85dvh] w-[min(560px,92vw)] rounded-[20px] border border-line bg-panel-solid p-0 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-md"
+	class="modal-dialog m-auto max-h-[85dvh] w-[min(560px,92vw)] rounded-[20px] border border-line bg-panel-solid p-0 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-md"
 	onclose={() => (open = false)}
 	onclick={(e) => {
 		// a click landing on the dialog itself (not its content box) is a backdrop click

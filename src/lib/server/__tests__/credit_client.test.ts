@@ -21,6 +21,18 @@ describe('get_balance', () => {
 		expect(r).toEqual({ balance: 5400, granted_today: true });
 		expect(ws.calls[0].url).toBe('https://x2-ws/credits/ada/balance');
 	});
+
+	it('returns a fallback instead of throwing when the response body is not JSON', async () => {
+		const ws = { fetch: vi.fn().mockResolvedValue(new Response('Worker x2-ws error')) } as unknown as Fetcher;
+		const r = await get_balance(ws, 'ada');
+		expect(r).toEqual({ balance: 0, granted_today: false });
+	});
+
+	it('returns a fallback instead of throwing when fetch itself rejects', async () => {
+		const ws = { fetch: vi.fn().mockRejectedValue(new Error('connection refused')) } as unknown as Fetcher;
+		const r = await get_balance(ws, 'ada');
+		expect(r).toEqual({ balance: 0, granted_today: false });
+	});
 });
 
 describe('deduct', () => {
@@ -38,6 +50,18 @@ describe('deduct', () => {
 		const r = await deduct(ws, 'ada', 999999);
 		expect(r).toEqual({ ok: false, reason: 'insufficient_credits', balance: 0 });
 	});
+
+	it('returns a fallback instead of throwing on bad response', async () => {
+		const ws = { fetch: vi.fn().mockResolvedValue(new Response('not json')) } as unknown as Fetcher;
+		const r = await deduct(ws, 'ada', 100);
+		expect(r).toEqual({ ok: false, reason: 'service_unavailable', balance: 0 });
+	});
+
+	it('returns a fallback when fetch rejects', async () => {
+		const ws = { fetch: vi.fn().mockRejectedValue(new Error('timeout')) } as unknown as Fetcher;
+		const r = await deduct(ws, 'ada', 100);
+		expect(r).toEqual({ ok: false, reason: 'service_unavailable', balance: 0 });
+	});
 });
 
 describe('credit', () => {
@@ -45,5 +69,17 @@ describe('credit', () => {
 		const ws = fetcher({ '/credits/ada/credit': { balance: 15400 } });
 		const r = await credit(ws, 'ada', 10000);
 		expect(r).toEqual({ balance: 15400 });
+	});
+
+	it('returns a fallback instead of throwing on bad response', async () => {
+		const ws = { fetch: vi.fn().mockResolvedValue(new Response('not json')) } as unknown as Fetcher;
+		const r = await credit(ws, 'ada', 10000);
+		expect(r).toEqual({ balance: 0 });
+	});
+
+	it('returns a fallback when fetch rejects', async () => {
+		const ws = { fetch: vi.fn().mockRejectedValue(new Error('timeout')) } as unknown as Fetcher;
+		const r = await credit(ws, 'ada', 10000);
+		expect(r).toEqual({ balance: 0 });
 	});
 });

@@ -21,6 +21,12 @@ describe('Modal', () => {
 		expect(screen.getByText('modal body')).toBeInTheDocument();
 	});
 
+	it('renders the dialog with explicit centering margin', () => {
+		render(ModalHost, { props: { open: true } });
+		const dialog = screen.getByRole('dialog') as HTMLDialogElement;
+		expect(dialog.classList.contains('m-auto')).toBe(true);
+	});
+
 	it('closes when the close button is pressed', async () => {
 		render(ModalHost, { props: { open: true } });
 		const dialog = screen.getByRole('dialog') as HTMLDialogElement;

@@ -2,10 +2,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 
-vi.mock('$env/dynamic/public', () => ({
-	env: { PUBLIC_ORIGIN: 'https://x.com', PUBLIC_VAPID_KEY: 'vapid-key' }
-}));
-
 const { push_state, enable_push, disable_push } = vi.hoisted(() => ({
 	push_state: vi.fn(),
 	enable_push: vi.fn(),
@@ -50,10 +46,21 @@ beforeEach(() => {
 	push_state.mockResolvedValue('off');
 	enable_push.mockResolvedValue({ ok: true });
 	disable_push.mockResolvedValue(true);
-	globalThis.fetch = vi.fn().mockResolvedValue(mockRes({ balance: 0 }));
+	globalThis.fetch = vi.fn((url: string) =>
+		Promise.resolve(url === '/api/push' ? mockRes({ key: 'vapid-key' }) : mockRes({ balance: 0 }))
+	);
 	Object.defineProperty(navigator, 'serviceWorker', {
 		value: { ready: Promise.resolve({}) },
 		writable: true
+	});
+});
+
+describe('profile view profile button', () => {
+	it('links to the public profile view for the signed-in user id', async () => {
+		render(Page, { props: { data: data({ p: { ...baseData.p, id: 'u1' } }) } });
+		const link = screen.getByText('view profile');
+		expect(link).toBeInTheDocument();
+		expect(link).toHaveAttribute('href', '/app/user/u1');
 	});
 });
 
@@ -108,6 +115,15 @@ describe('profile notification settings', () => {
 		const mutes = [{ target: 'bob', kind: 'u' as const, until: 0, name: 'Bob' }];
 		render(Page, { props: { data: data({ mutes }) } });
 		expect(screen.queryByText(/until/)).toBeNull();
+	});
+
+	it('fetches the vapid key from /api/push before enabling push', async () => {
+		push_state.mockResolvedValue('off');
+		render(Page, { props: { data: data() } });
+		await screen.findByText('enable');
+		fireEvent.click(screen.getByText('enable'));
+		expect(globalThis.fetch).toHaveBeenCalledWith('/api/push');
+		expect(enable_push).toHaveBeenCalledWith('vapid-key');
 	});
 
 	it('shows the push toggle after loading', async () => {

@@ -59,8 +59,13 @@ describe('GET /api/search', () => {
 		expect(scrollMock).toHaveBeenCalled();
 	});
 
-	it('400s only when there is neither a query nor any filter', async () => {
-		await expect(GET(make_event(''))).rejects.toMatchObject({ status: 400 });
+	it('returns all users for a completely empty search instead of 400', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const res = await GET(make_event(''));
+		expect(res.status).toBe(200);
+		expect(scrollMock).toHaveBeenCalled();
+		const filter = scrollMock.mock.calls[0][1];
+		expect(filter).toEqual({ must: [{ key: 's', match: { value: 'u' } }] });
 	});
 
 	it('falls back to a scroll when the embedder returns a zero vector', async () => {

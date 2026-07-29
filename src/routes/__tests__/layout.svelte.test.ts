@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import { writable } from 'svelte/store';
 
@@ -7,9 +7,41 @@ vi.mock('$app/stores', () => ({
 }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
+const { devEnv, registerMock } = vi.hoisted(() => ({
+	devEnv: { value: true },
+	registerMock: vi.fn()
+}));
+
+vi.mock('$app/environment', () => ({ get dev() { return devEnv.value; } }));
+
 import Layout from '../+layout.svelte';
 
 const fakeUser = { id: 'me', username: 'me' };
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	devEnv.value = true;
+	Object.defineProperty(navigator, 'serviceWorker', {
+		value: { register: registerMock },
+		writable: true,
+		configurable: true
+	});
+	registerMock.mockResolvedValue(undefined);
+});
+
+describe('service worker registration', () => {
+	it('registers as a module in dev', () => {
+		devEnv.value = true;
+		render(Layout, { props: { data: { user: fakeUser }, children: () => '' } });
+		expect(registerMock).toHaveBeenCalledWith('/service-worker.js', { type: 'module' });
+	});
+
+	it('registers as classic in production', () => {
+		devEnv.value = false;
+		render(Layout, { props: { data: { user: fakeUser }, children: () => '' } });
+		expect(registerMock).toHaveBeenCalledWith('/service-worker.js', { type: 'classic' });
+	});
+});
 
 describe('bottom nav', () => {
 	it('renders four destinations for a signed-in user', () => {

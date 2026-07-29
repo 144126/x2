@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { env } from '$env/dynamic/public';
 	import type { User } from '$lib/types';
 	import LocationPicker from '$lib/LocationPicker.svelte';
 	import PhoneInput from '$lib/PhoneInput.svelte';
@@ -14,6 +13,7 @@
 	let buying = $state(false);
 	let pushState = $state<'on' | 'off' | 'blocked' | 'unsupported'>('off');
 	let pushLoaded = $state(false);
+	let key = $state('');
 
 	async function load_credits() {
 		const res = await fetch('/api/credits');
@@ -36,11 +36,16 @@
 
 	onMount(async () => {
 		load_credits();
-		pushState = await push_state();
+		const [state, keyRes] = await Promise.all([
+			push_state(),
+			fetch('/api/push')
+				.then((r) => (r.ok ? (r.json() as Promise<{ key: string }>) : null))
+				.catch(() => null)
+		]);
+		pushState = state;
+		key = keyRes?.key ?? '';
 		pushLoaded = true;
 	});
-
-	const key = env.PUBLIC_VAPID_KEY ?? '';
 
 	let about = $state(p.a ?? '');
 	let username = $state(p.u ?? '');
@@ -92,6 +97,8 @@
 	<h1 class="display mt-3 mb-10 text-[clamp(40px,6vw,64px)]">
 		{username || p.m?.split('@')[0] || 'profile'}
 	</h1>
+
+	<a href="/app/user/{p.id}" class="btn text-[13px] -mt-8 mb-10 block w-fit">view profile</a>
 
 	<form onsubmit={(e) => (e.preventDefault(), save())} class="flex flex-col gap-2">
 		<label class="eyebrow mt-6" for="p-username">username</label>

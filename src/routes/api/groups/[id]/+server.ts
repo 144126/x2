@@ -13,10 +13,19 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 // PATCH edits (owner only); POST {action:'join'|'leave'} changes membership
 export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	if (!locals.user) throw error(401, 'auth');
-	const b = (await request.json().catch(() => null)) as { name?: string; description?: string };
+	const b = (await request.json().catch(() => null)) as {
+		name?: string;
+		description?: string;
+		country?: string;
+		state?: string;
+		city?: string;
+	};
 	const g = await update_group(env, params.id, locals.user.id, {
 		name: b?.name,
-		description: b?.description
+		description: b?.description,
+		country: b?.country,
+		state: b?.state,
+		city: b?.city
 	});
 	if (!g) throw error(403, 'owner only');
 	return json({ g });

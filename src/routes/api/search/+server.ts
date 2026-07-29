@@ -59,10 +59,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const vec = has_query ? await embed(env, q) : ZV;
 	const has_real_vec = has_query && vec.some((v) => v !== 0);
 
-	if (!has_query && !gender && !country && !state && !age_min && !age_max && !only_online) {
-		throw error(400, 'q required');
-	}
-
 	const fetch_page = (limit: number, offset: number) =>
 		has_real_vec
 			? search(env, vec, f(...conds), limit, offset)

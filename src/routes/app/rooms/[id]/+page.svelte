@@ -10,6 +10,7 @@
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
+	import LocationPicker from '$lib/LocationPicker.svelte';
 	import {
 		ArrowLeft,
 		Image,
@@ -41,6 +42,9 @@
 	let editing = $state(false);
 	let ename = $state(g.name);
 	let edesc = $state(g.description);
+	let ecountry = $state(g.country ?? '');
+	let eregion = $state(g.state ?? '');
+	let ecity = $state(g.city ?? '');
 
 	// ponytail: full mesh — every participant connects to every other. Comfortable to ~4-6
 	// people; an SFU is the upgrade path if rooms need to be bigger.
@@ -153,7 +157,13 @@
 		const res = await fetch(`/api/groups/${g.id}`, {
 			method: 'PATCH',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ name: ename, description: edesc })
+			body: JSON.stringify({
+				name: ename,
+				description: edesc,
+				country: ecountry || undefined,
+				state: eregion || undefined,
+				city: ecity || undefined
+			})
 		});
 		if (res.ok) {
 			g = (await res.json()).g;
@@ -315,6 +325,7 @@
 			<input bind:value={ename} placeholder="room name" maxlength="60" />
 			<textarea bind:value={edesc} rows="2" placeholder="what this room is about (used for search)"
 			></textarea>
+			<LocationPicker bind:country={ecountry} bind:region={eregion} bind:city={ecity} anyLabel="country" />
 			<div class="flex gap-2">
 				<button class="btn btn-amber px-4 py-2 text-[12px]" type="submit">save</button>
 				<button class="btn px-4 py-2 text-[12px] text-red-400" type="button" onclick={remove}

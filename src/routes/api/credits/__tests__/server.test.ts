@@ -37,4 +37,12 @@ describe('GET /api/credits', () => {
 		expect(getBalanceMock).toHaveBeenCalledWith({}, 'ada');
 		expect(creditHistoryMock).toHaveBeenCalledWith(expect.anything(), 'ada', expect.any(Number));
 	});
+
+	it('returns a 200 with a degraded balance instead of 500 when the ws worker is unreachable', async () => {
+		getBalanceMock.mockRejectedValue(new Error('timeout'));
+		const res = await GET(event());
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body).toMatchObject({ balance: 0, granted_today: false });
+	});
 });
