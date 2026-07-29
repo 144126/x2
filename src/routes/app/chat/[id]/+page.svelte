@@ -5,6 +5,8 @@
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
 	import { upload_file, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
+	import { CallMesh, type CallSignal } from '$lib/call';
+	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import {
 		ArrowLeft,
 		Phone,
@@ -63,16 +65,34 @@
 	let unsub: (() => void) | null = null;
 	let me = $derived($page.data.user?.id);
 
-	// ponytail: free Google STUN only — add TURN for symmetric NATs / prod
-	let pc: RTCPeerConnection | null = $state(null);
-	let localStream: MediaStream | null = $state(null);
-	let remoteStream: MediaStream | null = $state(null);
+	let mesh: CallMesh | null = null;
+	let localStream = $state<MediaStream | null>(null);
+	let remoteStream = $state<MediaStream | null>(null);
 	let callState = $state<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
 	let videoOn = $state(false);
 	let micOn = $state(true);
-	let pendingOffer: RTCSessionDescriptionInit | null = null;
 
-	const stun = { urls: 'stun:stun.l.google.com:19302' };
+	function resetCall() {
+		mesh = null;
+		localStream = null;
+		remoteStream = null;
+		callState = 'idle';
+		micOn = true;
+	}
+
+	function makeMesh(): CallMesh {
+		return new CallMesh({
+			me: me!,
+			send: (to, signal) => ws_send({ type: 'signal', to, signal }),
+			onremote: (uid, stream) => {
+				if (uid !== data.peer) return;
+				if (!stream) return resetCall(); // peer hung up or dropped
+				remoteStream = stream;
+				callState = 'connected';
+			},
+			onincoming: () => (callState = 'ringing')
+		});
+	}
 
 	async function send() {
 		const body = text.trim();
@@ -126,7 +146,7 @@
 			if (m.type === 'ws_down') {
 				console.warn('[CHAT-CLIENT] ws_down — marking peer offline');
 				online = false;
-				endCall();
+				endCall(true); // socket is gone; a bye would never arrive
 			} else if (m.type === 'presence' && m.uid === data.peer) {
 				console.log('[CHAT-CLIENT] presence update for peer', m.online);
 				online = m.online as boolean;
@@ -143,93 +163,45 @@
 			});
 			} else if (m.type === 'msg') {
 				console.log('[CHAT-CLIENT] incoming msg but NOT from current peer, ignoring here', { from: m.from, expectedPeer: data.peer });
-			} else if (m.type === 'signal') handleSignal(m as never);
+			} else if (m.type === 'signal' && m.from === data.peer) {
+				// lazily create the mesh so an inbound offer can ring before we've called
+				mesh ??= makeMesh();
+				mesh.handle(m.from as string, m.signal as CallSignal);
+			}
 		});
 		ws_send(watch, true);
 		ws_send(check, true);
 	}
 
-	function createPC() {
-		pc = new RTCPeerConnection({ iceServers: [stun] });
-		pc.onicecandidate = (e) => {
-			if (e.candidate)
-				ws_send({ type: 'signal', to: data.peer, signal: { type: 'ice', candidate: e.candidate.toJSON() } });
-		};
-		pc.ontrack = (e) => { remoteStream = e.streams[0]; };
-		if (localStream) for (const t of localStream.getTracks()) pc.addTrack(t, localStream);
-	}
-
-	function handleSignal(m: { from: string; signal: { type: string; sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit } }) {
-		if (m.signal.type === 'ice' && pc) {
-			pc.addIceCandidate(new RTCIceCandidate(m.signal.candidate));
-		} else if (m.signal.type === 'offer') {
-			pendingOffer = m.signal.sdp!;
-			callState = 'ringing';
-		} else if (m.signal.type === 'answer' && pc) {
-			pc.setRemoteDescription(new RTCSessionDescription(m.signal.sdp!));
-			callState = 'connected';
-		}
-	}
-
 	async function startCall() {
-		localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: videoOn });
-		createPC();
-		const offer = await pc!.createOffer();
-		await pc!.setLocalDescription(offer);
-		ws_send({ type: 'signal', to: data.peer, signal: { type: 'offer', sdp: offer } });
+		mesh = makeMesh();
+		localStream = await mesh.open(videoOn);
+		await mesh.invite(data.peer);
 		callState = 'calling';
 	}
 
 	async function answerCall() {
-		localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: videoOn });
-		createPC();
-		await pc!.setRemoteDescription(new RTCSessionDescription(pendingOffer!));
-		const answer = await pc!.createAnswer();
-		await pc!.setLocalDescription(answer);
-		ws_send({ type: 'signal', to: data.peer, signal: { type: 'answer', sdp: answer } });
+		if (!mesh) return;
+		localStream = await mesh.open(videoOn);
+		await mesh.accept(data.peer);
 		callState = 'connected';
 	}
 
 	async function toggleVideo() {
 		videoOn = !videoOn;
-		if (localStream) {
-			if (videoOn) {
-				const s = await navigator.mediaDevices.getUserMedia({ video: true });
-				for (const t of s.getVideoTracks()) localStream.addTrack(t);
-			} else {
-				for (const t of localStream.getVideoTracks()) { t.stop(); localStream.removeTrack(t); }
-			}
-			if (pc) for (const t of localStream.getTracks()) {
-				const sender = pc.getSenders().find((s) => s.track?.kind === t.kind);
-				if (sender) sender.replaceTrack(t);
-			}
-		}
+		await mesh?.setVideo(videoOn);
 	}
 
 	function toggleMic() {
 		micOn = !micOn;
-		localStream?.getAudioTracks().forEach((t) => (t.enabled = micOn));
+		mesh?.setMic(micOn);
 	}
 
-	function endCall() {
-		pc?.close();
-		pc = null;
-		localStream?.getTracks().forEach((t) => t.stop());
-		localStream = null;
-		remoteStream = null;
-		callState = 'idle';
-		pendingOffer = null;
+	/** hangs up locally AND tells the peer, so their UI leaves the call too */
+	function endCall(silent = false) {
+		mesh?.hangup(silent);
+		resetCall();
 	}
-
-	let remoteVideo: HTMLVideoElement | undefined;
-	let localVideo: HTMLVideoElement | undefined;
-
-	$effect(() => {
-		if (remoteVideo && remoteStream) remoteVideo.srcObject = remoteStream;
-	});
-	$effect(() => {
-		if (localVideo && localStream) localVideo.srcObject = localStream;
-	});
 
 	onDestroy(() => {
 		ws_drop(watch);
@@ -273,7 +245,7 @@
 			{/if}
 			{#if callState === 'calling'}
 				<span class="text-[12px] text-faint">calling…</span>
-				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={endCall}>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={() => endCall()}>
 					<PhoneOff size={15} /> cancel
 				</button>
 			{/if}
@@ -282,7 +254,7 @@
 				<button class="btn btn-amber flex items-center gap-1.5 text-[13px]" onclick={answerCall}>
 					<Phone size={15} /> answer
 				</button>
-				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={endCall}>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={() => endCall()}>
 					<PhoneOff size={15} /> decline
 				</button>
 			{/if}
@@ -293,20 +265,20 @@
 				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={toggleVideo}>
 					{#if videoOn}<Video size={15} />{:else}<VideoOff size={15} />{/if} {videoOn ? 'video on' : 'video off'}
 				</button>
-				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px] text-red-500" onclick={endCall}>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px] text-red-500" onclick={() => endCall()}>
 					<PhoneOff size={15} /> hang up
 				</button>
 			{/if}
 		</div>
 	</header>
 	{#if callState === 'connected'}
-		<div class="relative mb-4 overflow-hidden rounded-lg border border-line bg-black">
-			<video autoplay playsinline bind:this={remoteVideo}
-				class="remote-video w-full max-h-[300px] object-contain"
-			/>
+		<div class="reveal relative mb-4 overflow-hidden rounded-[16px] border border-accent/40 bg-black shadow-[0_0_0_1px_rgba(217,139,95,0.08),0_20px_50px_-20px_rgba(0,0,0,0.6)]">
+			<RemoteVideo stream={remoteStream} class="w-full max-h-[300px] object-contain" />
 			{#if localStream}
-				<video autoplay playsinline muted bind:this={localVideo}
-					class="absolute bottom-3 right-3 h-24 w-32 rounded-lg border border-line bg-black object-cover"
+				<RemoteVideo
+					stream={localStream}
+					muted
+					class="absolute bottom-3 right-3 h-24 w-32 rounded-[10px] border border-line-2 bg-black object-cover shadow-lg"
 				/>
 			{/if}
 		</div>
