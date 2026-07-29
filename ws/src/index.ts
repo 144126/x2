@@ -1,4 +1,5 @@
 import { relay } from './relay';
+import { online } from './online';
 import { get_secret, type SecretVal } from '../../src/lib/server/qdrant';
 
 interface Env {
@@ -37,6 +38,13 @@ const worker: ExportedHandler<Env> = {
 			console.log('[WS-WORKER] /relay result:', result);
 			if (!result) return new Response('no target', { status: 400 });
 			return Response.json(result, { status: result.ok ? 200 : 502 });
+		}
+
+		if (url.pathname === '/online' && request.method === 'POST') {
+			const body = await request.json().catch(() => null);
+			const uids = await online(body, env.CHAT_HUB);
+			if (!uids) return new Response('bad body', { status: 400 });
+			return Response.json({ online: uids });
 		}
 
 		// /credits/<uid>/balance|deduct|credit — one CreditAccount DO instance per uid

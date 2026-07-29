@@ -96,6 +96,8 @@
 		{ id: string; n: string; a?: string; g?: number; r?: string; co?: string; st?: string; ci?: string; w?: string; wu?: string; s: number }[]
 	>([]);
 	let searching = $state(false);
+	let onlineOnly = $state(false);
+	let presenceUnavailable = $state(false);
 
 	async function search() {
 		if (!q.trim()) return;
@@ -106,8 +108,11 @@
 		if (age_max) p.set('age_max', age_max);
 		if (country) p.set('country', country);
 		if (region) p.set('state', region);
+		if (onlineOnly) p.set('online', '1');
 		const res = await fetch(`/api/search?${p}`);
-		results = (await res.json()).r ?? [];
+		const body = await res.json();
+		results = body.r ?? [];
+		presenceUnavailable = onlineOnly && body.filtered === false;
 		searching = false;
 	}
 </script>
@@ -129,7 +134,7 @@
 			/>
 		</div>
 		<button class="btn btn-amber flex items-center justify-center gap-2 whitespace-nowrap" onclick={search} disabled={searching}>
-			{#if !searching}<Search size={15} />{/if} {searching ? 'searching' : 'find my people'}
+			{#if !searching}<Search size={15} />{/if} {searching ? 'searching' : 'search'}
 		</button>
 	</div>
 
@@ -163,7 +168,15 @@
 			aria-label="maximum age"
 		/>
 		<LocationPicker bind:country bind:region showCity={false} anyLabel="any country" />
+		<label class="flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
+			<input type="checkbox" class="!w-auto accent-accent" bind:checked={onlineOnly} />
+			online now
+		</label>
 	</div>
+
+	{#if presenceUnavailable}
+		<p class="mt-4 text-[13px] text-mute">couldn't check who's online — showing everyone.</p>
+	{/if}
 
 	{#if results.length}
 		<ul class="results mt-7 grid gap-3.5">

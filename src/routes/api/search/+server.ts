@@ -22,9 +22,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const age_max = Number(url.searchParams.get('age_max'));
 	if (age_min || age_max)
 		conds.push(range('ag', age_min || undefined, age_max || undefined));
-	const hits = await search(env, vec, f(...conds), 20);
+	const only_online = url.searchParams.get('online') === '1';
+	// over-fetch when filtering, since most candidates will be offline at any moment
+	const hits = await search(env, vec, f(...conds), only_online ? 60 : 20);
 	const { Country } = await import('country-state-city');
-	const r = hits
+	let r = hits
 		.map((h) => {
 			const u = h.payload as unknown as User;
 			const wu = u.w && u.co
@@ -45,5 +47,26 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			};
 		})
 		.filter((x) => x.id !== locals.user!.id);
-	return json({ r });
+
+	// presence is per-uid in ChatHub with no bulk index, so this fans out one check per
+	// candidate. Fails open: an unreachable ws worker returns everyone, flagged, rather
+	// than an empty page that would read as "nobody is online".
+	let filtered = true;
+	if (only_online) {
+		try {
+			const res = await locals.x2_ws.fetch('https://x2-ws/online', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ uids: r.map((x) => x.id) })
+			});
+			const data = (await res.json()) as { online?: unknown };
+			if (!Array.isArray(data?.online)) throw new Error('bad presence response');
+			const live = new Set(data.online as string[]);
+			r = r.filter((x) => live.has(x.id));
+		} catch {
+			filtered = false;
+		}
+	}
+
+	return json({ r: r.slice(0, 20), filtered });
 };
