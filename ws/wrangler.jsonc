@@ -20,10 +20,15 @@
 	"triggers": { "crons": ["*/1 * * * *"] },
 	// X2_ORIGIN: the deployed x2 (main) worker's public origin — set before deploying so the
 	// cron can reach POST /api/cron/dispatch-scheduled.
-	"vars": { "SECRET": "", "X2_ORIGIN": "" },
+	// SECRET must be the SAME store_id+secret_name x2's wrangler.jsonc uses — this is what
+	// signs/verifies ws tokens across the two workers. It was previously a blank plain `vars`
+	// entry, which `wrangler deploy` used to silently stomp a dashboard-set value with "" on
+	// every push (same failure mode WS_ORIGIN had) — every websocket handshake got a 403.
+	"vars": { "X2_ORIGIN": "" },
 	"secrets_store_secrets": [
 		{ "binding": "QDRANT_URL", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_URL" },
-		{ "binding": "QDRANT_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_KEY" }
+		{ "binding": "QDRANT_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_KEY" },
+		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" }
 	],
 	"workers_dev": true,
 	"preview_urls": true,
