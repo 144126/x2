@@ -1,9 +1,9 @@
-import { ensure, upsert, scroll, remove, new_id, f, eq, type QEnv } from './qdrant';
+import { ensure, upsert, scroll, remove, new_id, f, eq, ZV, type QEnv } from './qdrant';
 
 export interface Folder {
 	s: 'fo';
 	id: string;
-	owner: string;
+	ow: string; // owner uid — short key, matches the indexed field the filters use
 	name: string;
 	convs: string[]; // conversation ids (peer uid or `g:<gid>`) assigned to this folder
 	d: number;
@@ -11,8 +11,8 @@ export interface Folder {
 
 export async function save_folder(env: QEnv, owner: string, name: string): Promise<Folder> {
 	await ensure(env);
-	const fo: Folder = { s: 'fo', id: new_id(), owner, name, convs: [], d: Date.now() };
-	await upsert(env, [{ id: fo.id, vector: new Array(4096).fill(0), payload: fo as unknown as Record<string, unknown> }]);
+	const fo: Folder = { s: 'fo', id: new_id(), ow: owner, name, convs: [], d: Date.now() };
+	await upsert(env, [{ id: fo.id, vector: ZV, payload: fo as unknown as Record<string, unknown> }]);
 	return fo;
 }
 
@@ -29,7 +29,7 @@ async function owned_folder(env: QEnv, uid: string, folder_id: string): Promise<
 }
 
 async function save(env: QEnv, fo: Folder): Promise<void> {
-	await upsert(env, [{ id: fo.id, vector: new Array(4096).fill(0), payload: fo as unknown as Record<string, unknown> }]);
+	await upsert(env, [{ id: fo.id, vector: ZV, payload: fo as unknown as Record<string, unknown> }]);
 }
 
 export async function assign_conv(env: QEnv, uid: string, folder_id: string, conv: string): Promise<boolean> {
