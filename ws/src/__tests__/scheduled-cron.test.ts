@@ -8,7 +8,7 @@ import worker from '../index';
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	getSecretMock.mockResolvedValue('shh');
+	getSecretMock.mockImplementation(async (v: unknown) => (v ? String(v) : ''));
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('ok')));
 });
 
@@ -19,7 +19,11 @@ describe('scheduled cron', () => {
 	});
 
 	it('calls the dispatch endpoint with the shared secret', async () => {
-		await worker.scheduled!({} as never, { X2_ORIGIN: 'https://x2.example' } as never, {} as never);
+		await worker.scheduled!(
+			{} as never,
+			{ X2_ORIGIN: 'https://x2.example', SECRET: 'shh' } as never,
+			{} as never
+		);
 		expect(fetch).toHaveBeenCalledWith(
 			'https://x2.example/api/cron/dispatch-scheduled',
 			expect.objectContaining({ method: 'POST', headers: { authorization: 'Bearer shh' } })

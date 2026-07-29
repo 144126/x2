@@ -9,7 +9,7 @@ interface Env {
 	DEV_SECRET?: SecretVal; // local dev only (ws/.dev.vars); see get_secret
 	QDRANT_URL: string | { get?: () => Promise<string> };
 	QDRANT_KEY: string | { get?: () => Promise<string> };
-	X2_ORIGIN?: string; // deployed main worker's origin, e.g. "https://x2.<account>.workers.dev"
+	X2_ORIGIN: SecretVal; // deployed main worker's origin, e.g. "https://x2.apexlinks.org"
 }
 
 const worker: ExportedHandler<Env> = {
@@ -69,10 +69,11 @@ const worker: ExportedHandler<Env> = {
 	// cron trigger lives here instead and calls back into the main worker's internal endpoint,
 	// which has the push-notify + socket-relay code that scheduled sends need.
 	async scheduled(_event, env): Promise<void> {
-		if (!env.X2_ORIGIN) return;
+		const origin = await get_secret(env.X2_ORIGIN);
+		if (!origin) return;
 		const secret = await get_secret(env.SECRET, env.DEV_SECRET);
 		if (!secret) return;
-		await fetch(`${env.X2_ORIGIN}/api/cron/dispatch-scheduled`, {
+		await fetch(`${origin}/api/cron/dispatch-scheduled`, {
 			method: 'POST',
 			headers: { authorization: `Bearer ${secret}` }
 		}).catch(() => {});
