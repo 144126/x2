@@ -75,7 +75,7 @@
 		find people who <em class="italic text-accent">get it</em>.
 	</h2>
 
-	<div class="flex flex-col gap-3 sm:flex-row">
+	<div class="flex flex-row gap-2 sm:gap-3">
 		<div class="relative min-w-0 flex-1">
 			<Search
 				size={18}

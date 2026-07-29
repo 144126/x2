@@ -417,12 +417,13 @@
 				}}
 			/>
 			<button
-				class="btn btn-amber shrink-0 flex items-center gap-1.5 !px-4"
+				class="btn btn-amber shrink-0 !px-4"
 				type="submit"
 				disabled={busy}
+				aria-label="send message"
+				title="send"
 			>
 				<SendIcon size={16} />
-				{busy ? 'sending' : 'send'}
 			</button>
 		</form>
 	{:else}
