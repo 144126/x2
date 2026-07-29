@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import type { GroupView } from '$lib/server/group';
+	import Modal from '$lib/components/Modal.svelte';
 	import { Search, Plus, Users } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -14,6 +15,7 @@
 	let description = $state('');
 	let creating = $state(false);
 	let err = $state('');
+	let creatingOpen = $state(false);
 
 	async function search() {
 		searching = true;
@@ -37,6 +39,7 @@
 			return;
 		}
 		const { g } = await res.json();
+		creatingOpen = false;
 		goto(`/app/rooms/${g.id}`);
 	}
 
@@ -92,7 +95,7 @@
 						{/if}
 					</div>
 					{#if g.description}
-						<p class="mt-1.5 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">{g.description}</p>
+						<p class="mt-1.5 max-w-[60ch] truncate text-[14.5px] leading-[1.5] text-ink-soft">{g.description}</p>
 					{/if}
 					<div class="mt-3 flex items-center gap-3">
 						<span class="flex items-center gap-1 text-[12px] text-mute">
@@ -106,12 +109,17 @@
 			{/each}
 		</ul>
 	{:else if searching === false && q}
-		<p class="mt-6 text-[14.5px] text-faint">nothing matched. start the room yourself below.</p>
+		<p class="mt-6 text-[14.5px] text-faint">nothing matched. start the room yourself.</p>
 	{/if}
 </section>
 
 <section class="mb-[64px]">
-	<div class="eyebrow mb-4">start a room</div>
+	<button class="btn btn-amber flex items-center gap-1.5" onclick={() => (creatingOpen = true)}>
+		<Plus size={15} /> start a room
+	</button>
+</section>
+
+<Modal bind:open={creatingOpen} title="start a room">
 	<form class="flex flex-col gap-3" onsubmit={(e) => (e.preventDefault(), create())}>
 		<input bind:value={name} placeholder="room name" maxlength="60" />
 		<textarea
@@ -124,7 +132,7 @@
 		</button>
 		{#if err}<p class="text-[13px] text-red-400">{err}</p>{/if}
 	</form>
-</section>
+</Modal>
 
 <section>
 	<div class="eyebrow mb-1">your rooms</div>
