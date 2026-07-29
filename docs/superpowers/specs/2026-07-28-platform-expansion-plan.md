@@ -1,6 +1,7 @@
 # x2 platform expansion — master technical spec + test plan
 
 Covers, in the order the user listed them:
+
 1. Responsive pass, send icon button, custom radio (`/app/random`), custom select (used on `/app/profile` + `/app`), realtime presence correctness.
 2. Message scheduling (Cloudflare Cron), file sending, chat folders, message embedding + search.
 3. Groups-in-common on `/app/user/[id]`.
@@ -17,7 +18,7 @@ Covers, in the order the user listed them:
 
 ### 1.1 Presence bug (found during audit)
 
-`ws/src/hub.ts` `webSocketClose()` currently announces `online:false` for a uid the instant *any one* of its sockets closes, even if the same uid has another live socket (second tab/device). `getWebSockets(uid)` is never re-checked after removal.
+`ws/src/hub.ts` `webSocketClose()` currently announces `online:false` for a uid the instant _any one_ of its sockets closes, even if the same uid has another live socket (second tab/device). `getWebSockets(uid)` is never re-checked after removal.
 
 Fix: only announce offline when zero sockets remain for that uid.
 
@@ -31,6 +32,7 @@ async webSocketClose(ws: WebSocket): Promise<void> {
 	}
 }
 ```
+
 Note: `ws.close()` must run before the socket-count check only matters if the runtime hasn't already evicted `ws` from `getWebSockets()` at close time — Workers' `getWebSockets()` reflects hibernatable-websocket state immediately, so checking after `ws.close()` is safe; the important change is checking length, not the close-vs-check ordering.
 
 The `connect`-side `announce(uid, true)` is harmless when redundant (second tab connecting while first is open) — no change needed there.
@@ -53,7 +55,9 @@ let {
 	'aria-label'?: string;
 } = $props();
 ```
+
 Behavior contract (pinned by tests):
+
 - Renders a `button[role=combobox][aria-haspopup=listbox][aria-expanded]` trigger showing the selected option's `label`, or `placeholder` when `value` doesn't match any option.
 - Clicking the trigger toggles a `ul[role=listbox]` of `li[role=option][aria-selected]`.
 - Clicking an option sets `value` to its `.value`, closes the list, returns focus to the trigger.
@@ -74,8 +78,14 @@ let {
 	name,
 	value,
 	onselect
-}: { checked?: boolean; name: string; value: string; onselect?: (value: string) => void } = $props();
+}: {
+	checked?: boolean;
+	name: string;
+	value: string;
+	onselect?: (value: string) => void;
+} = $props();
 ```
+
 Renders `span[role=radio][aria-checked][tabindex]` (roving tabindex: `0` when checked or when it's the group's first item and nothing is checked yet, else `-1`), a visual dot that fills when checked, driven entirely by CSS/attributes (no native `<input>` in the DOM — the user asked for "custom radio boxes," and `/app/random` already wraps everything in a clickable `<label class="card">`, so click-to-select must be wired via `onclick`/`onkeydown` since there's no native input to carry click-through semantics anymore).
 
 ```ts
@@ -85,6 +95,7 @@ let {
 	options
 }: { value?: string; options: { value: string; label: string }[] } = $props();
 ```
+
 Keyboard: ArrowDown/ArrowRight moves to next option and selects it (roving tabindex + selection are the same action, matching native radio-group behavior); ArrowUp/ArrowLeft moves to previous; Home/End jump to first/last; clicking any option selects it directly.
 
 `/app/random/+page.svelte` swaps its three `label.card > input[type=radio]` blocks for one `<RadioGroup bind:value={mode} options={[...]} />`.
@@ -98,7 +109,8 @@ Keyboard: ArrowDown/ArrowRight moves to next option and selects it (roving tabin
 Audit target: every `max-w-[NNNpx]`/fixed-`w-[NNNpx]` in `src/routes/**/*.svelte` and `src/lib/**/*.svelte` that lacks a smaller-viewport override, plus horizontal-scroll risk from `whitespace-nowrap` buttons in narrow flex rows (`/app`, `/app/groups` search rows), plus the chat/groups `h-[calc(100dvh-150px)]` headers which assume a fixed header height that shifts once InstallBanner/NotifyPrompt banners are visible (they're `fixed`, so they don't affect layout height — no fix needed there, confirmed by inspection, not assumed).
 
 Concrete changes:
-- `/app/+page.svelte` and `/app/groups/+page.svelte`: the search-button `whitespace-nowrap` next to a `flex-1` input already stacks via `flex-col sm:flex-row` — verified fine; the *filter row* (`gender select + age inputs + LocationPicker`) needs `flex-wrap` (already present) confirmed sufficient down to 320px width once selects are the new custom component (native selects and the age number inputs have a browser-enforced minimum intrinsic width that can force horizontal scroll at ≤360px; the custom `<Select>` has no such floor and is given `min-w-0`).
+
+- `/app/+page.svelte` and `/app/groups/+page.svelte`: the search-button `whitespace-nowrap` next to a `flex-1` input already stacks via `flex-col sm:flex-row` — verified fine; the _filter row_ (`gender select + age inputs + LocationPicker`) needs `flex-wrap` (already present) confirmed sufficient down to 320px width once selects are the new custom component (native selects and the age number inputs have a browser-enforced minimum intrinsic width that can force horizontal scroll at ≤360px; the custom `<Select>` has no such floor and is given `min-w-0`).
 - `PhoneInput.svelte` and `LocationPicker.svelte`: add `min-w-0` to flex children that don't already have it, so they can shrink inside a `flex-wrap` row instead of forcing overflow.
 - Root layout bottom tab bar and header: already responsive (verified — `grid-cols-4`, `sm:hidden`/`hidden sm:flex` split, `env(safe-area-inset-bottom)` already applied). No change.
 - Global rule: audit for any element wider than `100vw` at 320px, 375px, 768px, 1024px via Playwright viewport screenshots as part of the manual verification pass (not an automated test — see §1.7).
@@ -110,10 +122,12 @@ Concrete changes:
 All new logic that's pure/testable goes in `.ts` files with real unit tests; component interaction tests use the `component` vitest project (jsdom + `@testing-library/svelte`) already set up in `vite.config.ts`.
 
 **`ws/src/__tests__/hub-do.test.ts`** (extend existing file) — new cases:
-- "does not announce offline while a second socket for the same uid is still open" — two `FakeSocket`s tagged `['alice']`, close one, assert the *other* socket never receives a `presence offline` message and `notify_watchers`'s underlying `stub.fetch` (via `CHAT_HUB.get`) is not called for `alice`'s watchers.
+
+- "does not announce offline while a second socket for the same uid is still open" — two `FakeSocket`s tagged `['alice']`, close one, assert the _other_ socket never receives a `presence offline` message and `notify_watchers`'s underlying `stub.fetch` (via `CHAT_HUB.get`) is not called for `alice`'s watchers.
 - "announces offline once the last socket for a uid closes" — one socket tagged `['alice']`, close it, assert presence-offline is broadcast (existing behavior, re-asserted after the fix to lock in no regression).
 
 **`src/lib/components/__tests__/Select.test.ts`** (jsdom, `@testing-library/svelte`):
+
 - renders the placeholder when `value` matches no option.
 - renders the matching option's label when `value` is set.
 - opens the listbox on trigger click; `aria-expanded` flips true.
@@ -128,6 +142,7 @@ All new logic that's pure/testable goes in `.ts` files with real unit tests; com
 - `aria-label` passthrough renders on the trigger.
 
 **`src/lib/components/__tests__/RadioGroup.test.ts`**:
+
 - renders one `role=radio` per option, exactly one with `aria-checked="true"` matching `value`.
 - clicking an unselected option sets `value` to it.
 - `ArrowDown`/`ArrowRight` from the checked option selects the next option; wraps or clamps — **decide and pin**: clamp at the last option (no wrap), matching `/app/random`'s fixed 3-item list where wrap-around isn't expected UX. Same for `ArrowUp`/`ArrowLeft` clamping at the first.
@@ -135,14 +150,17 @@ All new logic that's pure/testable goes in `.ts` files with real unit tests; com
 - roving tabindex: only the checked option (or the first, if none checked) has `tabindex="0"`; the rest have `tabindex="-1"`.
 
 **`src/routes/app/random/__tests__/page.test.ts`** (component test, jsdom) — smoke test only (this page has no server logic to unit test beyond what RadioGroup already covers):
+
 - renders three radio options with labels "text only" / "voice + text" / "video + text".
 - defaults to "video + text" selected (matches current `mode = $state<Mode>('video')`).
 - clicking "text only" updates the selected option.
 
 **`src/routes/app/chat/[id]/__tests__/send-button.test.ts`** — if the chat page's existing test coverage is nil (confirmed: no test file exists for this route today), add a narrow component test scoped only to the button:
+
 - extract the icon button markup isn't practical to unit-test in isolation without duplicating page state; instead assert via a Playwright/manual check (see §1.7) that the button has `aria-label="send message"` and no visible text, since testing-library jsdom tests for this page would require mocking `ws_on`/`RTCPeerConnection`/`getUserMedia`/media APIs disproportionate to what's being changed (a label swap). **Explicit ponytail-style skip, stated plainly**: full page-level render test skipped as disproportionate; covered by manual Playwright check instead.
 
 **Manual verification (not automated, run once before calling Step 1 done):**
+
 - Playwright screenshots of `/app`, `/app/random`, `/app/profile`, `/app/chat/[id]` at 320×640, 375×667, 768×1024, 1280×800 — confirm no horizontal scrollbar, no overlapping elements, custom select/radio render correctly and are usable via touch tap.
 - Two real browser tabs signed in as the same user, confirm closing one tab leaves the other showing "online" for a peer watching that uid.
 
@@ -153,19 +171,21 @@ All new logic that's pure/testable goes in `.ts` files with real unit tests; com
 ### 2.1 Message scheduling (Cloudflare Cron)
 
 New Qdrant record type:
+
 ```ts
 interface ScheduledMessage {
 	s: 'sm';
 	id: string;
-	f: string;          // sender uid
-	to?: string;         // recipient uid (1:1)
-	group?: string;       // group id (group send)
+	f: string; // sender uid
+	to?: string; // recipient uid (1:1)
+	group?: string; // group id (group send)
 	text: string;
 	image?: string;
-	at: number;          // unix ms when it should send
-	sent?: boolean;       // set true once dispatched (idempotency guard)
+	at: number; // unix ms when it should send
+	sent?: boolean; // set true once dispatched (idempotency guard)
 }
 ```
+
 - `POST /api/send` gains an optional `at?: number` (future ms timestamp) — when present and `> Date.now() + 60_000` (must be at least 1 minute out, otherwise just send now), stores a `ScheduledMessage` instead of calling `send_msg`/`send_group_msg`, returns `{ ok: true, scheduled: true, id }`.
 - New `GET/DELETE /api/scheduled` — list/cancel a user's own pending scheduled messages (`sent` unset, `f === locals.user.id`).
 - `wrangler.jsonc` gains `"triggers": { "crons": ["*/1 * * * *"] }` and the SvelteKit Cloudflare adapter's `scheduled(event, env, ctx)` export (via `src/hooks.server.ts` or a dedicated `src/scheduled.ts` merged into the worker entry — SvelteKit's Cloudflare adapter supports exporting additional handlers from `src/worker/index.ts` in recent adapter versions; confirm exact wiring against the installed `@sveltejs/adapter-cloudflare` version before implementing, since this differs across adapter releases).
@@ -179,6 +199,7 @@ Extend `src/lib/server/media.ts`'s `TYPES` map to a generic `ALLOWED_TYPES` cove
 ### 2.3 Chat folders
 
 New Qdrant record:
+
 ```ts
 interface Folder {
 	s: 'fo';
@@ -189,6 +210,7 @@ interface Folder {
 	d: number;
 }
 ```
+
 `save_folder`, `list_folders(env, uid)`, `assign_conv(env, folder_id, conv_id)`, `unassign_conv`, `delete_folder` in a new `src/lib/server/folders.ts`. `/app/+page.svelte`'s "recent threads" list gains a folder-tab strip (built from the new custom `<Select>`-adjacent tab component, or plain buttons — a tab strip isn't a `<select>`, no native-control replacement needed) filtering `convs` by the active folder; "all" is always the default first tab.
 
 ### 2.4 Message embedding + search
@@ -201,7 +223,7 @@ Currently only `User` and `Group` records get embedded (`src/lib/server/or.ts` �
 
 `/app/user/[id]/+page.server.ts` gains: fetch `list_groups(env, viewedUid)` and `list_groups(env, viewerUid)` in parallel, intersect by `id`, pass `{ shared: GroupView[] }` to the page. Page renders a "N groups in common" line plus an expandable list of all of them (name + link to `/app/groups/[id]`), matching the existing `card` visual language. Edge case: if `viewedUid === viewerUid` (viewing your own profile via a stray link), skip the section entirely rather than showing "all your groups in common with yourself."
 
-Function signature: `shared_groups(env: QEnv, a: string, b: string): Promise<GroupView[]>` in `group.ts`, unit-tested directly (two users, overlapping and non-overlapping membership sets, empty-intersection case, same-user case returns that user's full group list — but the *route* is what suppresses rendering it, not the function, since the function is a generic set-intersection utility with a legitimate a===b answer).
+Function signature: `shared_groups(env: QEnv, a: string, b: string): Promise<GroupView[]>` in `group.ts`, unit-tested directly (two users, overlapping and non-overlapping membership sets, empty-intersection case, same-user case returns that user's full group list — but the _route_ is what suppresses rendering it, not the function, since the function is a generic set-intersection utility with a legitimate a===b answer).
 
 ---
 
@@ -212,7 +234,8 @@ Function signature: `shared_groups(env: QEnv, a: string, b: string): Promise<Gro
 Taking: kobo-denominated integer balance, daily free grant, per-model token pricing table, Paystack purchase flow shape.
 
 Fixing (per the user's "5400 free credits per day" instruction and this being a from-scratch port, not a copy-paste):
-- **Atomicity**: e4's read-then-write balance has no CAS and is a real race under concurrent requests. x2 already has a natural single-threaded-per-key primitive available — a Cloudflare Durable Object. New DO `CreditAccount` (one instance per uid, `idFromName(uid)`), all balance mutations (`grant`, `deduct`, `credit`) happen inside the DO's single-threaded `fetch` handler, serializing concurrent calls for the same user automatically. Balance is persisted in the DO's own transactional `storage` (`state.storage.get/put`), not Qdrant — Qdrant stays vector/search-only, matching x2's existing design philosophy ("Qdrant is the only datastore" reinterpreted as "the only *searchable* datastore"; a DO is not a competing datastore, it's per-entity durable state, same category as the existing `ChatHub`/`MatchLobby` DOs).
+
+- **Atomicity**: e4's read-then-write balance has no CAS and is a real race under concurrent requests. x2 already has a natural single-threaded-per-key primitive available — a Cloudflare Durable Object. New DO `CreditAccount` (one instance per uid, `idFromName(uid)`), all balance mutations (`grant`, `deduct`, `credit`) happen inside the DO's single-threaded `fetch` handler, serializing concurrent calls for the same user automatically. Balance is persisted in the DO's own transactional `storage` (`state.storage.get/put`), not Qdrant — Qdrant stays vector/search-only, matching x2's existing design philosophy ("Qdrant is the only datastore" reinterpreted as "the only _searchable_ datastore"; a DO is not a competing datastore, it's per-entity durable state, same category as the existing `ChatHub`/`MatchLobby` DOs).
 - **Insufficient-balance gate**: e4 never blocks usage. x2's Groq-similarity feature (§6) is exactly the kind of call that should be gated — `deduct` returns a discriminated result `{ ok: true, balance: number } | { ok: false, reason: 'insufficient_credits'; balance: number }` instead of e4's silent clamp-to-zero, and the caller must check before making the paid LLM call, not after.
 - **Real ledger**: new `CreditEvent` record type persisted to Qdrant (searchable/listable, unlike the DO's own opaque storage) for user-facing history: `{ s: 'ce', id, uid, kind: 'daily_grant'|'purchase'|'deduct'|'referral_bonus', amount, balance_after, ts, ref? }`. Written by the DO after each mutation via a fire-and-forget `ctx.waitUntil` call back out to Qdrant (the DO is the source of truth for balance; Qdrant ledger is for display/audit only — if the two ever disagree, the DO wins).
 - **Paystack double-credit bug**: e4 credits from webhook, redirect-callback, AND a client-called verify-payment endpoint, with no dedup. x2's port implements exactly one authoritative credit path (webhook `charge.success`), guarded by a "have we processed this Paystack reference" check — a Qdrant point keyed by `uuid_from('paystack:'+reference)` written atomically as part of crediting; a second delivery for the same reference finds the point already exists and no-ops. The redirect-callback page becomes purely a "thanks, check your balance" UI with no crediting side-effect of its own.
@@ -222,17 +245,24 @@ Fixing (per the user's "5400 free credits per day" instruction and this being a 
 ```ts
 // src/lib/server/credits.ts (Qdrant side: ledger only)
 interface CreditEvent {
-	s: 'ce'; id: string; uid: string;
+	s: 'ce';
+	id: string;
+	uid: string;
 	kind: 'daily_grant' | 'purchase' | 'deduct' | 'referral_bonus';
-	amount: number;       // signed: positive for grants/purchases/bonus, negative for deduct
+	amount: number; // signed: positive for grants/purchases/bonus, negative for deduct
 	balance_after: number;
 	ts: number;
-	ref?: string;         // paystack reference, for purchase events
+	ref?: string; // paystack reference, for purchase events
 }
-export async function record_event(env: QEnv, e: Omit<CreditEvent,'s'|'id'>): Promise<void>
-export async function credit_history(env: QEnv, uid: string, limit?: number): Promise<CreditEvent[]>
-export async function mark_paystack_ref_processed(env: QEnv, ref: string): Promise<boolean> // false if already processed
+export async function record_event(env: QEnv, e: Omit<CreditEvent, 's' | 'id'>): Promise<void>;
+export async function credit_history(
+	env: QEnv,
+	uid: string,
+	limit?: number
+): Promise<CreditEvent[]>;
+export async function mark_paystack_ref_processed(env: QEnv, ref: string): Promise<boolean>; // false if already processed
 ```
+
 ```ts
 // ws/src/credit_account.ts (new Durable Object)
 export const DAILY_GRANT = 5400; // kobo, per user's explicit instruction
@@ -240,13 +270,14 @@ export class CreditAccount implements DurableObject {
 	// POST /balance -> { balance: number, granted_today: boolean }
 	// POST /deduct  body:{amount:number} -> { ok:true, balance } | { ok:false, reason:'insufficient_credits', balance }
 	// POST /credit  body:{amount:number, kind, ref?} -> { balance }
-	async fetch(request: Request): Promise<Response>
+	async fetch(request: Request): Promise<Response>;
 }
 ```
+
 ```ts
 // src/lib/server/pricing.ts — per-model USD/1M-token rates, ported table from e4, same shape
-export function calc_cost_usd(model: string, input_tokens: number, output_tokens: number): number
-export function usd_to_kobo(usd: number, rate?: number): number // rate default from env NGN_USD
+export function calc_cost_usd(model: string, input_tokens: number, output_tokens: number): number;
+export function usd_to_kobo(usd: number, rate?: number): number; // rate default from env NGN_USD
 ```
 
 ### 4.3 Test plan (high level — full test file list to be written when this step starts)
@@ -265,24 +296,38 @@ export function usd_to_kobo(usd: number, rate?: number): number // rate default 
 Taking: `ac` partner-code field on `User`, sqids-based code generation, `localStorage`-based referral-link capture (`?c=` param + `/i/<code>` redirect), self-referral block, deterministic-point-id idempotency pattern for the payout ledger, webhook-driven (not partner-triggered) payout, Paystack transfer/recipient flow, cron-based retry of failed/stuck payouts, "duplicate transfer reference = already succeeded" idempotency backstop.
 
 Deciding differently per the user's explicit instruction ("54% equivalent of the credits they bought"):
+
 - **Commission is in credits, not currency.** Unlike beee (real bank transfer via Paystack Transfer API), x2's commission is `Math.round(purchased_kobo_equivalent_in_credits * 0.54)` credited directly to the inviter's `CreditAccount` DO (§4) via its `/credit` endpoint with `kind:'referral_bonus'` — no Paystack transfer, no bank-account collection, no `run_payout`/`retry_failed_payouts`/cron-retry machinery needed, because there's no external money movement to retry. This is a meaningfully simpler port than beee's actual mechanism, and should be called out to the user as a deliberate simplification once this step starts (ponytail: beee's transfer/retry machinery exists to handle real bank transfers failing; a credits-ledger credit inside an already-atomic DO call cannot fail the way a bank transfer can, so that whole subsystem doesn't need porting — flag this trade-off explicitly rather than silently dropping "transfers and all" from the request).
-- **Same Paystack keys**: reuses whatever `PAYSTACK_SECRET_KEY_TEST`/`PAYSTACK_SECRET_KEY_LIVE`/`PAYSTACK_TEST` secrets already exist for credit *purchases* (§4) — there is no separate transfer-side key needed since there's no transfer.
+- **Same Paystack keys**: reuses whatever `PAYSTACK_SECRET_KEY_TEST`/`PAYSTACK_SECRET_KEY_LIVE`/`PAYSTACK_TEST` secrets already exist for credit _purchases_ (§4) — there is no separate transfer-side key needed since there's no transfer.
 
 ### 5.2 Types and signatures
 
 ```ts
 // User gains:
-interface User { /* ...existing... */ ac?: string; invited_by?: string; }
+interface User {
+	/* ...existing... */ ac?: string;
+	invited_by?: string;
+}
 // src/lib/partner_code.ts (client-safe, ported near-verbatim from beee)
-export function gen_partner_code(): string  // sqids([Date.now()/1000, random 1000-9999])
+export function gen_partner_code(): string; // sqids([Date.now()/1000, random 1000-9999])
 // src/lib/server/partner.ts
-export async function ensure_partner_code(env: QEnv, uid: string): Promise<string>
-export async function attribute_referral(env: QEnv, new_uid: string, code: string): Promise<{ ok: boolean; inviter?: string }>
+export async function ensure_partner_code(env: QEnv, uid: string): Promise<string>;
+export async function attribute_referral(
+	env: QEnv,
+	new_uid: string,
+	code: string
+): Promise<{ ok: boolean; inviter?: string }>;
 // called from registration/signup flow; self-referral impossible by construction here since
 // code is looked up to a different, already-existing uid before the new account is created
-export async function pay_referral_bonus(env: QEnv, purchase_kobo: number, inviter_uid: string, purchase_ref: string): Promise<void>
+export async function pay_referral_bonus(
+	env: QEnv,
+	purchase_kobo: number,
+	inviter_uid: string,
+	purchase_ref: string
+): Promise<void>;
 // idempotency: same pattern as §4's paystack-ref dedup — a `ref` already paid a bonus is skipped
 ```
+
 Routes: `GET /i/[code]` → redirect to `/login?c=<code>` (x2 has no separate `/register` — signup is Google OAuth + `/api/auth/login` per existing code, so the capture point is wherever local/Google signup finalizes account creation, not a dedicated registration form like beee's).
 
 ### 5.3 Test plan (high level)
@@ -299,8 +344,16 @@ Routes: `GET /i/[code]` → redirect to `/login?c=<code>` (x2 has no separate `/
 ```ts
 // src/lib/server/groq.ts
 export const GROQ_MODEL = 'llama3-8b-8192';
-export async function whats_in_common(env: QEnv, a: User, b: User): Promise<{ ok: true; text: string; cost_kobo: number } | { ok: false; reason: 'insufficient_credits' | 'llm_error' }>
+export async function whats_in_common(
+	env: QEnv,
+	a: User,
+	b: User
+): Promise<
+	| { ok: true; text: string; cost_kobo: number }
+	| { ok: false; reason: 'insufficient_credits' | 'llm_error' }
+>;
 ```
+
 Flow: build a compact prompt from both users' `a`/`i`/`ag`/`co`/`st`/`ci` fields (never send email/password/whatsapp), call Groq's OpenAI-compatible `/openai/v1/chat/completions` with `GROQ` secret, compute cost via §4's `pricing.ts` (Groq's llama3-8b rate needs adding to the rate table — check Groq's published per-token price at implementation time, don't guess a number now), **check-then-deduct** against the viewer's `CreditAccount` (deduct the viewer, not the profile owner — the viewer is the one spending credits to learn the commonality) via the gate from §4.2, before making the paid call — insufficient balance returns `insufficient_credits` without calling Groq at all. Route: `GET /api/user/[id]/common` (viewer-authenticated, `params.id` is the other user). UI: a "what we have in common" button on `/app/user/[id]/+page.svelte`, loading state, renders `text` on success, an upsell message ("out of credits, back tomorrow" or a link to buy) on `insufficient_credits`.
 
 Test plan: `whats_in_common` unit tests mock the Groq fetch and the credit-deduct call; cases — sufficient balance + successful Groq call deducts and returns text; insufficient balance short-circuits without calling `fetch`; Groq API error after a successful deduct triggers a refund credit (mirroring §4's "never lose the user's money on our own failure" principle, which is stricter than e4's original "no refund" behavior — explicitly better than the reference implementation here, matching the instruction to implement in "the best way possible").
@@ -309,7 +362,8 @@ Test plan: `whats_in_common` unit tests mock the Groq fetch and the credit-deduc
 
 ## §7 — Robust PWA push (reboot-survivable) (spec only)
 
-The existing push implementation (this repo, already shipped) is correct Web Push per RFC 8291/8292/8188 and does not need reboot-specific code — **push delivery surviving a phone reboot is an OS/browser guarantee, not something the app implements**: once a push subscription is registered, Android/iOS wake the browser's push service worker on an incoming push regardless of reboot state, *provided*:
+The existing push implementation (this repo, already shipped) is correct Web Push per RFC 8291/8292/8188 and does not need reboot-specific code — **push delivery surviving a phone reboot is an OS/browser guarantee, not something the app implements**: once a push subscription is registered, Android/iOS wake the browser's push service worker on an incoming push regardless of reboot state, _provided_:
+
 1. The PWA is actually installed (standalone) on iOS — already required and implemented (`ios_hint_needed`/install flow).
 2. The subscription hasn't silently expired — already handled (`sync_subscription` re-registers on every app load; §4/§6 additions don't change this).
 3. Battery-optimization "kill this app's background activity" settings on some Android OEMs (Xiaomi/Huawei/Samsung aggressive battery managers) can prevent Chrome itself from processing pushes even though the OS-level guarantee exists — this is user-device-setting territory, not app code; the only thing the app can do is document it (an in-app help note, non-technical) — no function/signature to write here, flagged as a real limitation rather than silently promised-and-unbuilt.

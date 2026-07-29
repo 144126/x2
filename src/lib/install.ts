@@ -57,12 +57,16 @@ export function install_hidden(now: number = Date.now()): boolean {
 }
 
 function is_ios(): boolean {
-	return /iPhone|iPad|iPod|Macintosh.*Mobile/.test(navigator.userAgent) && /iPhone|iPad|iPod/.test(navigator.userAgent);
+	return (
+		/iPhone|iPad|iPod|Macintosh.*Mobile/.test(navigator.userAgent) &&
+		/iPhone|iPad|iPod/.test(navigator.userAgent)
+	);
 }
 
 function is_standalone(): boolean {
 	return (
-		('standalone' in navigator && (navigator as unknown as { standalone?: boolean }).standalone === true) ||
+		('standalone' in navigator &&
+			(navigator as unknown as { standalone?: boolean }).standalone === true) ||
 		window.matchMedia?.('(display-mode: standalone)').matches === true
 	);
 }

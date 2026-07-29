@@ -7,6 +7,7 @@
 	import { mark_first_send } from '$lib/notify-trigger';
 	import { CallMesh, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
+	import MuteButton from '$lib/components/MuteButton.svelte';
 	import {
 		ArrowLeft,
 		Phone,
@@ -26,6 +27,7 @@
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
 	let { data } = $props();
+	let muted = $state(data.muted as boolean);
 	let messages = $state(
 		data.messages as { id: string; f: string; x: string; im?: string; fl?: FileAttach; d: number }[]
 	);
@@ -35,7 +37,14 @@
 		if (!threadEl) return true;
 		return threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight < AT_BOTTOM_SLACK;
 	}
-	function add_msg(m: { id: string; f: string; x: string; im?: string; fl?: FileAttach; d: number }) {
+	function add_msg(m: {
+		id: string;
+		f: string;
+		x: string;
+		im?: string;
+		fl?: FileAttach;
+		d: number;
+	}) {
 		if (messages.some((e) => e.id === m.id)) return;
 		const wasAtBottom = isAtBottom();
 		messages = [...messages, m];
@@ -53,7 +62,9 @@
 			return;
 		}
 		searching = true;
-		const res = await fetch(`/api/search/messages?q=${encodeURIComponent(q)}&conv=${encodeURIComponent(data.peer)}`);
+		const res = await fetch(
+			`/api/search/messages?q=${encodeURIComponent(q)}&conv=${encodeURIComponent(data.peer)}`
+		);
 		searching = false;
 		if (res.ok) searchResults = (await res.json()).messages;
 	}
@@ -105,7 +116,11 @@
 
 	async function send() {
 		const body = text.trim();
-		console.log('[CHAT-CLIENT] send() called', { peer: data.peer, bodyLen: body.length, hasPendingFile: !!pendingFile });
+		console.log('[CHAT-CLIENT] send() called', {
+			peer: data.peer,
+			bodyLen: body.length,
+			hasPendingFile: !!pendingFile
+		});
 		if ((!body && !pendingFile) || busy) return;
 		busy = true;
 		let image: string | undefined;
@@ -125,7 +140,13 @@
 		const at = scheduleAt ? new Date(scheduleAt).getTime() : undefined;
 		scheduleAt = '';
 		showSchedule = false;
-		console.log('[CHAT-CLIENT] POSTing /api/send', { to: data.peer, textLen: body.length, hasImage: !!image, hasFile: !!file, at });
+		console.log('[CHAT-CLIENT] POSTing /api/send', {
+			to: data.peer,
+			textLen: body.length,
+			hasImage: !!image,
+			hasFile: !!file,
+			at
+		});
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
@@ -138,7 +159,14 @@
 			const body_r = await res.json();
 			console.log('[CHAT-CLIENT] /api/send body', body_r);
 			if (!body_r.scheduled)
-				add_msg({ id: body_r.m.id, f: body_r.m.from, x: body_r.m.text, im: body_r.m.image, fl: body_r.m.file, d: body_r.m.ts });
+				add_msg({
+					id: body_r.m.id,
+					f: body_r.m.from,
+					x: body_r.m.text,
+					im: body_r.m.image,
+					fl: body_r.m.file,
+					d: body_r.m.ts
+				});
 		} else {
 			console.error('[CHAT-CLIENT] /api/send FAILED', await res.text().catch(() => '<unreadable>'));
 		}
@@ -159,19 +187,21 @@
 			} else if (m.type === 'presence' && m.uid === data.peer) {
 				console.log('[CHAT-CLIENT] presence update for peer', m.online);
 				online = m.online as boolean;
-			}
-			else if (m.type === 'msg' && m.from === data.peer) {
+			} else if (m.type === 'msg' && m.from === data.peer) {
 				console.log('[CHAT-CLIENT] incoming msg from current peer, appending to thread', m);
 				add_msg({
-				id: m.id as string,
-				f: m.from as string,
-				x: (m.text as string) ?? '',
-				im: m.image as string | undefined,
-				fl: m.file as FileAttach | undefined,
-				d: m.ts as number
-			});
+					id: m.id as string,
+					f: m.from as string,
+					x: (m.text as string) ?? '',
+					im: m.image as string | undefined,
+					fl: m.file as FileAttach | undefined,
+					d: m.ts as number
+				});
 			} else if (m.type === 'msg') {
-				console.log('[CHAT-CLIENT] incoming msg but NOT from current peer, ignoring here', { from: m.from, expectedPeer: data.peer });
+				console.log('[CHAT-CLIENT] incoming msg but NOT from current peer, ignoring here', {
+					from: m.from,
+					expectedPeer: data.peer
+				});
 			} else if (m.type === 'signal' && m.from === data.peer && m.ctx === 'dm') {
 				// lazily create the mesh so an inbound offer can ring before we've called
 				mesh ??= makeMesh();
@@ -239,7 +269,7 @@
 	onMount(() => connect());
 </script>
 
-<section class="chat mx-auto flex h-[calc(100dvh-150px)] max-w-[760px] flex-col sm:h-[calc(100dvh-110px)]">
+<section class="chat mx-auto flex h-[calc(100dvh-var(--chrome))] max-w-[760px] flex-col">
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
 		<button
 			class="bg-none leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
@@ -249,7 +279,11 @@
 			<ArrowLeft size={22} />
 		</button>
 		<div class="flex min-w-0 flex-col gap-0.5">
-			<a href="/app/user/{data.peer}" class="truncate font-display text-[21px] font-medium tracking-[-0.01em] transition-colors duration-300 hover:text-accent">{data.peer_name}</a>
+			<a
+				href="/app/user/{data.peer}"
+				class="truncate font-display text-[21px] font-medium tracking-[-0.01em] transition-colors duration-300 hover:text-accent"
+				>{data.peer_name}</a
+			>
 			<div
 				class="flex items-center gap-[7px] text-[10.5px] uppercase tracking-[0.2em] {online
 					? 'text-accent'
@@ -263,6 +297,7 @@
 			</div>
 		</div>
 		<div class="ml-auto flex items-center gap-2">
+			<MuteButton target={data.peer} kind="u" bind:muted label="notifications from this person" />
 			{#if callState === 'idle' && online}
 				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={startCall}>
 					<Phone size={15} /> call
@@ -270,7 +305,10 @@
 			{/if}
 			{#if callState === 'calling'}
 				<span class="text-[12px] text-faint">calling…</span>
-				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={() => endCall()}>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 text-[13px]"
+					onclick={() => endCall()}
+				>
 					<PhoneOff size={15} /> cancel
 				</button>
 			{/if}
@@ -279,18 +317,26 @@
 				<button class="btn btn-amber flex items-center gap-1.5 text-[13px]" onclick={answerCall}>
 					<Phone size={15} /> answer
 				</button>
-				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={() => endCall()}>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 text-[13px]"
+					onclick={() => endCall()}
+				>
 					<PhoneOff size={15} /> decline
 				</button>
 			{/if}
 			{#if callState === 'connected'}
 				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={toggleMic}>
-					{#if micOn}<Mic size={15} />{:else}<MicOff size={15} />{/if} {micOn ? 'mic on' : 'muted'}
+					{#if micOn}<Mic size={15} />{:else}<MicOff size={15} />{/if}
+					{micOn ? 'mic on' : 'muted'}
 				</button>
 				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={toggleVideo}>
-					{#if videoOn}<Video size={15} />{:else}<VideoOff size={15} />{/if} {videoOn ? 'video on' : 'video off'}
+					{#if videoOn}<Video size={15} />{:else}<VideoOff size={15} />{/if}
+					{videoOn ? 'video on' : 'video off'}
 				</button>
-				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px] text-red-500" onclick={() => endCall()}>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 text-[13px] text-red-500"
+					onclick={() => endCall()}
+				>
 					<PhoneOff size={15} /> hang up
 				</button>
 			{/if}
@@ -300,7 +346,9 @@
 		<p class="border-b border-line py-2 text-[12.5px] text-[#e2674c]">{callError}</p>
 	{/if}
 	{#if callState === 'connected'}
-		<div class="reveal relative mb-4 overflow-hidden rounded-[16px] border border-accent/40 bg-black shadow-[0_0_0_1px_rgba(217,139,95,0.08),0_20px_50px_-20px_rgba(0,0,0,0.6)]">
+		<div
+			class="reveal relative mb-4 overflow-hidden rounded-[16px] border border-accent/40 bg-black shadow-[0_0_0_1px_rgba(217,139,95,0.08),0_20px_50px_-20px_rgba(0,0,0,0.6)]"
+		>
 			<RemoteVideo stream={remoteStream} class="w-full max-h-[300px] object-contain" />
 			{#if localStream}
 				<RemoteVideo
@@ -314,7 +362,10 @@
 
 	<div class="flex items-center gap-2 border-b border-line py-3">
 		<div class="relative min-w-0 flex-1">
-			<Search size={14} class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint" />
+			<Search
+				size={14}
+				class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint"
+			/>
 			<input
 				class="min-w-0 w-full py-1.5 pr-3 pl-8 text-[13px]"
 				placeholder="search this thread…"
@@ -325,7 +376,10 @@
 		{#if searchResults !== null}
 			<button
 				class="btn flex items-center gap-1 py-1.5 px-3 text-[12px]"
-				onclick={() => { searchQ = ''; searchResults = null; }}
+				onclick={() => {
+					searchQ = '';
+					searchResults = null;
+				}}
 			>
 				<X size={13} /> clear
 			</button>
@@ -340,42 +394,53 @@
 				<p class="text-[13px] text-faint">no matches.</p>
 			{:else}
 				{#each searchResults as r (r.id)}
-					<div class="rounded-[10px] border border-line bg-panel px-3 py-2 text-[14px] text-ink-soft">{r.x}</div>
+					<div
+						class="rounded-[10px] border border-line bg-panel px-3 py-2 text-[14px] text-ink-soft"
+					>
+						{r.x}
+					</div>
 				{/each}
 			{/if}
 		</div>
 	{:else}
-	<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7" bind:this={threadEl}>
-		{#each messages as m (m.id)}
-			<div class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me ? 'self-end items-end' : 'self-start'}">
+		<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7" bind:this={threadEl}>
+			{#each messages as m (m.id)}
 				<div
-					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f ===
-					me
-						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
-						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+					class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
+						? 'self-end items-end'
+						: 'self-start'}"
 				>
-					{#if m.im}
-						<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
-							<img src={media_src(m.im)} alt="" class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover" />
-						</a>
-					{/if}
-					{#if m.fl}
-						<a
-							href={media_src(m.fl.key)}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
-						>
-							<FileText size={15} class="shrink-0" />
-							<span class="truncate">{m.fl.name}</span>
-							<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
-						</a>
-					{/if}
-					{#if m.x}{m.x}{/if}
+					<div
+						class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
+							? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
+							: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+					>
+						{#if m.im}
+							<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
+								<img
+									src={media_src(m.im)}
+									alt=""
+									class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
+								/>
+							</a>
+						{/if}
+						{#if m.fl}
+							<a
+								href={media_src(m.fl.key)}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
+							>
+								<FileText size={15} class="shrink-0" />
+								<span class="truncate">{m.fl.name}</span>
+								<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
+							</a>
+						{/if}
+						{#if m.x}{m.x}{/if}
+					</div>
 				</div>
-			</div>
-		{/each}
-	</div>
+			{/each}
+		</div>
 	{/if}
 
 	{#if showSchedule}

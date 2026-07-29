@@ -57,7 +57,7 @@
 	<p class="mt-5 text-[14px] leading-[1.6] text-ink-soft">
 		{mode === 'login'
 			? 'your threads are waiting.'
-			: 'one card, matched by what you\'re into — not what you look like.'}
+			: "one card, matched by what you're into — not what you look like."}
 	</p>
 
 	<a class="btn btn-amber mt-9 w-full" href={google_href()}>continue with google</a>
@@ -68,14 +68,11 @@
 
 	<form onsubmit={submit} class="flex flex-col gap-3.5">
 		<input type="email" placeholder="email" bind:value={email} required />
-		<input
-			type="password"
-			placeholder="password · min 6"
-			bind:value={pw}
-			required
-			minlength="6"
-		/>
-		<button class="btn btn-amber mt-1.5 flex w-full items-center justify-center gap-2" type="submit">
+		<input type="password" placeholder="password · min 6" bind:value={pw} required minlength="6" />
+		<button
+			class="btn btn-amber mt-1.5 flex w-full items-center justify-center gap-2"
+			type="submit"
+		>
 			{#if mode === 'login'}<LogIn size={16} />{:else}<UserPlus size={16} />{/if}
 			{mode === 'login' ? 'log in' : 'create account'}
 		</button>

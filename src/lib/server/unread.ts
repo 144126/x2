@@ -14,12 +14,19 @@ async function read_marker(env: QEnv, uid: string, conv: string): Promise<number
 	return pts.length ? (pts[0].payload as unknown as Read).d : 0;
 }
 
-export async function mark_read(env: QEnv, uid: string, conv: string, ts: number = Date.now()): Promise<void> {
+export async function mark_read(
+	env: QEnv,
+	uid: string,
+	conv: string,
+	ts: number = Date.now()
+): Promise<void> {
 	await ensure(env);
 	const prev = await read_marker(env, uid, conv);
 	const d = Math.max(prev, ts);
 	const r: Read = { s: 'rd', f: uid, c: conv, d };
-	await upsert(env, [{ id: await read_id(uid, conv), vector: ZV, payload: r as unknown as Record<string, unknown> }]);
+	await upsert(env, [
+		{ id: await read_id(uid, conv), vector: ZV, payload: r as unknown as Record<string, unknown> }
+	]);
 }
 
 export async function unread_by_conv(
@@ -54,7 +61,11 @@ export async function unread_by_conv(
 	return counts;
 }
 
-export async function total_unread(env: QEnv, uid: string, group_convs: string[] = []): Promise<number> {
+export async function total_unread(
+	env: QEnv,
+	uid: string,
+	group_convs: string[] = []
+): Promise<number> {
 	const by_conv = await unread_by_conv(env, uid, group_convs);
 	const mutes = await list_mutes(env, uid);
 	const silent = new Set(

@@ -7,7 +7,7 @@
 	import InstallBanner from '$lib/components/InstallBanner.svelte';
 	import { sync_badge } from '$lib/badge';
 	import { sync_subscription } from '$lib/push-client';
-	import { Users, DoorOpen, UserRound, LogOut } from '@lucide/svelte';
+	import { Users, MessagesSquare, DoorOpen, UserRound, LogOut } from '@lucide/svelte';
 
 	let { children, data } = $props();
 	let vapid_key = $state('');
@@ -35,6 +35,7 @@
 
 	const nav = [
 		{ href: '/app', label: 'people', icon: Users },
+		{ href: '/app/chats', label: 'chats', icon: MessagesSquare },
 		{ href: '/app/rooms', label: 'rooms', icon: DoorOpen },
 		{ href: '/app/profile', label: 'profile', icon: UserRound }
 	];
@@ -93,7 +94,8 @@
 
 {#if data.user}
 	<nav
-		class="fixed inset-x-0 bottom-0 z-10 grid grid-cols-4 border-t border-line bg-base/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
+		class="fixed inset-x-0 bottom-0 z-20 grid border-t border-line bg-base/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
+		style="grid-template-columns: repeat({nav.length}, minmax(0, 1fr))"
 	>
 		{#each nav as item (item.href)}
 			<a

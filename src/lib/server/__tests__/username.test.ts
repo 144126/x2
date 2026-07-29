@@ -6,7 +6,12 @@ vi.mock('../qdrant', async () => {
 	return { ...actual, scroll: scrollMock };
 });
 
-import { normalize_username, validate_username, username_free, available_username } from '../username';
+import {
+	normalize_username,
+	validate_username,
+	username_free,
+	available_username
+} from '../username';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
 
@@ -46,16 +51,19 @@ describe('username_free', () => {
 
 describe('available_username', () => {
 	it('suffixes on collision until one is free', async () => {
-		scrollMock.mockImplementation(async (_e: unknown, filter: { must: { match: { value: string } }[] }) => {
-			const wanted = filter.must[1].match.value;
-			return wanted === 'ada' || wanted === 'ada2' ? [{ id: 'other', payload: {} }] : [];
-		});
+		scrollMock.mockImplementation(
+			async (_e: unknown, filter: { must: { match: { value: string } }[] }) => {
+				const wanted = filter.must[1].match.value;
+				return wanted === 'ada' || wanted === 'ada2' ? [{ id: 'other', payload: {} }] : [];
+			}
+		);
 		expect(await available_username(ENV, 'ada', 'me')).toBe('ada3');
 	});
 
 	it('keeps the result legal when the base is already full length', async () => {
-		scrollMock.mockImplementation(async (_e: unknown, filter: { must: { match: { value: string } }[] }) =>
-			filter.must[1].match.value.length === 20 ? [{ id: 'other', payload: {} }] : []
+		scrollMock.mockImplementation(
+			async (_e: unknown, filter: { must: { match: { value: string } }[] }) =>
+				filter.must[1].match.value.length === 20 ? [{ id: 'other', payload: {} }] : []
 		);
 		const name = await available_username(ENV, 'a'.repeat(25), 'me');
 		expect(validate_username(name)).not.toBeNull();

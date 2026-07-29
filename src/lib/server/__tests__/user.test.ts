@@ -103,7 +103,10 @@ describe('create_pw_user', () => {
 describe('verify_user_pw', () => {
 	it('returns the user on a correct password', async () => {
 		const h = await hash_pw('hunter22');
-		retrieveOneMock.mockResolvedValue({ id: 'x', payload: { s: 'u', o: 'local', h, m: 'e@x.com' } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'x',
+			payload: { s: 'u', o: 'local', h, m: 'e@x.com' }
+		});
 		const u = await verify_user_pw(ENV, 'e@x.com', 'hunter22');
 		expect(u?.m).toBe('e@x.com');
 	});
@@ -127,13 +130,21 @@ describe('verify_user_pw', () => {
 
 describe('patch_user', () => {
 	it('merges the patch onto the existing record', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'x', vector: [1, 2, 3], payload: { s: 'u', u: 'ada', d: 1 } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'x',
+			vector: [1, 2, 3],
+			payload: { s: 'u', u: 'ada', d: 1 }
+		});
 		const merged = await patch_user(ENV, 'x', { ac: 'CODE1' });
 		expect(merged).toMatchObject({ u: 'ada', ac: 'CODE1' });
 	});
 
 	it('preserves the existing search embedding rather than resetting it', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'x', vector: [1, 2, 3], payload: { s: 'u', u: 'ada', d: 1 } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'x',
+			vector: [1, 2, 3],
+			payload: { s: 'u', u: 'ada', d: 1 }
+		});
 		await patch_user(ENV, 'x', { ac: 'CODE1' });
 		expect(upsertMock.mock.calls[0][1][0].vector).toEqual([1, 2, 3]);
 	});

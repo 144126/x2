@@ -42,7 +42,10 @@ describe('POST /api/credits/purchase', () => {
 
 	it('initializes a paystack transaction and returns the checkout url', async () => {
 		const body = await (await POST(event({ amount_kobo: 10000 }, 'ada', 'ada@x.com'))).json();
-		expect(body).toMatchObject({ authorization_url: 'https://checkout.paystack.com/x', reference: expect.any(String) });
+		expect(body).toMatchObject({
+			authorization_url: 'https://checkout.paystack.com/x',
+			reference: expect.any(String)
+		});
 		expect(paystackInitMock.mock.calls[0][1]).toBe('ada@x.com');
 		expect(paystackInitMock.mock.calls[0][2]).toBe(10000);
 	});

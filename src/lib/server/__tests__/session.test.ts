@@ -2,7 +2,12 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { encode_session, decode_session, type SessionUser } from '../session';
 
 const SECRET = 'session-secret-value';
-const USER: SessionUser = { id: 'uid-1', username: 'ada', picture: 'pic.png', email: 'ada@example.com' };
+const USER: SessionUser = {
+	id: 'uid-1',
+	username: 'ada',
+	picture: 'pic.png',
+	email: 'ada@example.com'
+};
 
 afterEach(() => {
 	vi.useRealTimers();

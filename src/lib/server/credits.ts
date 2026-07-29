@@ -1,4 +1,14 @@
-import { ensure, upsert, scroll, retrieve_one, new_id, uuid_from, f, eq, type QEnv } from './qdrant';
+import {
+	ensure,
+	upsert,
+	scroll,
+	retrieve_one,
+	new_id,
+	uuid_from,
+	f,
+	eq,
+	type QEnv
+} from './qdrant';
 
 export type CreditEvent = {
 	s: 'ce';
@@ -14,7 +24,13 @@ export type CreditEvent = {
 export async function record_event(env: QEnv, e: Omit<CreditEvent, 's' | 'id'>): Promise<void> {
 	await ensure(env);
 	const ev: CreditEvent = { s: 'ce', id: new_id(), ...e };
-	await upsert(env, [{ id: ev.id, vector: new Array(4096).fill(0), payload: ev as unknown as Record<string, unknown> }]);
+	await upsert(env, [
+		{
+			id: ev.id,
+			vector: new Array(4096).fill(0),
+			payload: ev as unknown as Record<string, unknown>
+		}
+	]);
 }
 
 export async function credit_history(env: QEnv, uid: string, limit = 100): Promise<CreditEvent[]> {

@@ -45,7 +45,7 @@ describe('save_profile', () => {
 		expect(payload.ag).toBe(20); // untouched field preserved
 		expect(payload.n).toBe('Ada'); // name preserved from cur
 	});
-	
+
 	it('extends to cover user display with username', async () => {
 		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'user123' });
 		await save_profile(ENV, 'uid', { about: 'test' });

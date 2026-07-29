@@ -62,7 +62,11 @@ export async function get_image(bucket: MediaBucket, key: string): Promise<Media
 }
 
 /** only the uploader may delete — ownership is encoded in the key prefix */
-export async function delete_image(bucket: MediaBucket, uid: string, key: string): Promise<boolean> {
+export async function delete_image(
+	bucket: MediaBucket,
+	uid: string,
+	key: string
+): Promise<boolean> {
 	if (!key.startsWith(`${uid}/`)) return false;
 	await bucket.delete(key);
 	return true;

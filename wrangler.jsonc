@@ -9,16 +9,52 @@
 		"directory": ".svelte-kit/cloudflare"
 	},
 	"secrets_store_secrets": [
-		{ "binding": "QDRANT_URL", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_URL" },
-		{ "binding": "QDRANT_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_KEY" },
-		{ "binding": "VOXELL_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "VOXELL_KEY" },
-		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" },
-		{ "binding": "GOOGLE_ID", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GOOGLE_ID" },
-		{ "binding": "GOOGLE_SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GOOGLE_SECRET" },
+		{
+			"binding": "QDRANT_URL",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "QDRANT_URL"
+		},
+		{
+			"binding": "QDRANT_KEY",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "QDRANT_KEY"
+		},
+		{
+			"binding": "VOXELL_KEY",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "VOXELL_KEY"
+		},
+		{
+			"binding": "SECRET",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "SECRET"
+		},
+		{
+			"binding": "GOOGLE_ID",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "GOOGLE_ID"
+		},
+		{
+			"binding": "GOOGLE_SECRET",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "GOOGLE_SECRET"
+		},
 		// same slots as ../beee — populate with `wrangler secrets-store secret create` before deploying
-		{ "binding": "PAYSTACK_SECRET_KEY_TEST", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "PAYSTACK_SECRET_KEY_TEST" },
-		{ "binding": "PAYSTACK_SECRET_KEY_LIVE", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "PAYSTACK_SECRET_KEY_LIVE" },
-		{ "binding": "PAYSTACK_TEST", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "PAYSTACK_TEST" },
+		{
+			"binding": "PAYSTACK_SECRET_KEY_TEST",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "PAYSTACK_SECRET_KEY_TEST"
+		},
+		{
+			"binding": "PAYSTACK_SECRET_KEY_LIVE",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "PAYSTACK_SECRET_KEY_LIVE"
+		},
+		{
+			"binding": "PAYSTACK_TEST",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "PAYSTACK_TEST"
+		},
 		{ "binding": "GROQ", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GROQ" }
 	],
 	// WS_ORIGIN: the deployed x2-ws worker's public origin. Committed here (not left blank and

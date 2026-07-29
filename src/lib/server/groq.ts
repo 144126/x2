@@ -19,7 +19,10 @@ export async function whats_in_common(
 	viewer_uid: string,
 	a: User,
 	b: User
-): Promise<{ ok: true; text: string; cost_kobo: number } | { ok: false; reason: 'insufficient_credits' | 'llm_error' }> {
+): Promise<
+	| { ok: true; text: string; cost_kobo: number }
+	| { ok: false; reason: 'insufficient_credits' | 'llm_error' }
+> {
 	const gate = await deduct(ws, viewer_uid, ESTIMATE_KOBO);
 	if (!gate.ok) return { ok: false, reason: 'insufficient_credits' };
 
@@ -47,7 +50,9 @@ export async function whats_in_common(
 		};
 		const text = data.choices[0]?.message?.content?.trim();
 		if (!text) throw new Error('groq_empty');
-		const cost_kobo = usd_to_kobo(calc_cost_usd(GROQ_MODEL, data.usage.prompt_tokens, data.usage.completion_tokens));
+		const cost_kobo = usd_to_kobo(
+			calc_cost_usd(GROQ_MODEL, data.usage.prompt_tokens, data.usage.completion_tokens)
+		);
 		return { ok: true, text, cost_kobo };
 	} catch {
 		await credit(ws, viewer_uid, ESTIMATE_KOBO);

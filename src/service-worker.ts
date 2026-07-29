@@ -65,7 +65,10 @@ self.addEventListener('fetch', (event) => {
 					if (is_cacheable(res)) await cache.put(req, res.clone());
 					return res;
 				} catch {
-					return cached ?? (req.mode === 'navigate' ? (await cache.match('/offline'))! : Response.error());
+					return (
+						cached ??
+						(req.mode === 'navigate' ? (await cache.match('/offline'))! : Response.error())
+					);
 				}
 			}
 
@@ -135,10 +138,7 @@ self.addEventListener('notificationclick', (event) => {
 	if (event.action === 'reply' && data?.reply_to) {
 		const reply = (event as NotificationEvent & { reply?: string }).reply;
 		if (reply) {
-			const body = reply_body(
-				data as { kind?: 'u' | 'r'; reply_to?: string } | null,
-				reply
-			);
+			const body = reply_body(data as { kind?: 'u' | 'r'; reply_to?: string } | null, reply);
 			if (body) {
 				event.waitUntil(
 					fetch('/api/send', {
@@ -157,7 +157,11 @@ self.addEventListener('notificationclick', (event) => {
 		(async () => {
 			const clients = (await self.clients.matchAll({ type: 'window' })) as WindowClient[];
 			const target = pick_client(
-				clients.map((c) => ({ url: c.url, focused: c.focused, visibilityState: c.visibilityState })),
+				clients.map((c) => ({
+					url: c.url,
+					focused: c.focused,
+					visibilityState: c.visibilityState
+				})),
 				url
 			);
 			const match = target ? clients.find((c) => c.url === target.url) : null;

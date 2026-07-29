@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, searchMock, embedMock } = vi.hoisted(() => ({
+const { ensureMock, searchMock, scrollMock, embedMock, getSecretMock } = vi.hoisted(() => ({
 	ensureMock: vi.fn(),
 	searchMock: vi.fn(),
-	embedMock: vi.fn()
+	scrollMock: vi.fn(),
+	embedMock: vi.fn(),
+	getSecretMock: vi.fn()
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
@@ -11,7 +13,13 @@ vi.mock('$lib/server/qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../../../../lib/server/qdrant')>(
 		'../../../../lib/server/qdrant'
 	);
-	return { ...actual, ensure: ensureMock, search: searchMock };
+	return {
+		...actual,
+		ensure: ensureMock,
+		search: searchMock,
+		scroll: scrollMock,
+		get_secret: getSecretMock
+	};
 });
 vi.mock('$lib/server/or', () => ({ embed: embedMock }));
 
@@ -20,8 +28,13 @@ import { GET } from '../+server';
 function make_event(qs: string, uid = 'me') {
 	return {
 		url: new URL(`https://x/api/search?${qs}`),
-		locals: { user: uid ? { id: uid, name: 'Me' } : null }
-	} as Parameters<typeof GET>[0];
+		locals: {
+			user: uid ? { id: uid, name: 'Me' } : null,
+			x2_ws: {
+				fetch: vi.fn().mockResolvedValue(new Response(JSON.stringify({ online: [] })))
+			}
+		}
+	} as unknown as Parameters<typeof GET>[0];
 }
 
 beforeEach(() => {
@@ -29,6 +42,8 @@ beforeEach(() => {
 	ensureMock.mockResolvedValue(undefined);
 	embedMock.mockResolvedValue([0.1, 0.2]);
 	searchMock.mockResolvedValue([]);
+	scrollMock.mockResolvedValue([]);
+	getSecretMock.mockResolvedValue('s');
 });
 
 describe('GET /api/search', () => {
@@ -36,8 +51,29 @@ describe('GET /api/search', () => {
 		await expect(GET(make_event('q=hi', ''))).rejects.toMatchObject({ status: 401 });
 	});
 
-	it('400s without a query', async () => {
+	it('scrolls the filters when no query is given', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const res = await GET(make_event('gender=f'));
+		const body = await res.json();
+		expect(body.r).toHaveLength(1);
+		expect(scrollMock).toHaveBeenCalled();
+	});
+
+	it('400s only when there is neither a query nor any filter', async () => {
 		await expect(GET(make_event(''))).rejects.toMatchObject({ status: 400 });
+	});
+
+	it('falls back to a scroll when the embedder returns a zero vector', async () => {
+		embedMock.mockResolvedValue([0, 0]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const res = await GET(make_event('q=hiking'));
+		const body = await res.json();
+		expect(body.r).toHaveLength(1);
+	});
+
+	it('searches by vector when a query is given', async () => {
+		await GET(make_event('q=hiking'));
+		expect(searchMock).toHaveBeenCalled();
 	});
 
 	it('always filters to user profiles (s=u)', async () => {
@@ -94,5 +130,160 @@ describe('GET /api/search', () => {
 		const res = await GET(make_event('q=hiking'));
 		const body = await res.json();
 		expect(body.r[0]).toMatchObject({ co: 'US', st: 'CA', ci: 'SF' });
+	});
+
+	it('pages through candidates until it has 20 online users', async () => {
+		scrollMock
+			.mockResolvedValueOnce(
+				Array.from({ length: 100 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+			)
+			.mockResolvedValueOnce(
+				Array.from({ length: 100 }, (_, i) => ({ id: `v${i}`, payload: { s: 'u', n: `V${i}` } }))
+			);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					online: [
+						'u1',
+						'u2',
+						'u3',
+						'v1',
+						'v2',
+						'v3',
+						'v4',
+						'v5',
+						'v6',
+						'v7',
+						'v8',
+						'v9',
+						'v10',
+						'v11',
+						'v12',
+						'v13',
+						'v14',
+						'v15',
+						'v16',
+						'v17',
+						'v18',
+						'v19',
+						'v20'
+					]
+				})
+			)
+		);
+		const res = await GET(ev);
+		const body = await res.json();
+		expect(body.r).toHaveLength(20);
+	});
+
+	it('requests at most 100 uids per presence check', async () => {
+		scrollMock.mockResolvedValue(
+			Array.from({ length: 100 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+		);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(
+			new Response(JSON.stringify({ online: Array.from({ length: 100 }, (_, i) => `u${i}`) }))
+		);
+		await GET(ev);
+		const callBody = JSON.parse(ws.fetch.mock.calls[0][1].body);
+		expect(callBody.uids.length).toBeLessThanOrEqual(100);
+	});
+
+	it('stops after three pages rather than scanning forever', async () => {
+		scrollMock.mockResolvedValue(
+			Array.from({ length: 100 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+		);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: ['u1'] })));
+		await GET(ev);
+		expect(scrollMock.mock.calls.length).toBeLessThanOrEqual(3);
+	});
+
+	it('stops early when a page comes back short', async () => {
+		scrollMock.mockResolvedValueOnce(
+			Array.from({ length: 30 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+		);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: ['u1'] })));
+		await GET(ev);
+		expect(scrollMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not paginate when the online filter is off', async () => {
+		searchMock.mockResolvedValue(
+			Array.from({ length: 30 }, (_, i) => ({
+				id: `u${i}`,
+				payload: { s: 'u', n: `U${i}` },
+				score: 0.5
+			}))
+		);
+		await GET(make_event('q=hiking'));
+		expect(searchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('returns everyone with filtered:false when presence is unreachable', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockRejectedValue(new Error('timeout'));
+		const res = await GET(ev);
+		const body = await res.json();
+		expect(body.filtered).toBe(false);
+		expect(body.r).toHaveLength(1);
+	});
+
+	it('returns everyone with filtered:false when presence responds with a non-array', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: 'nope' })));
+		const res = await GET(ev);
+		const body = await res.json();
+		expect(body.filtered).toBe(false);
+		expect(body.r).toHaveLength(1);
+	});
+
+	it('returns everyone with filtered:false on a non-200 from the presence oracle', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(new Response('bad', { status: 400 }));
+		const res = await GET(ev);
+		const body = await res.json();
+		expect(body.filtered).toBe(false);
+		expect(body.r).toHaveLength(1);
+	});
+
+	it('reports filtered:true when the check genuinely returned nobody', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: [] })));
+		const res = await GET(ev);
+		const body = await res.json();
+		expect(body.filtered).toBe(true);
+		expect(body.r).toHaveLength(0);
+	});
+
+	it('marks rows online when the online filter is on', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const ev = make_event('online=1');
+		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
+		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: ['u1'] })));
+		const res = await GET(ev);
+		const body = await res.json();
+		expect(body.r[0]).toMatchObject({ online: true });
+	});
+
+	it('omits the score for scroll results', async () => {
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		const res = await GET(make_event('gender=m'));
+		const body = await res.json();
+		expect(body.r[0].s).toBeUndefined();
 	});
 });

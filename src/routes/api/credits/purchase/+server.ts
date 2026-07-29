@@ -10,7 +10,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	const b = (await request.json().catch(() => null)) as { amount_kobo?: number } | null;
 	const amount_kobo = b?.amount_kobo;
-	if (!amount_kobo || amount_kobo < MIN_KOBO) throw error(400, `amount_kobo must be at least ${MIN_KOBO}`);
+	if (!amount_kobo || amount_kobo < MIN_KOBO)
+		throw error(400, `amount_kobo must be at least ${MIN_KOBO}`);
 
 	const email = locals.user.email || `${locals.user.id}@x2.studio`;
 	const reference = new_id();

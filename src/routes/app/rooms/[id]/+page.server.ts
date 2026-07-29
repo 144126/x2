@@ -3,6 +3,7 @@ import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { get_group } from '$lib/server/group';
 import { get_group_messages, get_user_name } from '$lib/server/chat';
+import { is_muted } from '$lib/server/mute';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	if (!locals.user) throw error(401, 'auth');
@@ -15,5 +16,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const names = Object.fromEntries(
 		await Promise.all(ids.map(async (id) => [id, await get_user_name(env, id)] as const))
 	);
-	return { g, messages, names };
+	const muted = await is_muted(env, locals.user.id, params.id);
+	return { g, messages, names, muted };
 };

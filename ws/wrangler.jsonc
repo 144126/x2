@@ -26,10 +26,26 @@
 	// X2_ORIGIN (the deployed x2 worker's public origin, for the cron callback) is bound the
 	// same way for the same reason — a plain blank var gets silently reset on every deploy.
 	"secrets_store_secrets": [
-		{ "binding": "QDRANT_URL", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_URL" },
-		{ "binding": "QDRANT_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_KEY" },
-		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" },
-		{ "binding": "X2_ORIGIN", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "X2_ORIGIN" }
+		{
+			"binding": "QDRANT_URL",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "QDRANT_URL"
+		},
+		{
+			"binding": "QDRANT_KEY",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "QDRANT_KEY"
+		},
+		{
+			"binding": "SECRET",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "SECRET"
+		},
+		{
+			"binding": "X2_ORIGIN",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "X2_ORIGIN"
+		}
 	],
 	"workers_dev": true,
 	"preview_urls": true,

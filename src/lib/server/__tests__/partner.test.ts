@@ -18,7 +18,12 @@ vi.mock('../credit_client', () => ({ credit: creditMock }));
 vi.mock('../credits', () => ({ record_event: recordEventMock }));
 vi.mock('../user', () => ({ get_user: getUserMock, patch_user: patchUserMock }));
 
-import { pay_referral_bonus, gen_partner_code, ensure_partner_code, attribute_referral } from '../partner';
+import {
+	pay_referral_bonus,
+	gen_partner_code,
+	ensure_partner_code,
+	attribute_referral
+} from '../partner';
 
 const ctx = { env: {}, ws: {} } as never;
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
@@ -34,19 +39,28 @@ beforeEach(() => {
 
 describe('pay_referral_bonus', () => {
 	it('pays 54% of the purchase to the buyer’s inviter', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'ada', payload: { s: 'u', u: 'ada', d: 1, invited_by: 'bob' } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'ada',
+			payload: { s: 'u', u: 'ada', d: 1, invited_by: 'bob' }
+		});
 		await pay_referral_bonus(ctx, 10000, 'ada', 'ref1');
 		expect(creditMock).toHaveBeenCalledWith({}, 'bob', 5400);
 	});
 
 	it('rounds the commission to the nearest kobo', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'ada', payload: { s: 'u', u: 'ada', d: 1, invited_by: 'bob' } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'ada',
+			payload: { s: 'u', u: 'ada', d: 1, invited_by: 'bob' }
+		});
 		await pay_referral_bonus(ctx, 10001, 'ada', 'ref1');
 		expect(creditMock).toHaveBeenCalledWith({}, 'bob', Math.round(10001 * 0.54));
 	});
 
 	it('records a referral_bonus ledger event for the inviter', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'ada', payload: { s: 'u', u: 'ada', d: 1, invited_by: 'bob' } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'ada',
+			payload: { s: 'u', u: 'ada', d: 1, invited_by: 'bob' }
+		});
 		await pay_referral_bonus(ctx, 10000, 'ada', 'ref1');
 		expect(recordEventMock).toHaveBeenCalledWith(
 			{},
@@ -67,7 +81,10 @@ describe('pay_referral_bonus', () => {
 	});
 
 	it('refuses to pay a bonus for a self-referral, defensively', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'ada', payload: { s: 'u', u: 'ada', d: 1, invited_by: 'ada' } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'ada',
+			payload: { s: 'u', u: 'ada', d: 1, invited_by: 'ada' }
+		});
 		await pay_referral_bonus(ctx, 10000, 'ada', 'ref1');
 		expect(creditMock).not.toHaveBeenCalled();
 	});
@@ -88,7 +105,12 @@ describe('gen_partner_code', () => {
 describe('ensure_partner_code', () => {
 	it('assigns a fresh code to a user who has none', async () => {
 		getUserMock.mockResolvedValue({ s: 'u', u: 'ada', d: 1 });
-		patchUserMock.mockImplementation(async (_e, _uid, patch) => ({ s: 'u', u: 'ada', d: 1, ...patch }));
+		patchUserMock.mockImplementation(async (_e, _uid, patch) => ({
+			s: 'u',
+			u: 'ada',
+			d: 1,
+			...patch
+		}));
 		const code = await ensure_partner_code(ENV, 'ada');
 		expect(code).toBeTruthy();
 		expect(patchUserMock).toHaveBeenCalledWith(ENV, 'ada', { ac: code });
@@ -103,8 +125,15 @@ describe('ensure_partner_code', () => {
 
 	it('retries generation on the rare collision with an existing code', async () => {
 		getUserMock.mockResolvedValue({ s: 'u', u: 'ada', d: 1 });
-		scrollMock.mockResolvedValueOnce([{ id: 'x', payload: { s: 'u', ac: 'dup' } }]).mockResolvedValueOnce([]);
-		patchUserMock.mockImplementation(async (_e, _uid, patch) => ({ s: 'u', u: 'ada', d: 1, ...patch }));
+		scrollMock
+			.mockResolvedValueOnce([{ id: 'x', payload: { s: 'u', ac: 'dup' } }])
+			.mockResolvedValueOnce([]);
+		patchUserMock.mockImplementation(async (_e, _uid, patch) => ({
+			s: 'u',
+			u: 'ada',
+			d: 1,
+			...patch
+		}));
 		await ensure_partner_code(ENV, 'ada');
 		expect(scrollMock).toHaveBeenCalledTimes(2);
 	});
@@ -126,7 +155,9 @@ describe('attribute_referral', () => {
 	});
 
 	it('rejects attributing a user to themself', async () => {
-		scrollMock.mockResolvedValue([{ id: 'new-uid', payload: { s: 'u', u: 'x', d: 1, ac: 'CODE1' } }]);
+		scrollMock.mockResolvedValue([
+			{ id: 'new-uid', payload: { s: 'u', u: 'x', d: 1, ac: 'CODE1' } }
+		]);
 		const r = await attribute_referral(ENV, 'new-uid', 'CODE1');
 		expect(r).toEqual({ ok: false });
 		expect(patchUserMock).not.toHaveBeenCalled();

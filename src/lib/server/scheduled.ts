@@ -32,7 +32,13 @@ export async function save_scheduled(
 		at: opts.at,
 		sent: 0
 	};
-	await upsert(env, [{ id: sm.id, vector: new Array(4096).fill(0), payload: sm as unknown as Record<string, unknown> }]);
+	await upsert(env, [
+		{
+			id: sm.id,
+			vector: new Array(4096).fill(0),
+			payload: sm as unknown as Record<string, unknown>
+		}
+	]);
 	return sm;
 }
 
@@ -58,7 +64,11 @@ export async function due_scheduled(env: QEnv, now: number): Promise<ScheduledMe
 
 async function mark_sent(env: QEnv, sm: ScheduledMessage): Promise<void> {
 	await upsert(env, [
-		{ id: sm.id, vector: new Array(4096).fill(0), payload: { ...sm, sent: 1 } as unknown as Record<string, unknown> }
+		{
+			id: sm.id,
+			vector: new Array(4096).fill(0),
+			payload: { ...sm, sent: 1 } as unknown as Record<string, unknown>
+		}
 	]);
 }
 
@@ -102,7 +112,11 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 						file: sm.file,
 						ts: m.d
 					});
-					const targets = await drop_muted(env, sm.group, g.members.filter((u) => u !== sm.f));
+					const targets = await drop_muted(
+						env,
+						sm.group,
+						g.members.filter((u) => u !== sm.f)
+					);
 					await push(env, targets, {
 						title: g.name,
 						body: sm.file ? `📎 ${sm.file.name}` : sm.text,
@@ -114,7 +128,15 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 				}
 			} else if (sm.to) {
 				const m = await send_msg(env, sm.f, sm.to, sm.text, sm.image, sm.file);
-				await relay(ws, { id: m.id, to: sm.to, from: sm.f, text: sm.text, image: sm.image, file: sm.file, ts: m.d });
+				await relay(ws, {
+					id: m.id,
+					to: sm.to,
+					from: sm.f,
+					text: sm.text,
+					image: sm.image,
+					file: sm.file,
+					ts: m.d
+				});
 				if (!(await is_muted(env, sm.to, sm.f))) {
 					await push(env, [sm.to], {
 						title: sm.f,

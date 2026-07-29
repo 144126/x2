@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { markMock, byConvMock, totalMock, groupsMock, listMutesMock, mutedConvsMock } = vi.hoisted(() => ({
-	markMock: vi.fn(),
-	byConvMock: vi.fn(),
-	totalMock: vi.fn(),
-	groupsMock: vi.fn(),
-	listMutesMock: vi.fn().mockResolvedValue([]),
-	mutedConvsMock: vi.fn().mockReturnValue([])
-}));
+const { markMock, byConvMock, totalMock, groupsMock, listMutesMock, mutedConvsMock } = vi.hoisted(
+	() => ({
+		markMock: vi.fn(),
+		byConvMock: vi.fn(),
+		totalMock: vi.fn(),
+		groupsMock: vi.fn(),
+		listMutesMock: vi.fn().mockResolvedValue([]),
+		mutedConvsMock: vi.fn().mockReturnValue([])
+	})
+);
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/unread', () => ({

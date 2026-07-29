@@ -17,8 +17,10 @@ function is_ios(): boolean {
 
 function is_standalone(): boolean {
 	return (
-		('standalone' in navigator && (navigator as unknown as { standalone?: boolean }).standalone === true) ||
-		(typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)').matches === true)
+		('standalone' in navigator &&
+			(navigator as unknown as { standalone?: boolean }).standalone === true) ||
+		(typeof window !== 'undefined' &&
+			window.matchMedia?.('(display-mode: standalone)').matches === true)
 	);
 }
 

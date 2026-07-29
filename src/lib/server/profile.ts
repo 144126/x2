@@ -62,7 +62,9 @@ export async function save_profile(
 		.filter(Boolean)
 		.join(' | ');
 	const vec = text ? await embed_text(env, text) : ZV;
-	await upsert(env, [{ id: uid, vector: vec, payload: merged as unknown as Record<string, unknown> }]);
+	await upsert(env, [
+		{ id: uid, vector: vec, payload: merged as unknown as Record<string, unknown> }
+	]);
 }
 
 async function cleanWhatsApp(num: string, country?: string): Promise<string | undefined> {
@@ -71,7 +73,8 @@ async function cleanWhatsApp(num: string, country?: string): Promise<string | un
 	const { Country } = await import('country-state-city');
 	const phonecode = country ? Country.getCountryByCode(country)?.phonecode : undefined;
 	let cleaned = s;
-	if (phonecode && cleaned.startsWith(`+${phonecode}`)) cleaned = cleaned.slice(phonecode.length + 1);
+	if (phonecode && cleaned.startsWith(`+${phonecode}`))
+		cleaned = cleaned.slice(phonecode.length + 1);
 	else if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
 	return cleaned || undefined;
 }

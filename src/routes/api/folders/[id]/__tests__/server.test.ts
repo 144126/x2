@@ -37,7 +37,9 @@ beforeEach(() => {
 
 describe('POST /api/folders/[id]', () => {
 	it('401s when signed out', async () => {
-		await expect(POST(event(null, 'f1', { body: { conv: 'bob' } }))).rejects.toMatchObject({ status: 401 });
+		await expect(POST(event(null, 'f1', { body: { conv: 'bob' } }))).rejects.toMatchObject({
+			status: 401
+		});
 	});
 
 	it('400s without a conv', async () => {
@@ -46,7 +48,9 @@ describe('POST /api/folders/[id]', () => {
 
 	it('404s when the folder is not owned by the caller', async () => {
 		assignConvMock.mockResolvedValue(false);
-		await expect(POST(event('ada', 'f1', { body: { conv: 'bob' } }))).rejects.toMatchObject({ status: 404 });
+		await expect(POST(event('ada', 'f1', { body: { conv: 'bob' } }))).rejects.toMatchObject({
+			status: 404
+		});
 	});
 
 	it('assigns the conv on success', async () => {

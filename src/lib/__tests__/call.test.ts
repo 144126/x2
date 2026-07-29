@@ -13,18 +13,37 @@ class FakePC {
 	ontrack: ((e: { streams: unknown[] }) => void) | null = null;
 	onconnectionstatechange: (() => void) | null = null;
 	connectionState = 'new';
-	async createOffer() { return { type: 'offer', sdp: 'OFFER' }; }
-	async createAnswer() { return { type: 'answer', sdp: 'ANSWER' }; }
-	async setLocalDescription(d: unknown) { this.localDescription = d; }
-	async setRemoteDescription(d: unknown) { this.remoteDescription = d; }
-	async addIceCandidate(c: unknown) { this.ice.push(c); }
+	async createOffer() {
+		return { type: 'offer', sdp: 'OFFER' };
+	}
+	async createAnswer() {
+		return { type: 'answer', sdp: 'ANSWER' };
+	}
+	async setLocalDescription(d: unknown) {
+		this.localDescription = d;
+	}
+	async setRemoteDescription(d: unknown) {
+		this.remoteDescription = d;
+	}
+	async addIceCandidate(c: unknown) {
+		this.ice.push(c);
+	}
 	addTrack(t: unknown) {
-		const sender: FakeSender = { track: t, replaceTrack: async (nt: unknown) => { sender.track = nt; } };
+		const sender: FakeSender = {
+			track: t,
+			replaceTrack: async (nt: unknown) => {
+				sender.track = nt;
+			}
+		};
 		this.senders.push(sender);
 		return sender;
 	}
-	getSenders() { return this.senders; }
-	close() { this.closed = true; }
+	getSenders() {
+		return this.senders;
+	}
+	close() {
+		this.closed = true;
+	}
 }
 
 type FakeTrack = { kind: string; enabled: boolean; stop: ReturnType<typeof vi.fn> };
@@ -53,8 +72,16 @@ function harness(me: string, opts: Partial<MeshOpts> = {}) {
 		me,
 		send: (to, signal) => sent.push({ to, signal }),
 		onremote: (uid, stream) => remotes.push({ uid, stream }),
-		makePC: () => { const pc = new FakePC(); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
-		getMedia: async () => { const { stream, tracks } = fakeStream(); made.push(tracks); return stream; },
+		makePC: () => {
+			const pc = new FakePC();
+			pcs.push(pc);
+			return pc as unknown as RTCPeerConnection;
+		},
+		getMedia: async () => {
+			const { stream, tracks } = fakeStream();
+			made.push(tracks);
+			return stream;
+		},
 		...opts
 	});
 	return { mesh, sent, remotes, pcs, made };
@@ -65,7 +92,9 @@ describe('CallMesh glare avoidance', () => {
 		const { mesh, sent } = harness('alice');
 		await mesh.open(false);
 		await mesh.handle('bob', { type: 'join' });
-		expect(sent).toEqual([{ to: 'bob', signal: { type: 'offer', sdp: { type: 'offer', sdp: 'OFFER' } } }]);
+		expect(sent).toEqual([
+			{ to: 'bob', signal: { type: 'offer', sdp: { type: 'offer', sdp: 'OFFER' } } }
+		]);
 	});
 
 	it('replies "here" instead of offering when the joiner sorts below me', async () => {

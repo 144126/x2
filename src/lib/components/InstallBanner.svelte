@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { watch_install, can_install, install, install_hidden, dismiss_install } from '$lib/install';
+	import {
+		watch_install,
+		can_install,
+		install,
+		install_hidden,
+		dismiss_install
+	} from '$lib/install';
 	import { X } from '@lucide/svelte';
 
 	let visible = $state(false);
@@ -37,7 +43,10 @@
 		class="fixed inset-x-4 top-[calc(env(safe-area-inset-top)+12px)] z-20 flex items-center justify-between gap-4 rounded-lg border border-line bg-base/95 px-4 py-3 text-[13px] shadow-lg backdrop-blur-md sm:left-auto sm:right-6 sm:w-96"
 	>
 		<p class="text-ink-soft">Install x2 for a faster, full-screen experience.</p>
-		<button class="shrink-0 text-[11px] uppercase tracking-[0.18em] text-accent" onclick={do_install}>
+		<button
+			class="shrink-0 text-[11px] uppercase tracking-[0.18em] text-accent"
+			onclick={do_install}
+		>
 			install
 		</button>
 		<button class="shrink-0 text-mute" onclick={dismiss} aria-label="dismiss">

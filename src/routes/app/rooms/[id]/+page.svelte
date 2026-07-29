@@ -8,6 +8,8 @@
 	import type { Message } from '$lib/types';
 	import { CallMesh, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import MuteButton from '$lib/components/MuteButton.svelte';
 	import {
 		ArrowLeft,
 		Image,
@@ -24,6 +26,7 @@
 	let g = $state(data.g);
 	let messages = $state(data.messages as Message[]);
 	let names = $state<Record<string, string>>(data.names);
+	let muted = $state(data.muted as boolean);
 	let text = $state('');
 	let pending: File | null = $state(null);
 	let busy = $state(false);
@@ -34,6 +37,7 @@
 	let owner = $derived(!!me && g.owner === me);
 
 	// owner-only edit panel
+	let aboutOpen = $state(false);
 	let editing = $state(false);
 	let ename = $state(g.name);
 	let edesc = $state(g.description);
@@ -128,7 +132,10 @@
 		if (res.ok) {
 			mark_first_send();
 			const { m } = await res.json();
-			messages = [...messages, { s: 'm', id: m.id, c: '', f: m.from, t: '', gr: g.id, x: m.text, im: m.image, d: m.ts }];
+			messages = [
+				...messages,
+				{ s: 'm', id: m.id, c: '', f: m.from, t: '', gr: g.id, x: m.text, im: m.image, d: m.ts }
+			];
 			scroll_down();
 		}
 	}
@@ -205,7 +212,7 @@
 	});
 </script>
 
-<section class="mx-auto flex h-[calc(100dvh-140px)] max-w-[760px] flex-col sm:h-[calc(100dvh-110px)]">
+<section class="mx-auto flex h-[calc(100dvh-var(--chrome))] max-w-[760px] flex-col">
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
 		<button
 			class="bg-none leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
@@ -215,22 +222,38 @@
 			<ArrowLeft size={22} />
 		</button>
 		<div class="flex min-w-0 flex-col gap-0.5">
-			<h1 class="truncate font-display text-[21px] font-medium tracking-[-0.01em]">{g.name}</h1>
+			<button
+				class="truncate text-left font-display text-[21px] font-medium tracking-[-0.01em] transition-colors duration-300 hover:text-accent"
+				onclick={() => (aboutOpen = true)}
+				title="about this room">{g.name}</button
+			>
 			<span class="text-[10.5px] uppercase tracking-[0.2em] text-faint"
 				>{g.members.length} member{g.members.length === 1 ? '' : 's'}</span
 			>
 		</div>
 		<div class="ml-auto flex flex-wrap items-center gap-2">
 			{#if mine && !inCall}
-				<button class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]" onclick={joinCall}>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]"
+					onclick={joinCall}
+				>
 					<Phone size={14} /> join call
 				</button>
 			{/if}
+			{#if mine}
+				<MuteButton target={g.id} kind="r" bind:muted label="notifications for this room" />
+			{/if}
 			{#if inCall}
-				<button class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]" onclick={toggleMic}>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]"
+					onclick={toggleMic}
+				>
 					{#if micOn}<Mic size={14} />{:else}<MicOff size={14} />{/if}
 				</button>
-				<button class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]" onclick={toggleVideo}>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]"
+					onclick={toggleVideo}
+				>
 					{#if videoOn}<Video size={14} />{:else}<VideoOff size={14} />{/if}
 				</button>
 				<button
@@ -241,11 +264,17 @@
 				</button>
 			{/if}
 			{#if owner}
-				<button class="btn px-4 py-2 text-[12px]" onclick={() => (editing = !editing)}>{editing ? 'close' : 'edit'}</button>
+				<button class="btn px-4 py-2 text-[12px]" onclick={() => (editing = !editing)}
+					>{editing ? 'close' : 'edit'}</button
+				>
 			{:else if mine}
-				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}>leave room</button>
+				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}
+					>leave room</button
+				>
 			{:else}
-				<button class="btn btn-amber px-4 py-2 text-[12px]" onclick={() => membership('join')}>join</button>
+				<button class="btn btn-amber px-4 py-2 text-[12px]" onclick={() => membership('join')}
+					>join</button
+				>
 			{/if}
 		</div>
 	</header>
@@ -270,42 +299,79 @@
 						stream={r.stream}
 						class="h-20 w-28 rounded-[10px] border border-line bg-black object-cover"
 					/>
-					<span class="max-w-[112px] truncate text-[10.5px] text-mute">{names[r.uid] ?? 'someone'}</span>
+					<span class="max-w-[112px] truncate text-[10.5px] text-mute"
+						>{names[r.uid] ?? 'someone'}</span
+					>
 				</div>
 			{/each}
 		</div>
 	{/if}
 
 	{#if editing}
-		<form class="flex flex-col gap-2 border-b border-line py-4" onsubmit={(e) => (e.preventDefault(), save_edits())}>
+		<form
+			class="flex flex-col gap-2 border-b border-line py-4"
+			onsubmit={(e) => (e.preventDefault(), save_edits())}
+		>
 			<input bind:value={ename} placeholder="room name" maxlength="60" />
-			<textarea bind:value={edesc} rows="2" placeholder="what this room is about (used for search)"></textarea>
+			<textarea bind:value={edesc} rows="2" placeholder="what this room is about (used for search)"
+			></textarea>
 			<div class="flex gap-2">
 				<button class="btn btn-amber px-4 py-2 text-[12px]" type="submit">save</button>
-				<button class="btn px-4 py-2 text-[12px] text-red-400" type="button" onclick={remove}>delete room</button>
+				<button class="btn px-4 py-2 text-[12px] text-red-400" type="button" onclick={remove}
+					>delete room</button
+				>
 			</div>
 		</form>
-	{:else if g.description}
-		<p class="border-b border-line py-3 text-[13.5px] leading-[1.5] text-ink-soft">{g.description}</p>
 	{/if}
+
+	<Modal bind:open={aboutOpen} title={g.name}>
+		<div class="flex flex-col gap-4">
+			{#if g.description}
+				<p class="text-[14.5px] leading-[1.6] text-ink-soft">{g.description}</p>
+			{:else}
+				<p class="text-[14px] text-faint">no description yet.</p>
+			{/if}
+			{#if g.city || g.state || g.country}
+				<div class="flex items-baseline gap-3">
+					<span class="eyebrow w-[100px] shrink-0">location</span>
+					<span class="text-[14px] text-ink">
+						{[g.city, g.state, g.country].filter(Boolean).join(' · ')}
+					</span>
+				</div>
+			{/if}
+			<div class="flex items-baseline gap-3">
+				<span class="eyebrow w-[100px] shrink-0">members</span>
+				<span class="text-[14px] text-ink">{g.members.length}</span>
+			</div>
+		</div>
+	</Modal>
 
 	<div bind:this={thread} class="flex flex-1 flex-col gap-3 overflow-y-auto py-6">
 		{#each messages as m (m.id)}
-			<div class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me ? 'self-end items-end' : 'self-start'}">
+			<div
+				class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
+					? 'self-end items-end'
+					: 'self-start'}"
+			>
 				{#if m.f !== me}
-					<a href="/app/user/{m.f}" class="text-[11px] uppercase tracking-[0.16em] text-mute hover:text-accent"
+					<a
+						href="/app/user/{m.f}"
+						class="text-[11px] uppercase tracking-[0.16em] text-mute hover:text-accent"
 						>{names[m.f] ?? 'someone'}</a
 					>
 				{/if}
 				<div
-					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f ===
-					me
+					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
 						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
 						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
 				>
 					{#if m.im}
 						<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
-							<img src={media_src(m.im)} alt="" class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover" />
+							<img
+								src={media_src(m.im)}
+								alt=""
+								class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
+							/>
 						</a>
 					{/if}
 					{#if m.x}{m.x}{/if}
@@ -330,7 +396,11 @@
 				}
 			}}
 		>
-			<label class="btn shrink-0 cursor-pointer px-3 py-3" aria-label="attach image" title={pending ? pending.name : 'attach image'}>
+			<label
+				class="btn shrink-0 cursor-pointer px-3 py-3"
+				aria-label="attach image"
+				title={pending ? pending.name : 'attach image'}
+			>
 				<span class="flex items-center gap-1">
 					<Image size={16} />{#if pending}<span class="text-[11px]">1</span>{/if}
 				</span>
@@ -346,8 +416,13 @@
 					if (f) pending = f;
 				}}
 			/>
-			<button class="btn btn-amber shrink-0 flex items-center gap-1.5 !px-4" type="submit" disabled={busy}>
-				<SendIcon size={16} /> {busy ? 'sending' : 'send'}
+			<button
+				class="btn btn-amber shrink-0 flex items-center gap-1.5 !px-4"
+				type="submit"
+				disabled={busy}
+			>
+				<SendIcon size={16} />
+				{busy ? 'sending' : 'send'}
 			</button>
 		</form>
 	{:else}

@@ -76,12 +76,47 @@ describe('save_group', () => {
 
 	it('embeds name + description only — that is the whole search signal', async () => {
 		await save_group(ENV, 'owner1', { name: 'Ceramics', description: 'wheel-thrown pots' });
-		expect(embedMock).toHaveBeenCalledWith(ENV, 'group_name: Ceramics | group_about: wheel-thrown pots');
+		expect(embedMock).toHaveBeenCalledWith(
+			ENV,
+			'group_name: Ceramics | group_about: wheel-thrown pots'
+		);
 		expect(stored().vector).toBe(VEC);
 	});
 
 	it('rejects a blank name', async () => {
 		await expect(save_group(ENV, 'owner1', { name: '  ' })).rejects.toThrow('name_required');
+	});
+
+	it('saves a room with a country, state and city', async () => {
+		const g = await save_group(ENV, 'owner1', {
+			name: 'Accra Pottery',
+			description: '',
+			country: 'GH',
+			state: 'AA',
+			city: 'Accra'
+		});
+		expect(stored().payload).toMatchObject({ co: 'GH', st: 'AA', ci: 'Accra' });
+	});
+
+	it('saves a room with no location at all', async () => {
+		const g = await save_group(ENV, 'owner1', { name: 'Online', description: '' });
+		expect(stored().payload.co).toBeUndefined();
+	});
+
+	it('exposes country, state and city on the view', async () => {
+		const g = await save_group(ENV, 'owner1', {
+			name: 'Accra Pottery',
+			description: '',
+			country: 'GH',
+			state: 'AA',
+			city: 'Accra'
+		});
+		expect(g).toMatchObject({ country: 'GH', state: 'AA', city: 'Accra' });
+	});
+
+	it('does not fold the location into the embedding', async () => {
+		await save_group(ENV, 'owner1', { name: 'Ceramics', description: 'pots', country: 'GH' });
+		expect(embedMock).toHaveBeenCalledWith(ENV, 'group_name: Ceramics | group_about: pots');
 	});
 });
 
@@ -109,13 +144,34 @@ describe('update_group', () => {
 		retrieveOneMock.mockResolvedValue(group());
 		const g = await update_group(ENV, 'g1', 'owner1', { name: 'Pottery' });
 		expect(g?.name).toBe('Pottery');
-		expect(embedMock).toHaveBeenCalledWith(ENV, 'group_name: Pottery | group_about: wheel-thrown pots');
+		expect(embedMock).toHaveBeenCalledWith(
+			ENV,
+			'group_name: Pottery | group_about: wheel-thrown pots'
+		);
 	});
 
 	it('refuses a non-owner and writes nothing', async () => {
 		retrieveOneMock.mockResolvedValue(group());
 		expect(await update_group(ENV, 'g1', 'someone_else', { name: 'Hijacked' })).toBeNull();
 		expect(upsertMock).not.toHaveBeenCalled();
+	});
+
+	it('updates a location on an existing room', async () => {
+		retrieveOneMock.mockResolvedValue(group());
+		const g = await update_group(ENV, 'g1', 'owner1', { country: 'GH' });
+		expect(upsertMock.mock.calls[0][1][0].payload).toMatchObject({ co: 'GH' });
+	});
+
+	it('clears a location when given an empty string', async () => {
+		retrieveOneMock.mockResolvedValue(group({ co: 'GH' }));
+		const g = await update_group(ENV, 'g1', 'owner1', { country: '' });
+		expect(upsertMock.mock.calls[0][1][0].payload.co).toBe('');
+	});
+
+	it('leaves a location alone when the field is undefined', async () => {
+		retrieveOneMock.mockResolvedValue(group({ co: 'GH' }));
+		const g = await update_group(ENV, 'g1', 'owner1', {});
+		expect(upsertMock.mock.calls[0][1][0].payload.co).toBe('GH');
 	});
 });
 
@@ -136,7 +192,14 @@ describe('membership', () => {
 	});
 
 	it('is_member reflects the member list', () => {
-		const g = { id: 'g1', name: 'n', description: '', owner: 'o', members: ['o', 'bob'], created: 1 };
+		const g = {
+			id: 'g1',
+			name: 'n',
+			description: '',
+			owner: 'o',
+			members: ['o', 'bob'],
+			created: 1
+		};
 		expect(is_member(g, 'bob')).toBe(true);
 		expect(is_member(g, 'eve')).toBe(false);
 	});
@@ -168,6 +231,55 @@ describe('list_groups / search_groups', () => {
 		scrollMock.mockResolvedValue([group()]);
 		expect(await search_groups(ENV, 'pots')).toHaveLength(1);
 		expect(searchMock).not.toHaveBeenCalled();
+	});
+
+	it('filters by country', async () => {
+		scrollMock.mockResolvedValue([group()]);
+		await search_groups(ENV, '', { country: 'GH' });
+		const filter = scrollMock.mock.calls[0][1];
+		expect(filter.must).toContainEqual({ key: 'co', match: { value: 'GH' } });
+	});
+
+	it('filters by country and state together', async () => {
+		scrollMock.mockResolvedValue([group()]);
+		await search_groups(ENV, '', { country: 'GH', state: 'AA' });
+		const filter = scrollMock.mock.calls[0][1];
+		expect(filter.must).toContainEqual({ key: 'co', match: { value: 'GH' } });
+		expect(filter.must).toContainEqual({ key: 'st', match: { value: 'AA' } });
+	});
+
+	it('filters by city', async () => {
+		scrollMock.mockResolvedValue([group()]);
+		await search_groups(ENV, '', { city: 'Accra' });
+		const filter = scrollMock.mock.calls[0][1];
+		expect(filter.must).toContainEqual({ key: 'ci', match: { value: 'Accra' } });
+	});
+
+	it('applies the filters when there is no query', async () => {
+		scrollMock.mockResolvedValue([group()]);
+		await search_groups(ENV, '', { country: 'GH' });
+		expect(scrollMock).toHaveBeenCalled();
+		expect(searchMock).not.toHaveBeenCalled();
+	});
+
+	it('applies the filters when the embedder returns a zero vector', async () => {
+		const { ZV } = await vi.importActual<typeof import('../qdrant')>('../qdrant');
+		embedMock.mockResolvedValue(ZV);
+		scrollMock.mockResolvedValue([group()]);
+		await search_groups(ENV, 'pots', { country: 'GH' });
+		expect(scrollMock).toHaveBeenCalled();
+	});
+
+	it('sorts the no-query fallback newest first', async () => {
+		scrollMock.mockResolvedValue([group({ d: 100 }), group({ id: 'g2', d: 900 })]);
+		const r = await search_groups(ENV, '', {});
+		expect(r.map((g) => g.created)).toEqual([900, 100]);
+	});
+
+	it('returns scored results when a query is given', async () => {
+		searchMock.mockResolvedValue([{ ...group({}), score: 0.8 }]);
+		const r = await search_groups(ENV, 'pots', {});
+		expect(r[0].score).toBe(0.8);
 	});
 });
 

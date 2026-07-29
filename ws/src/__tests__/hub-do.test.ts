@@ -38,7 +38,9 @@ function makeState() {
 		getTags: vi.fn((ws: FakeSocket) => tagsBySocket.get(ws) ?? []),
 		storage: {
 			get: vi.fn(async (k: string) => store.get(k)),
-			put: vi.fn(async (k: string, v: unknown) => { store.set(k, v); })
+			put: vi.fn(async (k: string, v: unknown) => {
+				store.set(k, v);
+			})
 		},
 		_socketsByTag: socketsByTag
 	};
@@ -53,7 +55,13 @@ const SECRET = 'shared-secret';
 describe('ChatHub.fetch', () => {
 	let state: ReturnType<typeof makeState>;
 	let stubFetch: ReturnType<typeof vi.fn>;
-	let env: { CHAT_HUB: { idFromName: (n: string) => string; get: (id: string) => { fetch: typeof stubFetch } }; SECRET: string };
+	let env: {
+		CHAT_HUB: {
+			idFromName: (n: string) => string;
+			get: (id: string) => { fetch: typeof stubFetch };
+		};
+		SECRET: string;
+	};
 
 	beforeEach(() => {
 		state = makeState();
@@ -104,7 +112,9 @@ describe('ChatHub.fetch', () => {
 		// the 101-upgrade Response construction itself is workerd-only (see note above) and throws
 		// under Node — what we're actually verifying is that we got PAST the auth check, i.e.
 		// get_secret correctly unwrapped the bound SECRET before verify_token compared it.
-		await hub.fetch(req(`https://dummy/ws?uid=uid-1&t=${t}`, { headers: { upgrade: 'websocket' } })).catch(() => {});
+		await hub
+			.fetch(req(`https://dummy/ws?uid=uid-1&t=${t}`, { headers: { upgrade: 'websocket' } }))
+			.catch(() => {});
 		expect(state.acceptWebSocket).toHaveBeenCalledWith(expect.anything(), ['uid-1']);
 		vi.unstubAllGlobals();
 	});
@@ -169,8 +179,15 @@ describe('ChatHub.fetch', () => {
 		state.acceptWebSocket(recipient, ['bob']);
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
-		const payload = { type: 'signal', to: 'bob', from: 'alice', signal: { type: 'offer', sdp: {} } };
-		const res = await hub.fetch(req('https://dummy/signal', { method: 'POST', body: JSON.stringify(payload) }));
+		const payload = {
+			type: 'signal',
+			to: 'bob',
+			from: 'alice',
+			signal: { type: 'offer', sdp: {} }
+		};
+		const res = await hub.fetch(
+			req('https://dummy/signal', { method: 'POST', body: JSON.stringify(payload) })
+		);
 		expect(res.status).toBe(200);
 		expect(recipient.sent).toEqual([JSON.stringify(payload)]);
 	});
@@ -180,7 +197,10 @@ describe('ChatHub.fetch', () => {
 		state.acceptWebSocket(ws, ['bob']);
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
-		await hub.webSocketMessage(ws as unknown as WebSocket, JSON.stringify({ type: 'active', on: false }));
+		await hub.webSocketMessage(
+			ws as unknown as WebSocket,
+			JSON.stringify({ type: 'active', on: false })
+		);
 		expect(ws._attachment).toEqual({ active: false });
 	});
 
@@ -191,7 +211,10 @@ describe('ChatHub.fetch', () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		const res = await hub.fetch(
-			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 })
+			})
 		);
 		expect(await res.json()).toEqual({ delivered: false });
 	});
@@ -206,7 +229,10 @@ describe('ChatHub.fetch', () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		const res = await hub.fetch(
-			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 })
+			})
 		);
 		expect(await res.json()).toEqual({ delivered: true });
 	});
@@ -218,7 +244,10 @@ describe('ChatHub.fetch', () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		await hub.fetch(
-			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 })
+			})
 		);
 		expect(bg.sent.length).toBe(1);
 	});
@@ -229,7 +258,10 @@ describe('ChatHub.fetch', () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		const res = await hub.fetch(
-			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 })
+			})
 		);
 		expect(await res.json()).toEqual({ delivered: true });
 	});
@@ -241,7 +273,10 @@ describe('ChatHub.fetch', () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		const res = await hub.fetch(
-			req('https://dummy/relay', { method: 'POST', body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 }) })
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', from: 'alice', text: 'hi', ts: 1 })
+			})
 		);
 		expect(await res.json()).toEqual({ delivered: true });
 	});
@@ -271,11 +306,17 @@ describe('ChatHub.webSocketMessage', () => {
 	it('ignores non-signal messages', async () => {
 		const state = makeState();
 		const stubFetch = vi.fn();
-		const env = { SECRET, CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: stubFetch }) } };
+		const env = {
+			SECRET,
+			CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: stubFetch }) }
+		};
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		const ws = new FakeSocket();
-		await hub.webSocketMessage(ws as unknown as WebSocket, JSON.stringify({ type: 'chat', to: 'bob' }));
+		await hub.webSocketMessage(
+			ws as unknown as WebSocket,
+			JSON.stringify({ type: 'chat', to: 'bob' })
+		);
 		expect(stubFetch).not.toHaveBeenCalled();
 	});
 
@@ -307,7 +348,10 @@ describe('ChatHub.webSocketClose', () => {
 		const other = new FakeSocket();
 		state.acceptWebSocket(closing, ['alice']);
 		state.acceptWebSocket(other, ['bob']);
-		const env = { SECRET, CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: vi.fn() }) } };
+		const env = {
+			SECRET,
+			CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: vi.fn() }) }
+		};
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		await hub.webSocketClose(closing as unknown as WebSocket);
@@ -325,7 +369,10 @@ describe('ChatHub.webSocketClose', () => {
 		state.acceptWebSocket(stillOpenTab, ['alice']);
 		state.acceptWebSocket(watcher, ['bob']);
 		const stubFetch = vi.fn().mockResolvedValue(new Response('ok'));
-		const env = { SECRET, CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: stubFetch }) } };
+		const env = {
+			SECRET,
+			CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: stubFetch }) }
+		};
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		await hub.webSocketClose(closingTab as unknown as WebSocket);
@@ -341,7 +388,10 @@ describe('ChatHub.webSocketClose', () => {
 		const watcher = new FakeSocket();
 		state.acceptWebSocket(closing, ['alice']);
 		state.acceptWebSocket(watcher, ['bob']);
-		const env = { SECRET, CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: vi.fn() }) } };
+		const env = {
+			SECRET,
+			CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: vi.fn() }) }
+		};
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, env as any);
 		await hub.webSocketClose(closing as unknown as WebSocket);

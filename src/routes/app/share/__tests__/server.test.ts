@@ -78,12 +78,12 @@ describe('POST /app/share — content shared from the OS', () => {
 		expect(new URL(to, 'https://x').searchParams.has('share_image')).toBe(false);
 	});
 
-	it('lands on the people page, where a recipient gets chosen', async () => {
+	it('redirects a shared payload to the chats page', async () => {
 		const to = await location_of(POST(event(form({ text: 'hi' }))));
-		expect(new URL(to, 'https://x').pathname).toBe('/app');
+		expect(new URL(to, 'https://x').pathname).toBe('/app/chats');
 	});
 
 	it('survives an empty share without erroring', async () => {
-		expect(await location_of(POST(event(form({}))))).toContain('/app');
+		expect(await location_of(POST(event(form({}))))).toContain('/app/chats');
 	});
 });

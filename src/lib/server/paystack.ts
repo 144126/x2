@@ -46,22 +46,42 @@ export async function paystack_init(
 		headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
 		body: JSON.stringify({ email, amount: amount_kobo, reference, callback_url, metadata })
 	});
-	const json = (await res.json()) as { status: boolean; message?: string; data?: PaystackInitResult };
-	if (!res.ok || !json.status || !json.data) throw new Error(json.message ?? 'paystack init failed');
+	const json = (await res.json()) as {
+		status: boolean;
+		message?: string;
+		data?: PaystackInitResult;
+	};
+	if (!res.ok || !json.status || !json.data)
+		throw new Error(json.message ?? 'paystack init failed');
 	return json.data;
 }
 
-export async function paystack_verify(env: PaystackEnv, reference: string): Promise<PaystackVerifyResult> {
+export async function paystack_verify(
+	env: PaystackEnv,
+	reference: string
+): Promise<PaystackVerifyResult> {
 	const key = await get_secret_key(env);
-	const res = await fetch(`${await base_url(env)}/transaction/verify/${encodeURIComponent(reference)}`, {
-		headers: { Authorization: `Bearer ${key}` }
-	});
-	const json = (await res.json()) as { status: boolean; message?: string; data?: PaystackVerifyResult };
-	if (!res.ok || !json.status || !json.data) throw new Error(json.message ?? 'paystack verify failed');
+	const res = await fetch(
+		`${await base_url(env)}/transaction/verify/${encodeURIComponent(reference)}`,
+		{
+			headers: { Authorization: `Bearer ${key}` }
+		}
+	);
+	const json = (await res.json()) as {
+		status: boolean;
+		message?: string;
+		data?: PaystackVerifyResult;
+	};
+	if (!res.ok || !json.status || !json.data)
+		throw new Error(json.message ?? 'paystack verify failed');
 	return json.data;
 }
 
-export async function verify_webhook_sig(env: PaystackEnv, raw_body: string, signature: string): Promise<boolean> {
+export async function verify_webhook_sig(
+	env: PaystackEnv,
+	raw_body: string,
+	signature: string
+): Promise<boolean> {
 	const key = await get_secret_key(env);
 	if (!key || !signature) return false;
 	const enc = new TextEncoder();

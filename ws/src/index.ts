@@ -23,7 +23,9 @@ const worker: ExportedHandler<Env> = {
 				console.warn('[WS-WORKER] /ws request with no uid, rejecting');
 				return new Response('no uid', { status: 400 });
 			}
-			console.log(`[WS-WORKER] routing /ws to ChatHub DO for uid=${uid}, upgrade header=${request.headers.get('upgrade')}`);
+			console.log(
+				`[WS-WORKER] routing /ws to ChatHub DO for uid=${uid}, upgrade header=${request.headers.get('upgrade')}`
+			);
 			const id = env.CHAT_HUB.idFromName(uid);
 			const stub = env.CHAT_HUB.get(id);
 			const res = await stub.fetch(request);

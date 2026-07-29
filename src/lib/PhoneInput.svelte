@@ -125,8 +125,22 @@
 			{:else}
 				<span class="pi-dial pi-placeholder">+000</span>
 			{/if}
-			<svg class="pi-chevron" class:pi-chevron-up={open} width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-				<path d="M3 5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+			<svg
+				class="pi-chevron"
+				class:pi-chevron-up={open}
+				width="12"
+				height="12"
+				viewBox="0 0 12 12"
+				aria-hidden="true"
+			>
+				<path
+					d="M3 5l3 3 3-3"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
 			</svg>
 		</button>
 

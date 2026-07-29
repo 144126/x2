@@ -2,16 +2,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 
-const { pushAvailableMock, pushStateMock, enablePushMock, hasSentMock, iosHintMock, dismissMock, hiddenMock } =
-	vi.hoisted(() => ({
-		pushAvailableMock: vi.fn(),
-		pushStateMock: vi.fn(),
-		enablePushMock: vi.fn(),
-		hasSentMock: vi.fn(),
-		iosHintMock: vi.fn(),
-		dismissMock: vi.fn(),
-		hiddenMock: vi.fn()
-	}));
+const {
+	pushAvailableMock,
+	pushStateMock,
+	enablePushMock,
+	hasSentMock,
+	iosHintMock,
+	dismissMock,
+	hiddenMock
+} = vi.hoisted(() => ({
+	pushAvailableMock: vi.fn(),
+	pushStateMock: vi.fn(),
+	enablePushMock: vi.fn(),
+	hasSentMock: vi.fn(),
+	iosHintMock: vi.fn(),
+	dismissMock: vi.fn(),
+	hiddenMock: vi.fn()
+}));
 
 vi.mock('$lib/push-client', () => ({
 	push_available: pushAvailableMock,

@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { saveMock, deleteMock, listMock, vapid_env, dynamic_env } = vi.hoisted(() => {
-	const vapid_env = { VAPID_PUBLIC: 'BPublicKey', VAPID_PRIVATE: 'priv', VAPID_SUBJECT: 'mailto:a@b' };
+	const vapid_env = {
+		VAPID_PUBLIC: 'BPublicKey',
+		VAPID_PRIVATE: 'priv',
+		VAPID_SUBJECT: 'mailto:a@b'
+	};
 	return {
 		saveMock: vi.fn(),
 		deleteMock: vi.fn(),

@@ -1,4 +1,15 @@
-import { ZV, ensure, upsert, retrieve_one, new_id, search, scroll, f, eq, type QEnv } from './qdrant';
+import {
+	ZV,
+	ensure,
+	upsert,
+	retrieve_one,
+	new_id,
+	search,
+	scroll,
+	f,
+	eq,
+	type QEnv
+} from './qdrant';
 import { embed } from './or';
 
 export interface Group {
@@ -9,6 +20,9 @@ export interface Group {
 	ow: string; // owner uid
 	mb: string[]; // member uids (owner included)
 	d: number; // created ts
+	co?: string; // country
+	st?: string; // state / province
+	ci?: string; // city
 }
 
 export type GroupView = {
@@ -18,6 +32,9 @@ export type GroupView = {
 	owner: string;
 	members: string[];
 	created: number;
+	country?: string;
+	state?: string;
+	city?: string;
 	score?: number;
 };
 
@@ -28,6 +45,9 @@ const view = (g: Group, score?: number): GroupView => ({
 	owner: g.ow,
 	members: g.mb ?? [],
 	created: g.d,
+	...(g.co ? { country: g.co } : {}),
+	...(g.st ? { state: g.st } : {}),
+	...(g.ci ? { city: g.ci } : {}),
 	...(score === undefined ? {} : { score })
 });
 
@@ -43,7 +63,7 @@ async function put(env: QEnv, g: Group): Promise<void> {
 export async function save_group(
 	env: QEnv,
 	ownerId: string,
-	data: { name: string; description?: string }
+	data: { name: string; description?: string; country?: string; state?: string; city?: string }
 ): Promise<GroupView> {
 	await ensure(env);
 	const name = data.name.trim();
@@ -55,7 +75,10 @@ export async function save_group(
 		ds: (data.description ?? '').trim(),
 		ow: ownerId,
 		mb: [ownerId],
-		d: Date.now()
+		d: Date.now(),
+		...(data.country ? { co: data.country } : {}),
+		...(data.state ? { st: data.state } : {}),
+		...(data.city ? { ci: data.city } : {})
 	};
 	await put(env, g);
 	return view(g);
@@ -72,11 +95,22 @@ export async function get_group(env: QEnv, id: string): Promise<GroupView | null
 }
 
 /** owner-only edit. Re-embeds, since name/description are what search matches on. */
+function apply_location(
+	cur: Group,
+	updates: { country?: string; state?: string; city?: string }
+): Partial<Group> {
+	const out: Partial<Group> = {};
+	if (updates.country !== undefined) out.co = updates.country || '';
+	if (updates.state !== undefined) out.st = updates.state || '';
+	if (updates.city !== undefined) out.ci = updates.city || '';
+	return out;
+}
+
 export async function update_group(
 	env: QEnv,
 	id: string,
 	uid: string,
-	updates: { name?: string; description?: string }
+	updates: { name?: string; description?: string; country?: string; state?: string; city?: string }
 ): Promise<GroupView | null> {
 	await ensure(env);
 	const cur = await raw_group(env, id);
@@ -84,7 +118,8 @@ export async function update_group(
 	const next: Group = {
 		...cur,
 		nm: updates.name?.trim() || cur.nm,
-		ds: updates.description === undefined ? cur.ds : updates.description.trim()
+		ds: updates.description === undefined ? cur.ds : updates.description.trim(),
+		...apply_location(cur, updates)
 	};
 	await put(env, next);
 	return view(next);
@@ -126,13 +161,37 @@ export async function list_groups(env: QEnv, uid?: string, limit = 50): Promise<
 	return pts.map((p) => view(p.payload as unknown as Group)).sort((a, b) => b.created - a.created);
 }
 
-export async function search_groups(env: QEnv, q: string, limit = 20): Promise<GroupView[]> {
+function loc_filter(loc: { country?: string; state?: string; city?: string }) {
+	const clauses = [eq('s', 'g')];
+	if (loc.country) clauses.push(eq('co', loc.country));
+	if (loc.state) clauses.push(eq('st', loc.state));
+	if (loc.city) clauses.push(eq('ci', loc.city));
+	return f(...clauses);
+}
+
+export async function search_groups(
+	env: QEnv,
+	q: string,
+	loc?: { country?: string; state?: string; city?: string },
+	limit = 20
+): Promise<GroupView[]> {
 	await ensure(env);
+	const has_loc = loc && (loc.country || loc.state || loc.city);
+	const filter = has_loc ? loc_filter(loc!) : f(eq('s', 'g'));
+	if (!q) {
+		const pts = await scroll(env, filter, limit);
+		return pts
+			.map((p) => view(p.payload as unknown as Group))
+			.sort((a, b) => b.created - a.created);
+	}
 	const vec = await embed(env, q);
-	// no embedder configured (or the call failed) — a zero vector ranks nothing, so fall
-	// back to listing rather than returning an empty page
-	if (vec === ZV) return list_groups(env, undefined, limit);
-	const hits = await search(env, vec, f(eq('s', 'g')), limit);
+	if (vec === ZV) {
+		const pts = await scroll(env, filter, limit);
+		return pts
+			.map((p) => view(p.payload as unknown as Group))
+			.sort((a, b) => b.created - a.created);
+	}
+	const hits = await search(env, vec, filter, limit);
 	return hits.map((h) => view(h.payload as unknown as Group, h.score));
 }
 

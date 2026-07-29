@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-const KEY = 'BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8';
+const KEY =
+	'BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8';
 
 class FakeSubscription {
 	endpoint = 'https://push.example.net/push/abc';
@@ -43,16 +44,15 @@ async function setup(e: Env = {}) {
 
 	vi.stubGlobal('navigator', {
 		userAgent: ua,
-		...(supported ? { serviceWorker: { ready: Promise.resolve(registration), register: vi.fn() } } : {}),
+		...(supported
+			? { serviceWorker: { ready: Promise.resolve(registration), register: vi.fn() } }
+			: {}),
 		...(standalone ? { standalone: true } : {})
 	});
-	vi.stubGlobal(
-		'window',
-		{
-			...(supported ? { PushManager: class {} } : {}),
-			matchMedia: (q: string) => ({ matches: standalone && q.includes('standalone') })
-		} as unknown as Window
-	);
+	vi.stubGlobal('window', {
+		...(supported ? { PushManager: class {} } : {}),
+		matchMedia: (q: string) => ({ matches: standalone && q.includes('standalone') })
+	} as unknown as Window);
 	if (supported) vi.stubGlobal('Notification', { permission, requestPermission });
 	else vi.stubGlobal('Notification', undefined);
 	vi.stubGlobal('fetch', fetchMock);

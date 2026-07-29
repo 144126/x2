@@ -55,7 +55,9 @@ describe('CreditAccount', () => {
 		const state = makeState();
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const acct = new CreditAccount(state as any, {} as any);
-		const res = await acct.fetch(req('/deduct', { method: 'POST', body: JSON.stringify({ amount: 100 }) }));
+		const res = await acct.fetch(
+			req('/deduct', { method: 'POST', body: JSON.stringify({ amount: 100 }) })
+		);
 		expect(await res.json()).toEqual({ ok: true, balance: DAILY_GRANT - 100 });
 	});
 
@@ -66,7 +68,11 @@ describe('CreditAccount', () => {
 		const res = await acct.fetch(
 			req('/deduct', { method: 'POST', body: JSON.stringify({ amount: DAILY_GRANT + 1 }) })
 		);
-		expect(await res.json()).toEqual({ ok: false, reason: 'insufficient_credits', balance: DAILY_GRANT });
+		expect(await res.json()).toEqual({
+			ok: false,
+			reason: 'insufficient_credits',
+			balance: DAILY_GRANT
+		});
 		const bal = await (await acct.fetch(req('/balance'))).json();
 		expect(bal.balance).toBe(DAILY_GRANT);
 	});
@@ -75,7 +81,9 @@ describe('CreditAccount', () => {
 		const state = makeState();
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const acct = new CreditAccount(state as any, {} as any);
-		const res = await acct.fetch(req('/deduct', { method: 'POST', body: JSON.stringify({ amount: 50 }) }));
+		const res = await acct.fetch(
+			req('/deduct', { method: 'POST', body: JSON.stringify({ amount: 50 }) })
+		);
 		expect(await res.json()).toEqual({ ok: true, balance: DAILY_GRANT - 50 });
 	});
 
@@ -84,7 +92,9 @@ describe('CreditAccount', () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const acct = new CreditAccount(state as any, {} as any);
 		await acct.fetch(req('/balance'));
-		const res = await acct.fetch(req('/credit', { method: 'POST', body: JSON.stringify({ amount: 10000 }) }));
+		const res = await acct.fetch(
+			req('/credit', { method: 'POST', body: JSON.stringify({ amount: 10000 }) })
+		);
 		expect(await res.json()).toEqual({ balance: DAILY_GRANT + 10000 });
 	});
 

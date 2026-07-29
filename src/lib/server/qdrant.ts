@@ -26,8 +26,7 @@ let q_key = '';
 export async function qc(env: QEnv): Promise<QdrantClient> {
 	const url = await get_secret(env.QDRANT_URL, env.DEV_QDRANT_URL);
 	const key = await get_secret(env.QDRANT_KEY, env.DEV_QDRANT_KEY);
-	if (!q || q_key !== key)
-		q = new QdrantClient({ url, apiKey: key, checkCompatibility: false });
+	if (!q || q_key !== key) q = new QdrantClient({ url, apiKey: key, checkCompatibility: false });
 	q_key = key;
 	return q;
 }
@@ -43,7 +42,6 @@ export type QEnv = {
 	DEV_QDRANT_URL?: SecretVal;
 	DEV_QDRANT_KEY?: SecretVal;
 };
-
 
 // deterministic UUID from an external id (e.g. google sub)
 export async function uuid_from(s: string): Promise<string> {
@@ -69,7 +67,12 @@ export const f = (...conds: Cond[]) => ({ must: conds });
 // AND every `musts`, but require at least one of `any_of` too (Qdrant's must+should combo)
 export const f_or = (musts: Cond[], any_of: Cond[]) => ({ must: musts, should: any_of });
 
-type Pt = { id: string | number; vector?: number[]; payload: Record<string, unknown> | null; score?: number };
+type Pt = {
+	id: string | number;
+	vector?: number[];
+	payload: Record<string, unknown> | null;
+	score?: number;
+};
 
 // idempotent: create collection + payload indexes if missing (once per instance)
 // Qdrant strict_mode on this collection rejects filtering on any unindexed field, so every
@@ -78,11 +81,24 @@ let ensured = false;
 export async function ensure(env: QEnv): Promise<void> {
 	if (ensured) return;
 	const c = await qc(env);
-	await c
-		.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } })
-		.catch(() => {});
+	await c.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } }).catch(() => {});
 	for (const key of [
-		's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k'
+		's',
+		't',
+		'r',
+		'c',
+		'f',
+		'co',
+		'st',
+		'ci',
+		'u',
+		'ow',
+		'mb',
+		'gr',
+		'uid',
+		'ac',
+		'tg',
+		'k'
 	])
 		await c.createPayloadIndex(C, { field_name: key, field_schema: 'keyword' }).catch(() => {});
 	await c.createPayloadIndex(C, { field_name: 'ag', field_schema: 'integer' }).catch(() => {});
@@ -97,7 +113,9 @@ export async function scroll(
 	limit = 1000,
 	offset?: number
 ): Promise<Pt[]> {
-	const r = await (await qc(env))
+	const r = await (
+		await qc(env)
+	)
 		.scroll(C, { filter, limit, offset, with_payload: true, with_vector: false })
 		.catch(() => ({ points: [] as Pt[] }));
 	return r.points as Pt[];
@@ -115,7 +133,9 @@ export async function search(
 	limit = 12,
 	offset?: number
 ): Promise<Pt[]> {
-	const r = await (await qc(env))
+	const r = await (
+		await qc(env)
+	)
 		.search(C, { vector, filter, limit, offset, with_payload: true })
 		.catch(() => []);
 	return r as unknown as Pt[];
@@ -128,7 +148,15 @@ export async function remove(env: QEnv, ids: string[]): Promise<void> {
 
 export async function upsert(env: QEnv, points: Pt[]): Promise<void> {
 	if (!points.length) return;
-	await (await qc(env))
-		.upsert(C, { points: points as unknown as { id: string | number; vector: number[]; payload: Record<string, unknown> }[] })
+	await (
+		await qc(env)
+	)
+		.upsert(C, {
+			points: points as unknown as {
+				id: string | number;
+				vector: number[];
+				payload: Record<string, unknown>;
+			}[]
+		})
 		.catch(() => {});
 }

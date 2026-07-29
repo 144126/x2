@@ -29,9 +29,7 @@ export async function notify(
 		const conv = typeof payload.conv === 'string' ? payload.conv : undefined;
 		const opts = conv ? { topic: push_topic(conv) } : {};
 
-		const results = await Promise.all(
-			subs.map((s) => send_push(to_web_push(s), body, keys, opts))
-		);
+		const results = await Promise.all(subs.map((s) => send_push(to_web_push(s), body, keys, opts)));
 
 		const gone = subs.filter((_, i) => results[i].gone).map((s) => s.ep);
 		if (gone.length) await delete_subs(env, gone);

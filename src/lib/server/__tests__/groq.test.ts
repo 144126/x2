@@ -13,8 +13,26 @@ import type { User } from '../../types';
 const ws = {} as never;
 const env = { GROQ: 'test-key' } as never;
 
-const a: User = { s: 'u', g: 'a', d: 1, u: 'ada', a: 'loves synths', i: ['music', 'hiking'], ag: 30, co: 'NG' };
-const b: User = { s: 'u', g: 'b', d: 1, u: 'bob', a: 'also loves synths', i: ['music', 'coding'], ag: 32, co: 'NG' };
+const a: User = {
+	s: 'u',
+	g: 'a',
+	d: 1,
+	u: 'ada',
+	a: 'loves synths',
+	i: ['music', 'hiking'],
+	ag: 30,
+	co: 'NG'
+};
+const b: User = {
+	s: 'u',
+	g: 'b',
+	d: 1,
+	u: 'bob',
+	a: 'also loves synths',
+	i: ['music', 'coding'],
+	ag: 32,
+	co: 'NG'
+};
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -48,7 +66,10 @@ describe('whats_in_common', () => {
 		const withSecrets: User = { ...a, m: 'ada@example.com', h: 'hash', w: '5551234' };
 		vi.mocked(fetch).mockResolvedValue(
 			new Response(
-				JSON.stringify({ choices: [{ message: { content: 'text' } }], usage: { prompt_tokens: 1, completion_tokens: 1 } })
+				JSON.stringify({
+					choices: [{ message: { content: 'text' } }],
+					usage: { prompt_tokens: 1, completion_tokens: 1 }
+				})
 			)
 		);
 		await whats_in_common(env, ws, 'viewer', withSecrets, b);

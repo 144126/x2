@@ -76,6 +76,12 @@
 		</div>
 	{/if}
 	{#if showCity}
-		<input type="text" placeholder="city (optional)" bind:value={city} aria-label="city" class="max-w-full" />
+		<input
+			type="text"
+			placeholder="city (optional)"
+			bind:value={city}
+			aria-label="city"
+			class="max-w-full"
+		/>
 	{/if}
 </div>

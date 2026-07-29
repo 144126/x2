@@ -1,4 +1,15 @@
-import { ensure, upsert, scroll, remove, uuid_from, f, eq, ZV, type QEnv, type Cond } from './qdrant';
+import {
+	ensure,
+	upsert,
+	scroll,
+	remove,
+	uuid_from,
+	f,
+	eq,
+	ZV,
+	type QEnv,
+	type Cond
+} from './qdrant';
 import { conv_id, group_conv_id } from './chat';
 
 export interface Mute {
@@ -24,7 +35,11 @@ export async function mute(
 	await ensure(env);
 	const m: Mute = { s: 'mu', ow: owner, tg: target, k: kind, until, d: Date.now() };
 	await upsert(env, [
-		{ id: await mute_id(owner, target), vector: ZV, payload: m as unknown as Record<string, unknown> }
+		{
+			id: await mute_id(owner, target),
+			vector: ZV,
+			payload: m as unknown as Record<string, unknown>
+		}
 	]);
 	return m;
 }

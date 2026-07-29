@@ -19,9 +19,11 @@ export function cache_mode(req: SwRequest, ctx: SwContext): CacheMode {
 		return 'bypass';
 	}
 	if (url.origin !== ctx.origin) return 'bypass';
-	if (BYPASS_PREFIXES.some((p) => url.pathname === p || url.pathname.startsWith(p))) return 'bypass';
+	if (BYPASS_PREFIXES.some((p) => url.pathname === p || url.pathname.startsWith(p)))
+		return 'bypass';
 
-	if (ctx.assets.has(url.pathname) || url.pathname.startsWith('/_app/immutable/')) return 'immutable';
+	if (ctx.assets.has(url.pathname) || url.pathname.startsWith('/_app/immutable/'))
+		return 'immutable';
 	if (url.pathname.startsWith('/media/')) return 'cache-first';
 	return 'network-first';
 }
@@ -82,7 +84,13 @@ export function notification_from(data: NotifyPayload): {
 			icon: '/icons/icon-192.png',
 			badge: '/icons/badge-96.png',
 			...(has_image ? { image: p.image } : {}),
-			data: { url, conv: p.conv, id: p.id, kind: p.kind, ...(p.reply_to ? { reply_to: p.reply_to } : {}) },
+			data: {
+				url,
+				conv: p.conv,
+				id: p.id,
+				kind: p.kind,
+				...(p.reply_to ? { reply_to: p.reply_to } : {})
+			},
 			...(p.ts !== undefined ? { timestamp: p.ts } : {}),
 			actions: p.conv
 				? [

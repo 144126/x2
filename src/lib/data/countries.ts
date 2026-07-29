@@ -237,5 +237,5 @@ export const countries: Country[] = [
 	{ n: 'Wallis and Futuna', f: '🇼🇫', c: 'WF', d: '+681' },
 	{ n: 'Yemen', f: '🇾🇪', c: 'YE', d: '+967' },
 	{ n: 'Zambia', f: '🇿🇲', c: 'ZM', d: '+260' },
-	{ n: 'Zimbabwe', f: '🇿🇼', c: 'ZW', d: '+263' },
+	{ n: 'Zimbabwe', f: '🇿🇼', c: 'ZW', d: '+263' }
 ];

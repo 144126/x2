@@ -34,8 +34,25 @@ describe('ensure', () => {
 		);
 		expect(keys).toEqual(
 			expect.arrayContaining([
-				's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac',
-				'tg', 'k', 'ag', 'at', 'sent'
+				's',
+				't',
+				'r',
+				'c',
+				'f',
+				'co',
+				'st',
+				'ci',
+				'u',
+				'ow',
+				'mb',
+				'gr',
+				'uid',
+				'ac',
+				'tg',
+				'k',
+				'ag',
+				'at',
+				'sent'
 			])
 		);
 	});

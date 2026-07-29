@@ -26,10 +26,12 @@ const enc = (b: Uint8Array): string =>
 const RFC = {
 	plaintext: 'When I grow up, I want to be a watermelon',
 	ua_private: 'q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94',
-	ua_public: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
+	ua_public:
+		'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
 	auth: 'BTBZMqHH6r4Tts7J_aSIgg',
 	as_private: 'yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw',
-	as_public: 'BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8',
+	as_public:
+		'BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8',
 	salt: 'DGv6ra1nlYgDzR9GBDl9NQ'
 };
 
@@ -43,9 +45,13 @@ const rfc_sub: WebPushSub = {
 const bs = (u: Uint8Array): BufferSource => u as unknown as BufferSource;
 
 async function hmac(key: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
-	const k = await crypto.subtle.importKey('raw', bs(key), { name: 'HMAC', hash: 'SHA-256' }, false, [
-		'sign'
-	]);
+	const k = await crypto.subtle.importKey(
+		'raw',
+		bs(key),
+		{ name: 'HMAC', hash: 'SHA-256' },
+		false,
+		['sign']
+	);
 	return new Uint8Array(await crypto.subtle.sign('HMAC', k, bs(data)));
 }
 const cat = (...parts: Uint8Array[]): Uint8Array => {

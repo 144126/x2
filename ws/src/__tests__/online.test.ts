@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { online } from '../online';
 
-function ns(states: Record<string, boolean>, throwFor: string[] = []) {
+function ns(states: Record<string, boolean>, throwFor: string[] = [], bg: string[] = []) {
 	return {
 		idFromName: (n: string) => n,
 		get: (id: unknown) => ({
 			fetch: async () => {
 				const uid = id as string;
 				if (throwFor.includes(uid)) throw new Error('DO unreachable');
-				return new Response(JSON.stringify({ online: states[uid] ?? false }));
+				const is_bg = bg.includes(uid);
+				return new Response(JSON.stringify({ online: states[uid] ?? false, backgrounded: is_bg }));
 			}
 		})
 	};
@@ -44,5 +45,13 @@ describe('online', () => {
 			ns({ ada: true, bob: true, cy: true }, ['ada', 'bob'])
 		);
 		expect(r).toBeNull();
+	});
+
+	it('excludes a uid whose only socket is backgrounded', async () => {
+		const r = await online(
+			{ uids: ['ada', 'bob', 'cy'] },
+			ns({ ada: true, bob: true, cy: true }, [], ['ada'])
+		);
+		expect(r?.sort()).toEqual(['bob', 'cy']);
 	});
 });

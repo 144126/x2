@@ -3,7 +3,6 @@ import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { get_messages } from '$lib/server/chat';
 
-
 export const GET: RequestHandler = async ({ url, locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	const peer = url.searchParams.get('u');

@@ -28,11 +28,13 @@ describe('deduct', () => {
 		const ws = fetcher({ '/credits/ada/deduct': { ok: true, balance: 5300 } });
 		const r = await deduct(ws, 'ada', 100);
 		expect(r).toEqual({ ok: true, balance: 5300 });
-		expect(JSON.parse((ws.calls[0].init!.body as string))).toEqual({ amount: 100 });
+		expect(JSON.parse(ws.calls[0].init!.body as string)).toEqual({ amount: 100 });
 	});
 
 	it('surfaces an insufficient_credits result', async () => {
-		const ws = fetcher({ '/credits/ada/deduct': { ok: false, reason: 'insufficient_credits', balance: 0 } });
+		const ws = fetcher({
+			'/credits/ada/deduct': { ok: false, reason: 'insufficient_credits', balance: 0 }
+		});
 		const r = await deduct(ws, 'ada', 999999);
 		expect(r).toEqual({ ok: false, reason: 'insufficient_credits', balance: 0 });
 	});

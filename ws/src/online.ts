@@ -17,8 +17,8 @@ export async function online(body: unknown, ns: HubNs): Promise<string[] | null>
 			try {
 				const stub = ns.get(ns.idFromName(uid));
 				const res = await stub.fetch(new Request('https://dummy/check'));
-				const data = (await res.json()) as { online?: boolean };
-				return data?.online ? uid : null;
+				const data = (await res.json()) as { online?: boolean; backgrounded?: boolean };
+				return data?.online && !data?.backgrounded ? uid : null;
 			} catch {
 				// an unreachable hub means we cannot prove they're online — treat as offline
 				failures++;

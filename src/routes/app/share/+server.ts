@@ -23,5 +23,5 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	}
 
 	const qs = params.toString();
-	throw redirect(303, qs ? `/app?${qs}` : '/app');
+	throw redirect(303, qs ? `/app/chats?${qs}` : '/app/chats');
 };

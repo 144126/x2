@@ -2,10 +2,20 @@
 	import { goto } from '$app/navigation';
 	import type { GroupView } from '$lib/server/group';
 	import Modal from '$lib/components/Modal.svelte';
+	import FolderBar from '$lib/components/FolderBar.svelte';
 	import { Search, Plus, Users } from '@lucide/svelte';
+
+	type Folder = { id: string; name: string; convs: string[] };
 
 	let { data } = $props();
 	let mine = $state(data.mine as GroupView[]);
+	let folders = $state(data.folders as Folder[]);
+	let activeFolder = $state<string | null>(null);
+	let visibleGroups = $derived(
+		activeFolder
+			? mine.filter((g) => folders.find((fo) => fo.id === activeFolder)?.convs.includes(g.id))
+			: mine
+	);
 
 	let q = $state('');
 	let results = $state<GroupView[]>([]);
@@ -64,7 +74,10 @@
 
 	<div class="flex flex-col gap-3 sm:flex-row">
 		<div class="relative min-w-0 flex-1">
-			<Search size={18} class="pointer-events-none absolute top-1/2 left-[18px] -translate-y-1/2 text-faint" />
+			<Search
+				size={18}
+				class="pointer-events-none absolute top-1/2 left-[18px] -translate-y-1/2 text-faint"
+			/>
 			<input
 				class="w-full py-4 pr-[18px] pl-[46px] text-[17px]"
 				placeholder="search rooms by what they're about…"
@@ -72,8 +85,13 @@
 				onkeydown={(e) => e.key === 'Enter' && search()}
 			/>
 		</div>
-		<button class="btn btn-amber flex items-center justify-center gap-2 whitespace-nowrap" onclick={search} disabled={searching}>
-			{#if !searching}<Search size={15} />{/if} {searching ? 'searching' : 'find rooms'}
+		<button
+			class="btn btn-amber flex items-center justify-center gap-2 whitespace-nowrap"
+			onclick={search}
+			disabled={searching}
+		>
+			{#if !searching}<Search size={15} />{/if}
+			{searching ? 'searching' : 'find rooms'}
 		</button>
 	</div>
 
@@ -95,13 +113,19 @@
 						{/if}
 					</div>
 					{#if g.description}
-						<p class="mt-1.5 max-w-[60ch] truncate text-[14.5px] leading-[1.5] text-ink-soft">{g.description}</p>
+						<p class="mt-1.5 max-w-[60ch] truncate text-[14.5px] leading-[1.5] text-ink-soft">
+							{g.description}
+						</p>
 					{/if}
 					<div class="mt-3 flex items-center gap-3">
 						<span class="flex items-center gap-1 text-[12px] text-mute">
-							<Users size={13} /> {g.members.length} member{g.members.length === 1 ? '' : 's'}
+							<Users size={13} />
+							{g.members.length} member{g.members.length === 1 ? '' : 's'}
 						</span>
-						<button class="btn ml-auto px-4 py-2 text-[12px]" onclick={() => (joined ? goto(`/app/rooms/${g.id}`) : join(g))}>
+						<button
+							class="btn ml-auto px-4 py-2 text-[12px]"
+							onclick={() => (joined ? goto(`/app/rooms/${g.id}`) : join(g))}
+						>
 							{joined ? 'open' : 'join'}
 						</button>
 					</div>
@@ -125,10 +149,14 @@
 		<textarea
 			bind:value={description}
 			rows="3"
-			placeholder="what is this room about? this is what people search against."
-		></textarea>
-		<button class="btn btn-amber flex items-center gap-1.5 self-start" type="submit" disabled={creating}>
-			<Plus size={15} /> {creating ? 'creating' : 'create room'}
+			placeholder="what is this room about? this is what people search against."></textarea>
+		<button
+			class="btn btn-amber flex items-center gap-1.5 self-start"
+			type="submit"
+			disabled={creating}
+		>
+			<Plus size={15} />
+			{creating ? 'creating' : 'create room'}
 		</button>
 		{#if err}<p class="text-[13px] text-red-400">{err}</p>{/if}
 	</form>
@@ -136,13 +164,30 @@
 
 <section>
 	<div class="eyebrow mb-1">your rooms</div>
-	{#if mine.length}
-		<ul class="mt-5 grid gap-3.5">
-			{#each mine as g, i (g.id)}
-				<li class="card person reveal" style="--i:{i}" onclick={() => goto(`/app/rooms/${g.id}`)} role="button" tabindex="0">
+	<div class="mt-3">
+		<FolderBar
+			bind:folders
+			bind:active={activeFolder}
+			items={mine.map((g) => ({ id: g.id, name: g.name }))}
+			kind="r"
+			itemNoun="rooms"
+		/>
+	</div>
+	{#if visibleGroups.length}
+		<ul class="results mt-5 grid gap-3.5">
+			{#each visibleGroups as g, i (g.id)}
+				<li
+					class="card person reveal"
+					style="--i:{i}"
+					onclick={() => goto(`/app/rooms/${g.id}`)}
+					role="button"
+					tabindex="0"
+				>
 					<div class="font-display text-[22px] font-medium tracking-[-0.01em]">{g.name}</div>
 					{#if g.description}
-						<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">{g.description}</p>
+						<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">
+							{g.description}
+						</p>
 					{/if}
 				</li>
 			{/each}

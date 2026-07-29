@@ -1,10 +1,24 @@
 import { ensure, upsert, scroll, remove, uuid_from, f, eq, ZV, type QEnv } from './qdrant';
 import type { WebPushSub } from './push';
 
-export type PushSub = { s: 'ps'; f: string; ep: string; k: string; au: string; ua?: string; d: number };
+export type PushSub = {
+	s: 'ps';
+	f: string;
+	ep: string;
+	k: string;
+	au: string;
+	ua?: string;
+	d: number;
+};
 
-export async function save_sub(env: QEnv, uid: string, sub: WebPushSub, ua?: string): Promise<void> {
-	if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) throw new Error('invalid push subscription');
+export async function save_sub(
+	env: QEnv,
+	uid: string,
+	sub: WebPushSub,
+	ua?: string
+): Promise<void> {
+	if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth)
+		throw new Error('invalid push subscription');
 	if (!sub.endpoint.startsWith('https://')) throw new Error('push endpoint must be https');
 	await ensure(env);
 	const p: PushSub = {
@@ -17,7 +31,11 @@ export async function save_sub(env: QEnv, uid: string, sub: WebPushSub, ua?: str
 		d: Date.now()
 	};
 	await upsert(env, [
-		{ id: await uuid_from(sub.endpoint), vector: ZV, payload: p as unknown as Record<string, unknown> }
+		{
+			id: await uuid_from(sub.endpoint),
+			vector: ZV,
+			payload: p as unknown as Record<string, unknown>
+		}
 	]);
 }
 

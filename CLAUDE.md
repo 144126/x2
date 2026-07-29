@@ -22,16 +22,17 @@ to work around that — commit `fedfe48` did, and it is not the fix.
 
 ## Plans
 
-This repo's work is tracked with the global `plan.ts` tool — see `~/.agents/AGENTS.md` § Plans.
+This repo's work is tracked in `plan.json`, driven by the global `plan.ts` tool — see
+`~/.agents/AGENTS.md` § Plans.
 
-| plan | what |
-|------|------|
-| `plan-tests.json` | every test to write, test-first |
-| `plan-implementation.json` | how to build it |
+```bash
+plan.ts plan              # print the step to do now
+plan.ts plan <step_name>  # mark it done, print the next one
+```
 
-Paired, with identical step names, so they advance in lockstep. Per step: `plan.ts plan-tests` →
-write those tests → see them fail → `plan.ts plan-implementation` → implement → `pnpm test` green →
-mark both done.
+Each step is self-contained and test-first, in four phases: write the tests → watch them fail for the
+right reason → implement → watch them pass. All four happen within the one step, before it is marked
+done.
 
 ## Things that bite
 

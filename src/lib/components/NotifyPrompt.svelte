@@ -49,9 +49,9 @@
 	>
 		{#if android_battery_hint}
 			<p class="text-ink-soft">
-				Notifications are on. Some phones aggressively limit background apps to save
-				battery — if messages stop arriving, check your phone's battery settings and
-				allow x2 (or your browser) to run in the background.
+				Notifications are on. Some phones aggressively limit background apps to save battery — if
+				messages stop arriving, check your phone's battery settings and allow x2 (or your browser)
+				to run in the background.
 			</p>
 		{:else if ios_hint}
 			<p class="text-ink-soft">

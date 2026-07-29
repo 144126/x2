@@ -22,7 +22,10 @@ export const GET: RequestHandler = async ({ locals }) => {
 	// Deployed with WS_ORIGIN unset we used to hand every client ws://localhost:8787 —
 	// realtime silently never worked. Fail loudly instead; only dev gets the fallback.
 	const raw_ws_origin = await get_secret(env.WS_ORIGIN);
-	console.log('[WSTOKEN] WS_ORIGIN raw from env', { value: raw_ws_origin, typeofBinding: typeof env.WS_ORIGIN });
+	console.log('[WSTOKEN] WS_ORIGIN raw from env', {
+		value: raw_ws_origin,
+		typeofBinding: typeof env.WS_ORIGIN
+	});
 	const ws_origin = raw_ws_origin || (dev ? 'ws://localhost:8787' : '');
 	if (!ws_origin) {
 		console.error('[WSTOKEN] 503 ws_unconfigured — WS_ORIGIN is empty and not in dev mode');

@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import MuteButton from '$lib/components/MuteButton.svelte';
 	import type { User } from '$lib/types';
 	let { data } = $props();
 	let u = $state(data.u as User);
+	let muted = $state(data.muted as boolean);
 	let username = $derived(u.u || u.m?.split('@')[0] || 'user');
 	let shared = $derived((data.shared ?? []) as { id: string; name: string }[]);
 	let showAllShared = $state(false);
@@ -74,7 +77,9 @@
 	{#if u.si && u.i?.length}
 		<div class="card mb-6 flex flex-wrap gap-2">
 			{#each u.i as t}
-				<span class="rounded-full border border-line bg-panel px-3 py-1 text-[13px] text-ink">{t}</span>
+				<span class="rounded-full border border-line bg-panel px-3 py-1 text-[13px] text-ink"
+					>{t}</span
+				>
 			{/each}
 		</div>
 	{/if}
@@ -88,7 +93,11 @@
 				<span class="text-[14.5px] text-ink-soft">
 					{shared.length} group{shared.length === 1 ? '' : 's'} in common
 				</span>
-				<span class="text-[10px] text-faint transition-transform duration-300 {showAllShared ? 'rotate-180' : ''}">▾</span>
+				<span
+					class="text-[10px] text-faint transition-transform duration-300 {showAllShared
+						? 'rotate-180'
+						: ''}">▾</span
+				>
 			</button>
 			{#if showAllShared}
 				<ul class="mt-3 flex flex-col gap-2">
@@ -115,7 +124,9 @@
 				{commonLoading ? 'thinking…' : 'what do we have in common?'}
 			</button>
 			{#if commonError === 'insufficient_credits'}
-				<p class="mt-2 text-[12px] text-mute">out of credits — back tomorrow, or buy more on your profile.</p>
+				<p class="mt-2 text-[12px] text-mute">
+					out of credits — back tomorrow, or buy more on your profile.
+				</p>
 			{:else if commonError === 'llm_error'}
 				<p class="mt-2 text-[12px] text-mute">couldn't figure that out just now — try again.</p>
 			{/if}
@@ -124,6 +135,9 @@
 
 	<div class="flex gap-3">
 		<button class="btn btn-amber" onclick={() => goto('/app/chat/' + data.id)}>chat</button>
+		{#if data.id !== $page.data.user?.id}
+			<MuteButton target={data.id} kind="u" bind:muted label="notifications from this person" />
+		{/if}
 		{#if data.wu}
 			<a
 				href={data.wu}

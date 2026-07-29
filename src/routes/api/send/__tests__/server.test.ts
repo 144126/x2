@@ -31,7 +31,10 @@ vi.mock('$lib/server/group', async () => {
 });
 vi.mock('$lib/server/notify', () => ({ notify: notifyMock }));
 vi.mock('$lib/server/unread', () => ({ total_unread: totalUnreadMock }));
-vi.mock('$lib/server/scheduled', () => ({ save_scheduled: saveScheduledMock, MIN_LEAD_MS: 60_000 }));
+vi.mock('$lib/server/scheduled', () => ({
+	save_scheduled: saveScheduledMock,
+	MIN_LEAD_MS: 60_000
+}));
 vi.mock('$lib/server/mute', () => ({ is_muted: isMutedMock, drop_muted: dropMutedMock }));
 
 import { POST } from '../+server';
@@ -134,9 +137,7 @@ describe('POST /api/send — push for whoever the socket relay could not reach',
 	});
 
 	it('pushes only the group members the relay missed', async () => {
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['cid'] }))
-		);
+		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['cid'] })));
 		expect(note()[1]).toEqual(['cid']);
 	});
 
@@ -192,10 +193,8 @@ describe('POST /api/send — what the notification says', () => {
 		expect(note()[2].unread).toBe(3);
 	});
 
-	it('includes the recipient\'s unread total in a room push', async () => {
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
-		);
+	it("includes the recipient's unread total in a room push", async () => {
+		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
 		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob', ['g:g1']);
 		expect(note()[2].unread).toBe(3);
 	});
@@ -219,9 +218,7 @@ describe('POST /api/send — what the notification says', () => {
 	});
 
 	it('includes kind and reply_to in both push payloads', async () => {
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
-		);
+		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
 		expect(note()[2]).toMatchObject({ kind: 'r', reply_to: 'g1' });
 
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
@@ -273,7 +270,9 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 		dropMutedMock.mockImplementation((_e, _t, uids: string[]) =>
 			Promise.resolve((uids as string[]).filter((u) => u !== 'bob'))
 		);
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] })));
+		await POST(
+			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
+		);
 		expect(notifyMock.mock.calls[0][1]).toEqual(['cid']);
 	});
 
@@ -281,13 +280,17 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 		dropMutedMock.mockImplementation((_e, _t, uids: string[]) =>
 			Promise.resolve((uids as string[]).filter((u) => u !== 'bob'))
 		);
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] })));
+		await POST(
+			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
+		);
 		expect(notifyMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('does not push at all when every offline member muted the room', async () => {
 		dropMutedMock.mockResolvedValue([]);
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] })));
+		await POST(
+			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
+		);
 		expect(notifyMock).not.toHaveBeenCalled();
 	});
 });

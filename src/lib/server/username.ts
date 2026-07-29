@@ -30,7 +30,8 @@ export async function available_username(env: QEnv, base: string, self?: string)
 	const b = normalize_username(base);
 	for (let n = 1; n < 500; n++) {
 		const candidate = n === 1 ? b : `${b.slice(0, 20 - String(n).length)}${n}`;
-		if (validate_username(candidate) && (await username_free(env, candidate, self))) return candidate;
+		if (validate_username(candidate) && (await username_free(env, candidate, self)))
+			return candidate;
 	}
 	// ponytail: 500 collisions on one base is not a real scenario; uid suffix ends it
 	return `${b.slice(0, 12)}_${(self ?? 'x').slice(0, 6)}`;

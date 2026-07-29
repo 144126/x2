@@ -17,7 +17,9 @@ export class ChatHub implements DurableObject {
 
 	async fetch(request: Request): Promise<Response> {
 		const url = new URL(request.url);
-		console.log(`[HUB-FETCH] ${request.method} ${url.pathname}${url.search} upgrade=${request.headers.get('upgrade')}`);
+		console.log(
+			`[HUB-FETCH] ${request.method} ${url.pathname}${url.search} upgrade=${request.headers.get('upgrade')}`
+		);
 		if (request.headers.get('upgrade') === 'websocket') {
 			const uid = url.searchParams.get('uid') ?? '';
 			const token = url.searchParams.get('t') ?? '';
@@ -33,15 +35,35 @@ export class ChatHub implements DurableObject {
 			const pair = new WebSocketPair();
 			const [client, server] = Object.values(pair) as unknown as [WebSocket, WebSocket];
 			this.state.acceptWebSocket(server, [uid]);
-			console.log(`[HUB-WS-UPGRADE] ACCEPTED uid=${uid}, total sockets now=${this.state.getWebSockets().length}`);
+			console.log(
+				`[HUB-WS-UPGRADE] ACCEPTED uid=${uid}, total sockets now=${this.state.getWebSockets().length}`
+			);
 			this.announce(uid, true);
 			await this.notify_watchers(uid, true);
 			return new Response(null, { status: 101, webSocket: client });
 		}
 		if (url.pathname === '/relay' && request.method === 'POST') {
-			const m = (await request.json()) as { id: string; to: string; from: string; text: string; ts: number; from_name?: string; group?: string; image?: string };
+			const m = (await request.json()) as {
+				id: string;
+				to: string;
+				from: string;
+				text: string;
+				ts: number;
+				from_name?: string;
+				group?: string;
+				image?: string;
+			};
 			console.log(`[HUB-RELAY] incoming relay for to=${m.to} from=${m.from} id=${m.id}`);
-			const delivered = this.deliver(m.to, { type: 'msg', id: m.id, from: m.from, from_name: m.from_name, text: m.text, image: m.image, group: m.group, ts: m.ts });
+			const delivered = this.deliver(m.to, {
+				type: 'msg',
+				id: m.id,
+				from: m.from,
+				from_name: m.from_name,
+				text: m.text,
+				image: m.image,
+				group: m.group,
+				ts: m.ts
+			});
 			console.log(`[HUB-RELAY] delivered=${delivered} to=${m.to}`);
 			return Response.json({ delivered });
 		}
@@ -87,7 +109,9 @@ export class ChatHub implements DurableObject {
 		console.log(`[HUB-WS-MSG] from=${self} type=${msg.type}`, msg);
 		if (!self) return;
 		if (msg.type === 'ping') {
-			try { ws.send(JSON.stringify({ type: 'pong' })); } catch {}
+			try {
+				ws.send(JSON.stringify({ type: 'pong' }));
+			} catch {}
 		} else if (msg.type === 'signal') {
 			msg.from = self;
 			const id = this.env.CHAT_HUB.idFromName(msg.to);
@@ -98,7 +122,10 @@ export class ChatHub implements DurableObject {
 		} else if (msg.type === 'watch') {
 			const id = this.env.CHAT_HUB.idFromName(msg.peer);
 			const stub = this.env.CHAT_HUB.get(id);
-			await stub.fetch('https://dummy/unwatch', { method: 'POST', body: JSON.stringify({ uid: self }) });
+			await stub.fetch('https://dummy/unwatch', {
+				method: 'POST',
+				body: JSON.stringify({ uid: self })
+			});
 		} else if (msg.type === 'check') {
 			const id = this.env.CHAT_HUB.idFromName(msg.peer);
 			const stub = this.env.CHAT_HUB.get(id);
@@ -110,7 +137,9 @@ export class ChatHub implements DurableObject {
 
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const uid = this.state.getTags(ws)[0];
-		console.log(`[HUB-WS-CLOSE] uid=${uid}, remaining sockets for uid=${uid ? this.state.getWebSockets(uid).length : 'n/a'}`);
+		console.log(
+			`[HUB-WS-CLOSE] uid=${uid}, remaining sockets for uid=${uid ? this.state.getWebSockets(uid).length : 'n/a'}`
+		);
 		ws.close();
 		// a second tab/device for the same uid may still be connected — only the uid's last
 		// socket closing means it actually went offline
@@ -147,7 +176,9 @@ export class ChatHub implements DurableObject {
 				if (att?.active !== false) seen = true;
 			} catch (e) {
 				console.error(`[HUB-DELIVER] send FAILED for uid=${uid}:`, e);
-				try { ws.close(1011, 'delivery failed'); } catch {}
+				try {
+					ws.close(1011, 'delivery failed');
+				} catch {}
 			}
 		}
 		console.log(`[HUB-DELIVER] uid=${uid} final seen=${seen}`);
@@ -157,7 +188,9 @@ export class ChatHub implements DurableObject {
 	private announce(uid: string, online: boolean): void {
 		const data = JSON.stringify({ type: 'presence', uid, online });
 		const allSockets = this.state.getWebSockets();
-		console.log(`[HUB-ANNOUNCE] uid=${uid} online=${online} broadcasting to ${allSockets.length} sockets`);
+		console.log(
+			`[HUB-ANNOUNCE] uid=${uid} online=${online} broadcasting to ${allSockets.length} sockets`
+		);
 		for (const ws of allSockets) {
 			try {
 				console.log(`[HUB-ANNOUNCE] sending presence to socket readyState=${ws.readyState}`);

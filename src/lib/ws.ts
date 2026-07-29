@@ -34,14 +34,21 @@ if (typeof document !== 'undefined') {
 async function open() {
 	console.log('[WS-CLIENT] open() called', { sock: !!sock, intentionallyClosed, tries });
 	if (sock || intentionallyClosed || typeof window === 'undefined') {
-		console.log('[WS-CLIENT] open() bailing early', { sock: !!sock, intentionallyClosed, isWindow: typeof window !== 'undefined' });
+		console.log('[WS-CLIENT] open() bailing early', {
+			sock: !!sock,
+			intentionallyClosed,
+			isWindow: typeof window !== 'undefined'
+		});
 		return;
 	}
 	console.log('[WS-CLIENT] fetching /api/wstoken…');
 	const r = await fetch('/api/wstoken');
 	console.log('[WS-CLIENT] /api/wstoken responded', { status: r.status, ok: r.ok });
 	if (!r.ok) {
-		console.error('[WS-CLIENT] /api/wstoken FAILED, will retry', { status: r.status, body: await r.text().catch(() => '<unreadable>') });
+		console.error('[WS-CLIENT] /api/wstoken FAILED, will retry', {
+			status: r.status,
+			body: await r.text().catch(() => '<unreadable>')
+		});
 		return retry();
 	}
 	const { ws } = (await r.json()) as { ws: string };
@@ -85,7 +92,11 @@ async function open() {
 		for (const fn of subs) fn(m);
 	};
 	s.onclose = (ev) => {
-		console.warn('[WS-CLIENT] socket CLOSED', { code: ev.code, reason: ev.reason, wasClean: ev.wasClean });
+		console.warn('[WS-CLIENT] socket CLOSED', {
+			code: ev.code,
+			reason: ev.reason,
+			wasClean: ev.wasClean
+		});
 		clearTimeout(heartbeatTimer!);
 		heartbeatTimer = null;
 		if (sock === s) sock = null;
@@ -134,7 +145,12 @@ export function ws_send(o: Record<string, unknown>, keep = false): void {
 		console.log('[WS-CLIENT] ws_send → socket open, sending now', o);
 		sock.send(data);
 	} else {
-		console.warn('[WS-CLIENT] ws_send → socket NOT open (readyState=', sock?.readyState, '), triggering open()', o);
+		console.warn(
+			'[WS-CLIENT] ws_send → socket NOT open (readyState=',
+			sock?.readyState,
+			'), triggering open()',
+			o
+		);
 		open();
 	}
 }

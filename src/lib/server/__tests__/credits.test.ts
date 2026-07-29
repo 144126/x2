@@ -33,7 +33,13 @@ beforeEach(() => {
 
 describe('record_event', () => {
 	it('writes a ledger point for the uid', async () => {
-		await record_event(env, { uid: 'ada', kind: 'daily_grant', amount: 5400, balance_after: 5400, ts: 1 });
+		await record_event(env, {
+			uid: 'ada',
+			kind: 'daily_grant',
+			amount: 5400,
+			balance_after: 5400,
+			ts: 1
+		});
 		const point = upsertMock.mock.calls[0][1][0];
 		expect(point.payload).toMatchObject({
 			s: 'ce',
@@ -61,10 +67,22 @@ describe('record_event', () => {
 describe('credit_history', () => {
 	it('returns the events for a uid', async () => {
 		scrollMock.mockResolvedValue([
-			{ id: 'x', payload: { s: 'ce', uid: 'ada', kind: 'daily_grant', amount: 5400, balance_after: 5400, ts: 5 } }
+			{
+				id: 'x',
+				payload: {
+					s: 'ce',
+					uid: 'ada',
+					kind: 'daily_grant',
+					amount: 5400,
+					balance_after: 5400,
+					ts: 5
+				}
+			}
 		]);
 		const h = await credit_history(env, 'ada');
-		expect(h).toEqual([{ s: 'ce', uid: 'ada', kind: 'daily_grant', amount: 5400, balance_after: 5400, ts: 5 }]);
+		expect(h).toEqual([
+			{ s: 'ce', uid: 'ada', kind: 'daily_grant', amount: 5400, balance_after: 5400, ts: 5 }
+		]);
 		const filter = scrollMock.mock.calls[0][1];
 		expect(filter.must).toContainEqual({ key: 's', match: { value: 'ce' } });
 		expect(filter.must).toContainEqual({ key: 'uid', match: { value: 'ada' } });
@@ -82,7 +100,10 @@ describe('mark_paystack_ref_processed', () => {
 	});
 
 	it('returns false when the reference was already processed — the dedup guard', async () => {
-		retrieveOneMock.mockResolvedValue({ id: await uuid_from('paystack:psk_123'), payload: { s: 'pr' } });
+		retrieveOneMock.mockResolvedValue({
+			id: await uuid_from('paystack:psk_123'),
+			payload: { s: 'pr' }
+		});
 		expect(await mark_paystack_ref_processed(env, 'psk_123')).toBe(false);
 		expect(upsertMock).not.toHaveBeenCalled();
 	});

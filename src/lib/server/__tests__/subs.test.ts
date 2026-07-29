@@ -89,7 +89,9 @@ describe('save_sub', () => {
 	});
 
 	it('rejects a subscription missing its endpoint or keys', async () => {
-		await expect(save_sub(env, 'me', { endpoint: '', keys: { p256dh: 'a', auth: 'b' } })).rejects.toThrow();
+		await expect(
+			save_sub(env, 'me', { endpoint: '', keys: { p256dh: 'a', auth: 'b' } })
+		).rejects.toThrow();
 		await expect(
 			save_sub(env, 'me', { endpoint: 'https://p/a', keys: { p256dh: '', auth: 'b' } })
 		).rejects.toThrow();
@@ -163,8 +165,9 @@ describe('delete_sub', () => {
 
 describe('to_web_push', () => {
 	it('maps a stored record back to the shape the push encoder expects', () => {
-		expect(
-			to_web_push({ s: 'ps', f: 'me', ep: 'https://p/1', k: 'K', au: 'A', d: 1 })
-		).toEqual({ endpoint: 'https://p/1', keys: { p256dh: 'K', auth: 'A' } });
+		expect(to_web_push({ s: 'ps', f: 'me', ep: 'https://p/1', k: 'K', au: 'A', d: 1 })).toEqual({
+			endpoint: 'https://p/1',
+			keys: { p256dh: 'K', auth: 'A' }
+		});
 	});
 });

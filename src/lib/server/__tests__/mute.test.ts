@@ -9,11 +9,26 @@ const { ensureMock, upsertMock, scrollMock, removeMock } = vi.hoisted(() => ({
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
-	return { ...actual, ensure: ensureMock, upsert: upsertMock, scroll: scrollMock, remove: removeMock };
+	return {
+		...actual,
+		ensure: ensureMock,
+		upsert: upsertMock,
+		scroll: scrollMock,
+		remove: removeMock
+	};
 });
 
 import type { QEnv } from '../qdrant';
-import { mute, unmute, is_muted, is_active, muters_of, drop_muted, muted_convs, type Mute } from '../mute';
+import {
+	mute,
+	unmute,
+	is_muted,
+	is_active,
+	muters_of,
+	drop_muted,
+	muted_convs,
+	type Mute
+} from '../mute';
 import { conv_id, group_conv_id } from '../chat';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' } as unknown as QEnv;
@@ -108,7 +123,9 @@ describe('is_muted()', () => {
 
 	it('filters by owner AND target, so one user muting bob does not mute bob for everyone', async () => {
 		await is_muted(ENV, 'ada', 'bob');
-		const filter = scrollMock.mock.calls[0][1] as { must: { key: string; match: { value: string } }[] };
+		const filter = scrollMock.mock.calls[0][1] as {
+			must: { key: string; match: { value: string } }[];
+		};
 		const keys = filter.must.map((c) => ({ key: c.key, value: c.match.value }));
 		expect(keys).toContainEqual({ key: 's', value: 'mu' });
 		expect(keys).toContainEqual({ key: 'ow', value: 'ada' });
@@ -175,7 +192,9 @@ describe('payload/filter coherence', () => {
 
 		scrollMock.mockResolvedValue([]);
 		await is_muted(ENV, 'ada', 'bob');
-		const filter = scrollMock.mock.calls[0][1] as { must: { key: string; match: { value: string } }[] };
+		const filter = scrollMock.mock.calls[0][1] as {
+			must: { key: string; match: { value: string } }[];
+		};
 
 		for (const cond of filter.must) {
 			expect(payload).toHaveProperty(cond.key, cond.match.value);

@@ -18,7 +18,7 @@ async function setup(ua = 'Mozilla/5.0 (X11; Linux) Chrome/140', standalone = fa
 	listeners = {};
 	store = {};
 	vi.stubGlobal('window', {
-		addEventListener: (t: string, fn: Listener) => ((listeners[t] ??= []).push(fn)),
+		addEventListener: (t: string, fn: Listener) => (listeners[t] ??= []).push(fn),
 		removeEventListener: (t: string, fn: Listener) => {
 			listeners[t] = (listeners[t] ?? []).filter((f) => f !== fn);
 		},

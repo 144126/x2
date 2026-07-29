@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { env } from '$env/dynamic/public';
 	import type { User } from '$lib/types';
 	import LocationPicker from '$lib/LocationPicker.svelte';
 	import PhoneInput from '$lib/PhoneInput.svelte';
 	import Select from '$lib/components/Select.svelte';
+	import { push_state, enable_push, disable_push } from '$lib/push-client';
 	let { data } = $props();
 	let p = $state(data.p as User);
 
 	let credit_balance = $state<number | null>(null);
 	let buying = $state(false);
+	let pushState = $state<'on' | 'off' | 'blocked' | 'unsupported'>('off');
+	let pushLoaded = $state(false);
 
 	async function load_credits() {
 		const res = await fetch('/api/credits');
@@ -30,7 +34,13 @@
 		}
 	}
 
-	onMount(load_credits);
+	onMount(async () => {
+		load_credits();
+		pushState = await push_state();
+		pushLoaded = true;
+	});
+
+	const key = env.PUBLIC_VAPID_KEY ?? '';
 
 	let about = $state(p.a ?? '');
 	let username = $state(p.u ?? '');
@@ -79,7 +89,9 @@
 
 <section class="prof reveal mx-auto max-w-[560px]">
 	<div class="eyebrow">your card</div>
-	<h1 class="display mt-3 mb-10 text-[clamp(40px,6vw,64px)]">{username || p.m?.split('@')[0] || 'profile'}</h1>
+	<h1 class="display mt-3 mb-10 text-[clamp(40px,6vw,64px)]">
+		{username || p.m?.split('@')[0] || 'profile'}
+	</h1>
 
 	<form onsubmit={(e) => (e.preventDefault(), save())} class="flex flex-col gap-2">
 		<label class="eyebrow mt-6" for="p-username">username</label>
@@ -98,15 +110,17 @@
 						type="button"
 						onclick={() => removeInterest(t)}
 						class="text-[15px] leading-none text-faint transition-colors hover:text-accent"
-						aria-label="remove {t}"
-					>&times;</button>
+						aria-label="remove {t}">&times;</button
+					>
 				</span>
 			{/each}
 			<input
 				id="p-interests"
 				class="min-w-[100px] flex-1 border-none bg-transparent px-1 py-1 text-[14px] text-ink outline-none placeholder:text-mute"
 				bind:value={interestInput}
-				onkeydown={(e) => { if (e.key === 'Enter') e.preventDefault(), addInterest(); }}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') (e.preventDefault(), addInterest());
+				}}
 				placeholder={interests.length ? '' : 'add an interest…'}
 			/>
 		</div>
@@ -116,7 +130,12 @@
 		</label>
 
 		<label class="eyebrow mt-6" for="p-about">more about me</label>
-		<textarea id="p-about" rows="4" bind:value={about} placeholder="tell people more about yourself — what you're into, what you're building…"></textarea>
+		<textarea
+			id="p-about"
+			rows="4"
+			bind:value={about}
+			placeholder="tell people more about yourself — what you're into, what you're building…"
+		></textarea>
 
 		<div class="mt-6 flex gap-4">
 			<div class="flex-1">
@@ -144,11 +163,7 @@
 		</div>
 
 		<label class="eyebrow mt-6" for="p-whatsapp">whatsapp number (optional)</label>
-		<PhoneInput
-			value={whatsapp}
-			defaultCountry={country}
-			onChange={(v) => (whatsapp = v)}
-		/>
+		<PhoneInput value={whatsapp} defaultCountry={country} onChange={(v) => (whatsapp = v)} />
 
 		<div class="mt-8 flex items-center gap-4">
 			<button class="btn btn-amber" type="submit">save card</button>
@@ -175,6 +190,63 @@
 					+ ₦{amount / 100}
 				</button>
 			{/each}
+		</div>
+	</div>
+
+	<div class="card mt-6">
+		<div class="eyebrow mb-3">notifications</div>
+
+		{#if data.mutes?.length}
+			<p class="text-[13px] text-mute mb-2 mt-3">muted</p>
+			<div class="flex flex-col gap-2">
+				{#each data.mutes as mute (mute.target)}
+					<div
+						class="flex items-center justify-between gap-2 rounded-[10px] border border-line bg-panel-solid px-3 py-2"
+					>
+						<span class="text-[13px] text-ink">{mute.name}</span>
+						<div class="flex items-center gap-3">
+							{#if mute.until}
+								<span class="text-[11px] text-mute"
+									>until {new Date(mute.until).toLocaleDateString()}</span
+								>
+							{/if}
+							<button
+								class="btn text-[12px]"
+								aria-label="unmute {mute.name}"
+								onclick={async () => {
+									const r = await fetch(`/api/mute?target=${mute.target}`, { method: 'DELETE' });
+									if (r.ok) data.mutes = data.mutes.filter((m) => m.target !== mute.target);
+								}}>unmute</button
+							>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-[13px] text-mute">nothing muted.</p>
+		{/if}
+
+		<div class="flex items-center justify-between mt-4">
+			<span class="text-[13px] text-ink">push notifications</span>
+			{#if pushLoaded}
+				{#if pushState === 'on'}
+					<button class="btn" onclick={() => disable_push().then(() => (pushState = 'off'))}
+						>disable</button
+					>
+				{:else if pushState === 'off'}
+					<button
+						class="btn"
+						onclick={() =>
+							enable_push(key).then((r) => {
+								if (r.ok) pushState = 'on';
+							})}>enable</button
+					>
+				{:else if pushState === 'blocked'}
+					<span class="text-[11px] text-mute">notifications are blocked by your browser</span>
+				{:else}
+					<span class="text-[11px] text-mute">notifications are not supported by your browser</span>
+				{/if}
+			{/if}
 		</div>
 	</div>
 

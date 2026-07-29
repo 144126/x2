@@ -31,13 +31,17 @@ const read = async (c: string, d: number) => ({
 
 // scroll is called with a filter; route each call by what it asks for
 function route(sets: { msgs?: unknown[]; reads?: unknown[]; groups?: unknown[] }) {
-	scrollMock.mockImplementation((_e: unknown, filter: { must: { key: string; match?: { value: string } }[] }) => {
-		const kind = filter.must.find((c) => c.key === 's')?.match?.value;
-		if (kind === 'rd') return Promise.resolve(sets.reads ?? []);
-		const conv = filter.must.find((c) => c.key === 'c')?.match?.value;
-		const all = (conv ? sets.groups : sets.msgs) ?? [];
-		return Promise.resolve(conv ? all.filter((m) => (m as { payload: { c: string } }).payload.c === conv) : all);
-	});
+	scrollMock.mockImplementation(
+		(_e: unknown, filter: { must: { key: string; match?: { value: string } }[] }) => {
+			const kind = filter.must.find((c) => c.key === 's')?.match?.value;
+			if (kind === 'rd') return Promise.resolve(sets.reads ?? []);
+			const conv = filter.must.find((c) => c.key === 'c')?.match?.value;
+			const all = (conv ? sets.groups : sets.msgs) ?? [];
+			return Promise.resolve(
+				conv ? all.filter((m) => (m as { payload: { c: string } }).payload.c === conv) : all
+			);
+		}
+	);
 }
 
 beforeEach(() => {
@@ -97,7 +101,9 @@ describe('mark_read', () => {
 
 describe('unread_by_conv', () => {
 	it('counts every received message when the thread was never opened', async () => {
-		route({ msgs: [msg({ c: 'a|me', f: 'a', t: 'me', d: 1 }), msg({ c: 'a|me', f: 'a', t: 'me', d: 2 })] });
+		route({
+			msgs: [msg({ c: 'a|me', f: 'a', t: 'me', d: 1 }), msg({ c: 'a|me', f: 'a', t: 'me', d: 2 })]
+		});
 		expect(await unread_by_conv(env, 'me')).toEqual({ 'a|me': 2 });
 	});
 
@@ -112,13 +118,16 @@ describe('unread_by_conv', () => {
 		expect(await unread_by_conv(env, 'me')).toEqual({ 'a|me': 1 });
 	});
 
-	it('never counts the reader\'s own messages', async () => {
+	it("never counts the reader's own messages", async () => {
 		route({ msgs: [msg({ c: 'a|me', f: 'me', t: 'a', d: 1 })] });
 		expect(await unread_by_conv(env, 'me')).toEqual({});
 	});
 
 	it('omits a fully-read conversation rather than reporting zero', async () => {
-		route({ msgs: [msg({ c: 'a|me', f: 'a', t: 'me', d: 100 })], reads: [await read('a|me', 200)] });
+		route({
+			msgs: [msg({ c: 'a|me', f: 'a', t: 'me', d: 100 })],
+			reads: [await read('a|me', 200)]
+		});
 		expect(await unread_by_conv(env, 'me')).toEqual({});
 	});
 
@@ -135,15 +144,12 @@ describe('unread_by_conv', () => {
 
 	it('counts group messages for the conversations it is told about', async () => {
 		route({
-			groups: [
-				msg({ c: 'g:1', f: 'a', gr: '1', d: 5 }),
-				msg({ c: 'g:1', f: 'b', gr: '1', d: 6 })
-			]
+			groups: [msg({ c: 'g:1', f: 'a', gr: '1', d: 5 }), msg({ c: 'g:1', f: 'b', gr: '1', d: 6 })]
 		});
 		expect(await unread_by_conv(env, 'me', ['g:1'])).toEqual({ 'g:1': 2 });
 	});
 
-	it('does not count the reader\'s own group messages', async () => {
+	it("does not count the reader's own group messages", async () => {
 		route({ groups: [msg({ c: 'g:1', f: 'me', gr: '1', d: 5 })] });
 		expect(await unread_by_conv(env, 'me', ['g:1'])).toEqual({});
 	});
@@ -182,9 +188,7 @@ describe('total_unread', () => {
 			msgs: [msg({ c: 'a|me', f: 'a', t: 'me', d: 1 })],
 			reads: []
 		});
-		listMutesMock.mockResolvedValue([
-			{ s: 'mu', ow: 'me', tg: 'a', k: 'u', until: 0, d: 1 }
-		]);
+		listMutesMock.mockResolvedValue([{ s: 'mu', ow: 'me', tg: 'a', k: 'u', until: 0, d: 1 }]);
 		const by_conv = await unread_by_conv(env, 'me');
 		expect(by_conv).toEqual({ 'a|me': 1 });
 	});
@@ -194,17 +198,13 @@ describe('total_unread', () => {
 			msgs: [msg({ c: 'a|me', f: 'a', t: 'me', d: 1 })],
 			reads: []
 		});
-		listMutesMock.mockResolvedValue([
-			{ s: 'mu', ow: 'me', tg: 'a', k: 'u', until: 0, d: 1 }
-		]);
+		listMutesMock.mockResolvedValue([{ s: 'mu', ow: 'me', tg: 'a', k: 'u', until: 0, d: 1 }]);
 		expect(await total_unread(env, 'me')).toBe(0);
 	});
 
 	it('total_unread excludes a muted room', async () => {
 		route({ groups: [msg({ c: 'g:1', f: 'b', gr: '1', d: 5 })] });
-		listMutesMock.mockResolvedValue([
-			{ s: 'mu', ow: 'me', tg: '1', k: 'r', until: 0, d: 1 }
-		]);
+		listMutesMock.mockResolvedValue([{ s: 'mu', ow: 'me', tg: '1', k: 'r', until: 0, d: 1 }]);
 		expect(await total_unread(env, 'me', ['g:1'])).toBe(0);
 	});
 

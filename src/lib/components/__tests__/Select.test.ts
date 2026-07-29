@@ -48,7 +48,9 @@ describe('Select', () => {
 		const trigger = screen.getByRole('combobox');
 		await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 		expect(trigger).toHaveAttribute('aria-expanded', 'true');
-		const female = within(screen.getByRole('listbox')).getByText('female').closest('[role="option"]')!;
+		const female = within(screen.getByRole('listbox'))
+			.getByText('female')
+			.closest('[role="option"]')!;
 		expect(female).toHaveAttribute('aria-selected', 'true');
 	});
 

@@ -26,14 +26,21 @@ async function relay(
 		console.log('[SEND→RELAY] x2-ws response body', data);
 		if (!data || !Array.isArray(data.undelivered)) {
 			const targets = (payload.to ? [payload.to] : (payload.members as string[])) as string[];
-			console.warn('[SEND→RELAY] malformed/missing undelivered array — treating all targets as undelivered', targets);
+			console.warn(
+				'[SEND→RELAY] malformed/missing undelivered array — treating all targets as undelivered',
+				targets
+			);
 			return { ok: false, undelivered: targets };
 		}
 		console.log('[SEND→RELAY] undelivered targets:', data.undelivered);
 		return { ok: true, undelivered: data.undelivered as string[] };
 	} catch (e) {
 		const targets = (payload.to ? [payload.to] : (payload.members as string[])) as string[];
-		console.error('[SEND→RELAY] fetch to x2-ws THREW — X2_WS service binding may be misconfigured', e, targets);
+		console.error(
+			'[SEND→RELAY] fetch to x2-ws THREW — X2_WS service binding may be misconfigured',
+			e,
+			targets
+		);
 		return { ok: false, undelivered: targets };
 	}
 }
@@ -69,7 +76,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!to && !group) throw error(400, 'to or group required');
 
 	const me = locals.user;
-	console.log('[SEND] parsed body', { to, group, textLen: text.length, hasImage: !!image, hasFile: !!file, at: b?.at });
+	console.log('[SEND] parsed body', {
+		to,
+		group,
+		textLen: text.length,
+		hasImage: !!image,
+		hasFile: !!file,
+		at: b?.at
+	});
 
 	if (b?.at && b.at > Date.now() + MIN_LEAD_MS) {
 		const sm = await save_scheduled(env, me.id, { to, group, text, image, file, at: b.at });
@@ -97,7 +111,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			},
 			locals.x2_ws
 		);
-		const targets = await drop_muted(env, group, undelivered.filter((u) => u !== me.id));
+		const targets = await drop_muted(
+			env,
+			group,
+			undelivered.filter((u) => u !== me.id)
+		);
 		await Promise.all(
 			targets.map(async (uid) => {
 				const unread = await total_unread(env, uid, [group_conv_id(group)]);
@@ -115,7 +133,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				});
 			})
 		);
-		return json({ ok: true, m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d } });
+		return json({
+			ok: true,
+			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d }
+		});
 	}
 
 	if (!to) throw error(400, 'to or group required');
@@ -142,5 +163,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			...(image ? { image: `/media/${image}` } : {})
 		});
 	}
-	return json({ ok: true, m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d } });
+	return json({
+		ok: true,
+		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d }
+	});
 };

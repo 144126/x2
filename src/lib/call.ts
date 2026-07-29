@@ -57,7 +57,8 @@ export class CallMesh {
 
 	async open(video: boolean): Promise<MediaStream> {
 		if (this.local) return this.local;
-		const get = this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
+		const get =
+			this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
 		this.local = await get({ audio: true, video });
 		return this.local;
 	}
@@ -104,10 +105,16 @@ export class CallMesh {
 				await this.answer(from, s.sdp);
 				return;
 			case 'answer':
-				await this.pcs.get(from)?.setRemoteDescription(s.sdp).catch(() => {});
+				await this.pcs
+					.get(from)
+					?.setRemoteDescription(s.sdp)
+					.catch(() => {});
 				return;
 			case 'ice':
-				await this.pcs.get(from)?.addIceCandidate(s.candidate).catch(() => {});
+				await this.pcs
+					.get(from)
+					?.addIceCandidate(s.candidate)
+					.catch(() => {});
 				return;
 			case 'bye':
 				this.drop(from);
@@ -122,7 +129,8 @@ export class CallMesh {
 	async setVideo(on: boolean): Promise<void> {
 		if (!this.local) return;
 		if (on) {
-			const get = this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
+			const get =
+				this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
 			const s = await get({ video: true });
 			for (const t of s.getVideoTracks()) this.local.addTrack(t);
 		} else {

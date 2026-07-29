@@ -78,6 +78,11 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 	const g = await google_client(url.origin);
 	const auth_url = g.createAuthorizationURL(s, verifier, ['openid', 'profile', 'email']);
 	cookies.set('oauth_state', s, { path: '/', httpOnly: true, maxAge: 600, sameSite: 'lax' });
-	cookies.set('oauth_verifier', verifier, { path: '/', httpOnly: true, maxAge: 600, sameSite: 'lax' });
+	cookies.set('oauth_verifier', verifier, {
+		path: '/',
+		httpOnly: true,
+		maxAge: 600,
+		sameSite: 'lax'
+	});
 	throw redirect(302, auth_url.toString());
 };

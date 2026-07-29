@@ -106,7 +106,10 @@
 		onkeydown={on_trigger_keydown}
 	>
 		<span class={selected_index < 0 ? 'text-mute' : ''}>{selected_label}</span>
-		<span class="text-[10px] text-faint transition-transform duration-300 {open ? 'rotate-180' : ''}">▾</span>
+		<span
+			class="text-[10px] text-faint transition-transform duration-300 {open ? 'rotate-180' : ''}"
+			>▾</span
+		>
 	</button>
 
 	{#if open}

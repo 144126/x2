@@ -6,7 +6,8 @@ export const DAILY_GRANT = 5400; // kobo, per spec: 5400 free credits/day
 const DAY_MS = 86_400_000;
 
 type Balance = { balance: number; last_grant: number };
-type DeductResult = { ok: true; balance: number } | { ok: false; reason: 'insufficient_credits'; balance: number };
+type DeductResult =
+	{ ok: true; balance: number } | { ok: false; reason: 'insufficient_credits'; balance: number };
 
 export class CreditAccount implements DurableObject {
 	private state: DurableObjectState;

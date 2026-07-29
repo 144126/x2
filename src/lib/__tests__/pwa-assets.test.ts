@@ -71,8 +71,8 @@ describe('manifest — launch', () => {
 		expect(manifest().launch_handler.client_mode).toBe('navigate-existing');
 	});
 
-	it('paints the OS chrome in the app’s own colours', () => {
-		expect(manifest().theme_color).toBe('#0b0b0c');
+	it('paints the OS chrome in the brand orange', () => {
+		expect(manifest().theme_color).toBe('#d98b5f');
 		expect(manifest().background_color).toBe('#0b0b0c');
 	});
 
@@ -82,7 +82,8 @@ describe('manifest — launch', () => {
 });
 
 describe('manifest — icons', () => {
-	const icons = () => manifest().icons as { src: string; sizes: string; type: string; purpose?: string }[];
+	const icons = () =>
+		manifest().icons as { src: string; sizes: string; type: string; purpose?: string }[];
 
 	it('ships the 192 and 512 PNGs installability requires', () => {
 		const any = icons().filter((i) => (i.purpose ?? 'any').includes('any'));
@@ -131,9 +132,13 @@ describe('manifest — shortcuts', () => {
 	const cuts = () => (manifest().shortcuts ?? []) as { name: string; url: string }[];
 
 	it('offers long-press jumps into the main sections', () => {
-		expect(cuts().map((c) => c.url)).toEqual(
-			expect.arrayContaining(['/app', '/app/rooms'])
-		);
+		expect(cuts().map((c) => c.url)).toEqual(expect.arrayContaining(['/app/chats', '/app/rooms']));
+	});
+
+	it('points the Chats shortcut at /app/chats', () => {
+		const cuts = (manifest().shortcuts ?? []) as { name: string; url: string }[];
+		const chats = cuts.find((c) => c.name.toLowerCase() === 'chats');
+		expect(chats?.url).toBe('/app/chats');
 	});
 
 	it('names every shortcut', () => {
@@ -170,8 +175,8 @@ describe('app.html head', () => {
 		expect(html()).toMatch(/name="viewport"[^>]*viewport-fit=cover/);
 	});
 
-	it('sets a theme colour matching the manifest', () => {
-		expect(html()).toMatch(/<meta[^>]+name="theme-color"[^>]+content="#0b0b0c"/);
+	it('sets a theme colour matching the brand orange', () => {
+		expect(html()).toMatch(/<meta[^>]+name="theme-color"[^>]+content="#d98b5f"/);
 	});
 
 	it('declares the app dark, so form controls and scrollbars match', () => {

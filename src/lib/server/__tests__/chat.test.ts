@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, idState } = vi.hoisted(() => ({
-	ensureMock: vi.fn(),
-	upsertMock: vi.fn(),
-	retrieveOneMock: vi.fn(),
-	scrollMock: vi.fn(),
-	searchMock: vi.fn(),
-	embedMock: vi.fn(),
-	idState: { n: 0 }
-}));
+const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, idState } =
+	vi.hoisted(() => ({
+		ensureMock: vi.fn(),
+		upsertMock: vi.fn(),
+		retrieveOneMock: vi.fn(),
+		scrollMock: vi.fn(),
+		searchMock: vi.fn(),
+		embedMock: vi.fn(),
+		idState: { n: 0 }
+	}));
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
@@ -165,7 +166,10 @@ describe('list_conversations', () => {
 
 describe('get_user_name', () => {
 	it('returns the username (not full name)', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'uid', payload: { s: 'u', n: 'Ada Lovelace', u: 'ada' } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'uid',
+			payload: { s: 'u', n: 'Ada Lovelace', u: 'ada' }
+		});
 		expect(await get_user_name(ENV, 'uid')).toBe('ada');
 	});
 
@@ -175,7 +179,10 @@ describe('get_user_name', () => {
 	});
 
 	it('shows username in chat header instead of full name', async () => {
-		retrieveOneMock.mockResolvedValue({ id: 'uid', payload: { s: 'u', n: 'Ada Lovelace', u: 'ada_lovelace' } });
+		retrieveOneMock.mockResolvedValue({
+			id: 'uid',
+			payload: { s: 'u', n: 'Ada Lovelace', u: 'ada_lovelace' }
+		});
 		expect(await get_user_name(ENV, 'uid')).toBe('ada_lovelace');
 	});
 });

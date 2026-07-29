@@ -2,7 +2,11 @@ import { b64u, unb64u } from '../b64';
 
 export type PushKeys = { public: string; private: string; subject: string };
 export type WebPushSub = { endpoint: string; keys: { p256dh: string; auth: string } };
-export type PushOpts = { ttl?: number; urgency?: 'very-low' | 'low' | 'normal' | 'high'; topic?: string };
+export type PushOpts = {
+	ttl?: number;
+	urgency?: 'very-low' | 'low' | 'normal' | 'high';
+	topic?: string;
+};
 export type PushResult = { ok: boolean; status: number; gone: boolean };
 
 export const MAX_PLAINTEXT = 4096 - 16 - 4 - 1 - 65 - 16 - 1; // 3993
@@ -23,14 +27,27 @@ const cat = (...parts: Uint8Array[]): Uint8Array => {
 };
 
 async function hmac(key: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
-	const k = await crypto.subtle.importKey('raw', bs(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+	const k = await crypto.subtle.importKey(
+		'raw',
+		bs(key),
+		{ name: 'HMAC', hash: 'SHA-256' },
+		false,
+		['sign']
+	);
 	return new Uint8Array(await crypto.subtle.sign('HMAC', k, bs(data)));
 }
 
 async function ecdh_import_private(d: Uint8Array, pub: Uint8Array) {
 	return crypto.subtle.importKey(
 		'jwk',
-		{ kty: 'EC', crv: 'P-256', d: b64u(d), x: b64u(pub.slice(1, 33)), y: b64u(pub.slice(33, 65)), ext: true },
+		{
+			kty: 'EC',
+			crv: 'P-256',
+			d: b64u(d),
+			x: b64u(pub.slice(1, 33)),
+			y: b64u(pub.slice(33, 65)),
+			ext: true
+		},
 		{ name: 'ECDH', namedCurve: 'P-256' },
 		false,
 		['deriveBits']
@@ -64,7 +81,13 @@ export async function encrypt_payload(
 	const auth = unb64u(sub.keys.auth);
 
 	const as_priv_key = await ecdh_import_private(as_private, as_public);
-	const ua_pub_key = await crypto.subtle.importKey('raw', bs(ua_pub), { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+	const ua_pub_key = await crypto.subtle.importKey(
+		'raw',
+		bs(ua_pub),
+		{ name: 'ECDH', namedCurve: 'P-256' },
+		false,
+		[]
+	);
 	const ecdh = new Uint8Array(
 		await crypto.subtle.deriveBits({ name: 'ECDH', public: ua_pub_key }, as_priv_key, 256)
 	);
@@ -75,10 +98,16 @@ export async function encrypt_payload(
 		cat(ascii('WebPush: info'), new Uint8Array([0]), ua_pub, as_public, new Uint8Array([1]))
 	);
 	const prk = await hmac(salt, ikm);
-	const cek = (await hmac(prk, cat(ascii('Content-Encoding: aes128gcm'), new Uint8Array([0, 1])))).slice(0, 16);
-	const nonce = (await hmac(prk, cat(ascii('Content-Encoding: nonce'), new Uint8Array([0, 1])))).slice(0, 12);
+	const cek = (
+		await hmac(prk, cat(ascii('Content-Encoding: aes128gcm'), new Uint8Array([0, 1])))
+	).slice(0, 16);
+	const nonce = (
+		await hmac(prk, cat(ascii('Content-Encoding: nonce'), new Uint8Array([0, 1])))
+	).slice(0, 12);
 
-	const key = await crypto.subtle.importKey('raw', bs(cek), { name: 'AES-GCM' }, false, ['encrypt']);
+	const key = await crypto.subtle.importKey('raw', bs(cek), { name: 'AES-GCM' }, false, [
+		'encrypt'
+	]);
 	const record = cat(bytes, new Uint8Array([2]));
 	const ciphertext = new Uint8Array(
 		await crypto.subtle.encrypt({ name: 'AES-GCM', iv: bs(nonce) }, key, bs(record))
@@ -88,7 +117,11 @@ export async function encrypt_payload(
 	return cat(salt, rs, new Uint8Array([as_public.length]), as_public, ciphertext);
 }
 
-export async function vapid_auth(keys: PushKeys, endpoint: string, now = Date.now()): Promise<string> {
+export async function vapid_auth(
+	keys: PushKeys,
+	endpoint: string,
+	now = Date.now()
+): Promise<string> {
 	const header = b64u(ascii(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
 	const claims = b64u(
 		ascii(

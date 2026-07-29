@@ -45,17 +45,17 @@ POST /api/send
 
 ### Modules
 
-| File | Responsibility |
-|---|---|
-| `src/lib/server/push.ts` | VAPID JWT (ES256), RFC 8291 ECDH + RFC 8188 `aes128gcm`, send, prune-on-410 |
-| `src/lib/server/subs.ts` | Subscription records in Qdrant (`s:'ps'`), keyed by endpoint hash |
-| `src/lib/server/unread.ts` | Read markers (`s:'rd'`), per-conversation and total unread |
-| `src/lib/sw-core.ts` | Pure service-worker logic: cache routing, notification building, click targeting |
-| `src/service-worker.ts` | Thin shim binding `sw-core` to `self` and the `$service-worker` module |
-| `src/lib/push-client.ts` | Permission/subscription state machine, iOS gating, `pushsubscriptionchange` |
-| `src/lib/install.ts` | `beforeinstallprompt` capture, dismissal memory, iOS manual hint |
-| `src/lib/outbox.ts` | IndexedDB-backed send queue, drained by Background Sync |
-| `src/lib/b64.ts` | `b64u`/`unb64u` moved out of `server/qdrant.ts` so the client can reuse them |
+| File                       | Responsibility                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| `src/lib/server/push.ts`   | VAPID JWT (ES256), RFC 8291 ECDH + RFC 8188 `aes128gcm`, send, prune-on-410      |
+| `src/lib/server/subs.ts`   | Subscription records in Qdrant (`s:'ps'`), keyed by endpoint hash                |
+| `src/lib/server/unread.ts` | Read markers (`s:'rd'`), per-conversation and total unread                       |
+| `src/lib/sw-core.ts`       | Pure service-worker logic: cache routing, notification building, click targeting |
+| `src/service-worker.ts`    | Thin shim binding `sw-core` to `self` and the `$service-worker` module           |
+| `src/lib/push-client.ts`   | Permission/subscription state machine, iOS gating, `pushsubscriptionchange`      |
+| `src/lib/install.ts`       | `beforeinstallprompt` capture, dismissal memory, iOS manual hint                 |
+| `src/lib/outbox.ts`        | IndexedDB-backed send queue, drained by Background Sync                          |
+| `src/lib/b64.ts`           | `b64u`/`unb64u` moved out of `server/qdrant.ts` so the client can reuse them     |
 
 Both new payload types reuse payload indexes that `ensure()` already creates (`s`, `f`, `c`),
 so no Qdrant index migration is required. `qdrant.ts` gains one missing primitive: `remove()`.
@@ -63,8 +63,21 @@ so no Qdrant index migration is required. `qdrant.ts` gains one missing primitiv
 ### Data
 
 ```ts
-interface PushSub { s:'ps'; f:string; ep:string; k:string; au:string; ua?:string; d:number }
-interface Read    { s:'rd'; f:string; c:string;  d:number }
+interface PushSub {
+	s: 'ps';
+	f: string;
+	ep: string;
+	k: string;
+	au: string;
+	ua?: string;
+	d: number;
+}
+interface Read {
+	s: 'rd';
+	f: string;
+	c: string;
+	d: number;
+}
 ```
 
 `PushSub` id is `uuid_from(endpoint)` — re-subscribing the same device upserts rather than
@@ -86,7 +99,7 @@ safe-zone padding the spec requires.
 
 ### Service worker
 
-- **install** — precache `build` + `files` + `/offline`; do *not* `skipWaiting` (the update
+- **install** — precache `build` + `files` + `/offline`; do _not_ `skipWaiting` (the update
   toast drives that).
 - **activate** — drop caches whose name is not the current version, `clients.claim()`.
 - **fetch** — bypass non-GET, `/api/*`, `/logout`, `/google`, cross-origin, and any request

@@ -3,7 +3,7 @@
 Status: N1/N2 done. Everything below is remaining work.
 
 Companion docs: `2026-07-28-pwa-notifications-design.md` (why), `-plan.md` (node graph).
-This doc is the *how*: exact signatures, types, behaviour, and the tests still missing.
+This doc is the _how_: exact signatures, types, behaviour, and the tests still missing.
 
 ---
 
@@ -28,23 +28,30 @@ export type PushKeys = { public: string; private: string; subject: string };
 //  subject = 'mailto:…' or an https origin
 
 export type WebPushSub = { endpoint: string; keys: { p256dh: string; auth: string } };
-export type PushOpts = { ttl?: number; urgency?: 'very-low'|'low'|'normal'|'high'; topic?: string };
+export type PushOpts = {
+	ttl?: number;
+	urgency?: 'very-low' | 'low' | 'normal' | 'high';
+	topic?: string;
+};
 export type PushResult = { ok: boolean; status: number; gone: boolean };
 
 export const MAX_PLAINTEXT = 4096 - 16 - 4 - 1 - 65 - 16 - 1; // 3993
 
 export function encrypt_payload(
-  sub: WebPushSub,
-  plaintext: string,
-  seed?: { salt: Uint8Array; as_private: Uint8Array; as_public: Uint8Array }
+	sub: WebPushSub,
+	plaintext: string,
+	seed?: { salt: Uint8Array; as_private: Uint8Array; as_public: Uint8Array }
 ): Promise<Uint8Array>;
 
 export function vapid_auth(keys: PushKeys, endpoint: string, now?: number): Promise<string>;
 export function push_topic(conv: string): string;
 export function clamp_payload(obj: Record<string, unknown>): string;
 export function send_push(
-  sub: WebPushSub, payload: string, keys: PushKeys,
-  opts?: PushOpts, f?: typeof fetch
+	sub: WebPushSub,
+	payload: string,
+	keys: PushKeys,
+	opts?: PushOpts,
+	f?: typeof fetch
 ): Promise<PushResult>;
 ```
 
@@ -96,7 +103,7 @@ Never throws — a rejected fetch returns `{ ok:false, status:0, gone:false }`.
 Tests exist (`__tests__/subs.test.ts`, 17). Qdrant point:
 
 ```ts
-type PushSub = { s:'ps'; f:string; ep:string; k:string; au:string; ua?:string; d:number };
+type PushSub = { s: 'ps'; f: string; ep: string; k: string; au: string; ua?: string; d: number };
 // f = owner uid, ep = endpoint, k = p256dh, au = auth, ua = user-agent, d = created ms
 // id = await uuid_from(endpoint)  ⇒ re-subscribing upserts instead of duplicating
 ```
@@ -158,12 +165,18 @@ Never throws.
   `{type:'msg', id, from, from_name, text, image, group, ts}` must stay byte-identical.
 - **N8 `ws/src/relay.ts`** (new) — extracted from `index.ts`:
   ```ts
-  export type HubNs = { idFromName(n: string): unknown; get(id: unknown): { fetch(r: Request): Promise<Response> } };
-  export function relay(body: unknown, ns: HubNs): Promise<null | { ok: boolean; undelivered: string[] }>
+  export type HubNs = {
+  	idFromName(n: string): unknown;
+  	get(id: unknown): { fetch(r: Request): Promise<Response> };
+  };
+  export function relay(
+  	body: unknown,
+  	ns: HubNs
+  ): Promise<null | { ok: boolean; undelivered: string[] }>;
   ```
   `null` when there is nobody to relay to (no `to`, empty `members`, null body).
   A hub that throws **or** answers non-JSON counts as undelivered. `ok` is false only
-  when *every* hub failed.
+  when _every_ hub failed.
 - **N9 `ws/src/index.ts`** — `/relay` delegates to `relay()` and returns its JSON.
 
 Tests exist: `ws/src/__tests__/relay.test.ts` (13), `hub-do.test.ts` (+2).
@@ -187,13 +200,13 @@ Push via `platform.context.waitUntil(notify(...))` so the response is not blocke
 
 ## 7. Client library
 
-| Node | File | Tests |
-|---|---|---|
-| N13 | `src/lib/push-client.ts` | exist (24) |
-| N14 | `src/lib/install.ts` | exist (18) |
-| N15 | `src/lib/outbox.ts` | exist (13) |
-| N16 | `src/lib/badge.ts` | **to write** |
-| N17 | `src/lib/sw-core.ts` | exist (46) |
+| Node | File                     | Tests        |
+| ---- | ------------------------ | ------------ |
+| N13  | `src/lib/push-client.ts` | exist (24)   |
+| N14  | `src/lib/install.ts`     | exist (18)   |
+| N15  | `src/lib/outbox.ts`      | exist (13)   |
+| N16  | `src/lib/badge.ts`       | **to write** |
+| N17  | `src/lib/sw-core.ts`     | exist (46)   |
 
 **`push-client.ts`** — `b64_to_bytes`, `push_available(): boolean`,
 `push_state(): Promise<'unsupported'|'blocked'|'off'|'on'>`, `enable_push(key)`,
@@ -210,11 +223,13 @@ types `OutStore`, `Outgoing`. Registers Background Sync tag `x2-outbox` when ava
 falls back to draining on `online`.
 
 **`badge.ts` (tests to write, ~8):**
+
 ```ts
 set_badge(n: number): Promise<void>   // navigator.setAppBadge / clearAppBadge at 0
 bump_badge(by = 1): Promise<void>     // reads a cached count; SW increments locally
 sync_badge(): Promise<number>         // GET /api/read → set_badge(total)
 ```
+
 Cases: no-ops when the API is absent; clears at 0; never throws when the promise
 rejects (Safari); `sync_badge` tolerates a failed fetch and returns the last known value.
 
@@ -236,6 +251,7 @@ Notification options are pinned by test: `icon:'/icons/icon-192.png'`,
 placeholder) and `mark-read`; **no actions when there is no conv**.
 
 SW event wiring (no unit tests — covered by the e2e in §11):
+
 - `install` → precache `build`+`files`+`/offline`, `skipWaiting()`
 - `activate` → delete `stale_caches`, `clients.claim()`
 - `fetch` → route by `cache_mode`; navigation failure → `/offline`. Never cache a 206.
@@ -282,7 +298,7 @@ declared icon's real PNG IHDR dimensions against its `sizes` string.
 
 ## 11. UI and e2e — **tests to write**
 
-- **N28 `src/lib/components/NotifyPrompt.svelte`** — asks for permission *after* a first
+- **N28 `src/lib/components/NotifyPrompt.svelte`** — asks for permission _after_ a first
   send, never on load. Svelte 5 runes. ~6 component tests: hidden when `push_state()`
   is `'on'` or `'blocked'`, shows the iOS install hint instead when `ios_hint_needed()`,
   re-ask suppressed for `REASK_MS` after dismissal.
@@ -298,7 +314,7 @@ declared icon's real PNG IHDR dimensions against its `sizes` string.
 ## Order
 
 1. push.ts (N3) → 2. subs/unread (N4,N5) → 3. notify (N6) → 4. relay chain (N7–N9) →
-5. /api/send (N10) → 6. client libs (N13–N17) → 7. SW + routes (N18–N23,N25) →
-8. assets + head (N24,N26,N27) → 9. UI (N28–N30) → 10. e2e (N31).
+2. /api/send (N10) → 6. client libs (N13–N17) → 7. SW + routes (N18–N23,N25) →
+3. assets + head (N24,N26,N27) → 9. UI (N28–N30) → 10. e2e (N31).
 
 Each step is green when its named suite passes **and** the pre-existing 104 tests still do.

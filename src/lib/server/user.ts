@@ -5,7 +5,12 @@ import { hash_pw, verify_pw } from './pw';
 
 // Identity is the username, derived once from the email local-part. Google's display
 // name is deliberately never requested or stored — the user edits their username instead.
-async function claim_username(env: QEnv, id: string, from: string, existing?: User): Promise<string> {
+async function claim_username(
+	env: QEnv,
+	id: string,
+	from: string,
+	existing?: User
+): Promise<string> {
 	if (existing?.u && validate_username(existing.u)) return existing.u;
 	return available_username(env, from, id);
 }
@@ -41,14 +46,22 @@ export async function get_user(env: QEnv, id: string): Promise<User | null> {
 }
 
 /** merges `patch` onto a user's record, preserving their existing search embedding */
-export async function patch_user(env: QEnv, uid: string, patch: Partial<User>): Promise<User | null> {
+export async function patch_user(
+	env: QEnv,
+	uid: string,
+	patch: Partial<User>
+): Promise<User | null> {
 	await ensure(env);
 	const pt = await retrieve_one(env, uid, true);
 	const cur = pt?.payload as unknown as User | undefined;
 	if (!cur || cur.s !== 'u') return null;
 	const merged: User = { ...cur, ...patch };
 	await upsert(env, [
-		{ id: uid, vector: (pt!.vector as number[]) ?? ZV, payload: merged as unknown as Record<string, unknown> }
+		{
+			id: uid,
+			vector: (pt!.vector as number[]) ?? ZV,
+			payload: merged as unknown as Record<string, unknown>
+		}
 	]);
 	return merged;
 }
@@ -71,7 +84,11 @@ export async function create_pw_user(env: QEnv, email: string, password: string)
 	return id;
 }
 
-export async function verify_user_pw(env: QEnv, email: string, password: string): Promise<User | null> {
+export async function verify_user_pw(
+	env: QEnv,
+	email: string,
+	password: string
+): Promise<User | null> {
 	const u = await get_user(env, await uuid_from(email));
 	if (!u || u.o !== 'local' || !u.h) return null;
 	return (await verify_pw(password, u.h)) ? u : null;

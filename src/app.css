@@ -34,6 +34,11 @@
 	--animate-reveal: reveal 0.9s var(--ease-studio) both;
 }
 
+:root {
+	/* header + main padding; the bottom bar's own height is added on phones */
+	--chrome: 110px;
+}
+
 @keyframes reveal {
 	from {
 		opacity: 0;
@@ -66,6 +71,10 @@
 	}
 	.btn:hover {
 		@apply -translate-y-px border-ink;
+	}
+
+	.btn-ghost {
+		@apply border-transparent;
 	}
 
 	.btn-amber {
@@ -148,33 +157,41 @@ body {
 }
 
 @media (max-width: 640px) {
-	body {
-		background-size: 50vw 100%;
+	:root {
+		--chrome: calc(140px + env(safe-area-inset-bottom));
 	}
-	.wrap {
-		@apply px-4;
-	}
-	input, textarea {
-		/* 15px keeps iOS from zooming the viewport on focus */
-		@apply text-[15px];
-	}
-	/* filter rows and chat headers were flex rows of fixed-width children, which pushed the
-	   page wider than the viewport — the source of the horizontal scroll on phones */
-	.filters {
-		@apply grid grid-cols-2 gap-2.5;
-	}
-	.filters > * {
-		@apply w-full min-w-0;
+	@layer components {
+		body {
+			background-size: 50vw 100%;
+		}
+		.wrap {
+			@apply px-4;
+		}
+		input,
+		textarea {
+			/* 15px keeps iOS from zooming the viewport on focus */
+			@apply text-[15px];
+		}
+		/* filter rows and chat headers were flex rows of fixed-width children, which pushed the
+		   page wider than the viewport — the source of the horizontal scroll on phones */
+		.filters {
+			@apply grid grid-cols-2 gap-2.5;
+		}
+		.filters > * {
+			@apply w-full min-w-0;
+		}
 	}
 }
 @media (max-width: 480px) {
-	.wrap {
-		@apply px-3;
-	}
-	.btn {
-		@apply px-4 py-3 text-[13px];
-	}
-	section.prof {
-		@apply max-w-full;
+	@layer components {
+		.wrap {
+			@apply px-3;
+		}
+		.btn {
+			@apply px-4 py-3 text-[13px];
+		}
+		section.prof {
+			@apply max-w-full;
+		}
 	}
 }

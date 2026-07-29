@@ -29,10 +29,12 @@
 Folders are written to Qdrant with a payload key `owner`, but every read filters on `eq('ow', uid)`. `ow` is the indexed key; `owner` is not in the payload's filterable set. Result: `list_folders` always returns `[]`, `owned_folder` never finds anything, so `assign_conv`/`unassign_conv`/`delete_folder` all 404. Folders appear to work only because the UI optimistically appends the object the POST returns; they vanish on reload. The existing tests mock `scroll` wholesale, so the filter argument is never asserted — that is why this shipped.
 
 **Files:**
+
 - Modify: `src/lib/server/folders.ts:3-17` (interface + `save_folder`)
 - Test: `src/lib/server/__tests__/folders.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ensure`, `upsert`, `scroll`, `remove`, `new_id`, `f`, `eq`, `ZV`, `QEnv` from `./qdrant`
 - Produces: `Folder` with field `ow: string` (renamed from `owner`); `save_folder(env, owner, name) => Promise<Folder>`, `list_folders(env, uid) => Promise<Folder[]>`, `assign_conv(env, uid, folder_id, conv) => Promise<boolean>`, `unassign_conv(...) => Promise<boolean>`, `delete_folder(env, uid, folder_id) => Promise<boolean>` — signatures unchanged.
 
@@ -48,7 +50,9 @@ describe('payload/filter coherence', () => {
 
 		scrollMock.mockResolvedValue([]);
 		await list_folders(ENV, 'ada');
-		const filter = scrollMock.mock.calls[0][1] as { must: { key: string; match: { value: string } }[] };
+		const filter = scrollMock.mock.calls[0][1] as {
+			must: { key: string; match: { value: string } }[];
+		};
 
 		// a filter key absent from the written payload matches nothing in Qdrant — silent data loss
 		for (const cond of filter.must) {
@@ -121,11 +125,13 @@ git commit -m "fix: folders were never readable — payload wrote 'owner' but fi
 No modal/dialog component exists. Two features need one (folder editor, create-room). Use the native `<dialog>` element: `showModal()` gives focus trapping, Esc-to-close, inert background and a `::backdrop` for free — no library, no focus-trap code.
 
 **Files:**
+
 - Create: `src/lib/components/Modal.svelte`
 - Create: `src/lib/components/__tests__/ModalHost.test.svelte`
 - Create: `src/lib/components/__tests__/Modal.test.ts`
 
 **Interfaces:**
+
 - Produces: `Modal` — props `{ open: boolean (bindable), title?: string, children: Snippet }`. Setting `open = true` shows it; Esc, backdrop click, and the close button all set `open = false`.
 
 - [ ] **Step 1: Write the failing test host**
@@ -258,9 +264,11 @@ git commit -m "feat: add Modal component built on native <dialog>"
 Replace the per-conversation `<select>` (a control repeated on every thread card) with a single edit button on the **active** folder pill. It opens a modal listing every conversation with a `+`/`−` toggle that adds/removes it from the active folder.
 
 **Files:**
+
 - Modify: `src/routes/app/+page.svelte:1-46` (script), `:189-249` (threads section)
 
 **Interfaces:**
+
 - Consumes: `Modal` from Task 2; `POST /api/folders/[id]` `{conv}` to assign; `DELETE /api/folders/[id]?conv=<id>` to unassign (both already exist).
 - Produces: nothing consumed by later tasks.
 
@@ -269,41 +277,43 @@ Replace the per-conversation `<select>` (a control repeated on every thread card
 In `src/routes/app/+page.svelte`, add the `Modal` and `Pencil` imports, and replace `assignToFolder` (lines 36-46) with a toggle pair:
 
 ```ts
-	import Modal from '$lib/components/Modal.svelte';
-	import { Search, FolderPlus, MessageCircle, Pencil, Plus, Minus } from '@lucide/svelte';
+import Modal from '$lib/components/Modal.svelte';
+import { Search, FolderPlus, MessageCircle, Pencil, Plus, Minus } from '@lucide/svelte';
 ```
 
 ```ts
-	let editingFolder = $state(false);
-	let activeFolderObj = $derived(folders.find((fo) => fo.id === activeFolder) ?? null);
-	const inFolder = (peer: string) => !!activeFolderObj?.convs.includes(peer);
+let editingFolder = $state(false);
+let activeFolderObj = $derived(folders.find((fo) => fo.id === activeFolder) ?? null);
+const inFolder = (peer: string) => !!activeFolderObj?.convs.includes(peer);
 
-	async function toggleInFolder(peer: string) {
-		const folderId = activeFolder;
-		if (!folderId) return;
-		const adding = !inFolder(peer);
-		// optimistic — the pill list and the filtered thread list both read from `folders`
+async function toggleInFolder(peer: string) {
+	const folderId = activeFolder;
+	if (!folderId) return;
+	const adding = !inFolder(peer);
+	// optimistic — the pill list and the filtered thread list both read from `folders`
+	folders = folders.map((fo) =>
+		fo.id !== folderId
+			? fo
+			: { ...fo, convs: adding ? [...fo.convs, peer] : fo.convs.filter((c) => c !== peer) }
+	);
+	const res = adding
+		? await fetch(`/api/folders/${folderId}`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ conv: peer })
+			})
+		: await fetch(`/api/folders/${folderId}?conv=${encodeURIComponent(peer)}`, {
+				method: 'DELETE'
+			});
+	if (!res.ok) {
+		// roll back so the UI never claims a membership the server rejected
 		folders = folders.map((fo) =>
 			fo.id !== folderId
 				? fo
-				: { ...fo, convs: adding ? [...fo.convs, peer] : fo.convs.filter((c) => c !== peer) }
+				: { ...fo, convs: adding ? fo.convs.filter((c) => c !== peer) : [...fo.convs, peer] }
 		);
-		const res = adding
-			? await fetch(`/api/folders/${folderId}`, {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ conv: peer })
-				})
-			: await fetch(`/api/folders/${folderId}?conv=${encodeURIComponent(peer)}`, { method: 'DELETE' });
-		if (!res.ok) {
-			// roll back so the UI never claims a membership the server rejected
-			folders = folders.map((fo) =>
-				fo.id !== folderId
-					? fo
-					: { ...fo, convs: adding ? fo.convs.filter((c) => c !== peer) : [...fo.convs, peer] }
-			);
-		}
 	}
+}
 ```
 
 - [ ] **Step 2: Put the edit button inside the active pill**
@@ -311,28 +321,28 @@ In `src/routes/app/+page.svelte`, add the `Modal` and `Pencil` imports, and repl
 Replace the folder pill loop (lines 200-208) with:
 
 ```svelte
-		{#each folders as fo (fo.id)}
-			<div class="flex items-center">
-				<button
-					class="btn text-[12px] py-1.5 px-3"
-					class:btn-amber={activeFolder === fo.id}
-					class:!rounded-r-none={activeFolder === fo.id}
-					onclick={() => (activeFolder = fo.id)}
-				>
-					{fo.name}
-				</button>
-				{#if activeFolder === fo.id}
-					<button
-						class="btn btn-amber !rounded-l-none border-l border-l-accent-ink/20 py-1.5 px-2.5 text-[12px]"
-						onclick={() => (editingFolder = true)}
-						aria-label="edit {fo.name}"
-						title="add or remove chats"
-					>
-						<Pencil size={13} />
-					</button>
-				{/if}
-			</div>
-		{/each}
+{#each folders as fo (fo.id)}
+	<div class="flex items-center">
+		<button
+			class="btn text-[12px] py-1.5 px-3"
+			class:btn-amber={activeFolder === fo.id}
+			class:!rounded-r-none={activeFolder === fo.id}
+			onclick={() => (activeFolder = fo.id)}
+		>
+			{fo.name}
+		</button>
+		{#if activeFolder === fo.id}
+			<button
+				class="btn btn-amber !rounded-l-none border-l border-l-accent-ink/20 py-1.5 px-2.5 text-[12px]"
+				onclick={() => (editingFolder = true)}
+				aria-label="edit {fo.name}"
+				title="add or remove chats"
+			>
+				<Pencil size={13} />
+			</button>
+		{/if}
+	</div>
+{/each}
 ```
 
 - [ ] **Step 3: Add the editor modal and delete the per-card select**
@@ -340,28 +350,28 @@ Replace the folder pill loop (lines 200-208) with:
 Add just before the closing `</section>` of the threads section (after the `{#if visibleConvs.length}` block, line 248):
 
 ```svelte
-	<Modal bind:open={editingFolder} title="chats in “{activeFolderObj?.name ?? ''}”">
-		{#if convs.length}
-			<ul class="flex flex-col gap-2">
-				{#each convs as c (c.peer)}
-					{@const on = inFolder(c.peer)}
-					<li class="flex items-center gap-3 rounded-[12px] border border-line bg-panel px-3 py-2">
-						<span class="min-w-0 flex-1 truncate text-[14.5px] text-ink">{c.name}</span>
-						<button
-							class="btn shrink-0 px-3 py-1.5 text-[12px]"
-							class:btn-amber={on}
-							onclick={() => toggleInFolder(c.peer)}
-							aria-label={on ? `remove ${c.name} from folder` : `add ${c.name} to folder`}
-						>
-							{#if on}<Minus size={13} />{:else}<Plus size={13} />{/if}
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="text-[14px] text-faint">no conversations to file yet.</p>
-		{/if}
-	</Modal>
+<Modal bind:open={editingFolder} title="chats in “{activeFolderObj?.name ?? ''}”">
+	{#if convs.length}
+		<ul class="flex flex-col gap-2">
+			{#each convs as c (c.peer)}
+				{@const on = inFolder(c.peer)}
+				<li class="flex items-center gap-3 rounded-[12px] border border-line bg-panel px-3 py-2">
+					<span class="min-w-0 flex-1 truncate text-[14.5px] text-ink">{c.name}</span>
+					<button
+						class="btn shrink-0 px-3 py-1.5 text-[12px]"
+						class:btn-amber={on}
+						onclick={() => toggleInFolder(c.peer)}
+						aria-label={on ? `remove ${c.name} from folder` : `add ${c.name} to folder`}
+					>
+						{#if on}<Minus size={13} />{:else}<Plus size={13} />{/if}
+					</button>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<p class="text-[14px] text-faint">no conversations to file yet.</p>
+	{/if}
+</Modal>
 ```
 
 Then delete the whole `{#if folders.length}` block containing the `<select>` (lines 232-242), leaving the thread card as just its clickable div.
@@ -390,6 +400,7 @@ git commit -m "feat: edit folder membership from the active pill instead of a se
 One global rule themes every scrollbar — the page and the `Select` listbox (`overflow-auto` on its `<ul>`) both inherit it, so no component change is needed. Task 3 removed the last native `<select>`, so its styling is dead code.
 
 **Files:**
+
 - Modify: `src/app.css:99-104` (delete), `:140` (selector), `:114` onward (add scrollbar block)
 
 - [ ] **Step 1: Delete the dead `select` rules**
@@ -397,12 +408,12 @@ One global rule themes every scrollbar — the page and the `Select` listbox (`o
 In `src/app.css`, remove these six lines from the `@layer components` block (lines 99-104):
 
 ```css
-		select {
-			@apply w-full rounded-[12px] border border-line bg-panel-solid px-4 py-3.5 text-[14px] text-ink outline-none transition-colors duration-300;
-		}
-		select:focus {
-			@apply border-accent;
-		}
+select {
+	@apply w-full rounded-[12px] border border-line bg-panel-solid px-4 py-3.5 text-[14px] text-ink outline-none transition-colors duration-300;
+}
+select:focus {
+	@apply border-accent;
+}
 ```
 
 And in the `@media (max-width: 640px)` block, change line 140 from `input, select, textarea {` to:
@@ -460,6 +471,7 @@ git commit -m "feat: theme scrollbars with a transparent track; drop dead native
 Deletes the discover route, its matchmaking Durable Object, the nav entry, the PWA shortcut, and the `auto=` call-autostart branch in the DM page. `MatchLobby` must be retired with a `deleted_classes` migration or the next `wrangler deploy` fails.
 
 **Files:**
+
 - Delete: `src/routes/app/random/+page.svelte`, `ws/src/lobby.ts`, `ws/src/__tests__/lobby.test.ts`, `src/lib/components/RadioGroup.svelte`, `src/lib/components/Radio.svelte`, `src/lib/components/__tests__/RadioGroup.test.ts`, `src/lib/components/__tests__/RadioGroupHost.test.svelte`
 - Modify: `src/routes/+layout.svelte:10,36-41`; `ws/src/index.ts:6,20-24,85`; `ws/wrangler.jsonc:7-18`; `src/routes/api/wstoken/+server.ts:33`; `src/lib/server/chat.ts:121-125`; `src/lib/server/__tests__/chat.test.ts:33,167-176`; `static/manifest.webmanifest:43-47`; `src/lib/__tests__/pwa-assets.test.ts:135`; `src/routes/app/chat/[id]/+page.svelte:66-69,173-206,334-336`
 
@@ -477,7 +489,7 @@ In `static/manifest.webmanifest`, replace the shortcuts array:
 In `src/lib/__tests__/pwa-assets.test.ts:135`, change the expectation to:
 
 ```ts
-			expect.arrayContaining(['/app', '/app/groups'])
+expect.arrayContaining(['/app', '/app/groups']);
 ```
 
 - [ ] **Step 2: Run the PWA test to verify it passes**
@@ -501,15 +513,15 @@ rm src/lib/components/__tests__/RadioGroup.test.ts src/lib/components/__tests__/
 In `src/routes/+layout.svelte`, drop `Shuffle` from the icon import (line 10) and delete the discover nav entry (line 39):
 
 ```ts
-	import { Users, DoorOpen, UserRound, LogOut } from '@lucide/svelte';
+import { Users, DoorOpen, UserRound, LogOut } from '@lucide/svelte';
 ```
 
 ```ts
-	const nav = [
-		{ href: '/app', label: 'people', icon: Users },
-		{ href: '/app/groups', label: 'rooms', icon: DoorOpen },
-		{ href: '/app/profile', label: 'profile', icon: UserRound }
-	];
+const nav = [
+	{ href: '/app', label: 'people', icon: Users },
+	{ href: '/app/groups', label: 'rooms', icon: DoorOpen },
+	{ href: '/app/profile', label: 'profile', icon: UserRound }
+];
 ```
 
 - [ ] **Step 5: Remove the lobby from the ws worker**
@@ -539,7 +551,7 @@ In `ws/wrangler.jsonc`, remove the `MATCH_LOBBY` binding and add a retirement mi
 In `src/routes/api/wstoken/+server.ts:33`, drop the `match` field:
 
 ```ts
-	return json({ t, ws: `${ws_origin}/ws?${qs}` });
+return json({ t, ws: `${ws_origin}/ws?${qs}` });
 ```
 
 - [ ] **Step 7: Remove `record_match` and its test**
@@ -551,6 +563,7 @@ In `src/lib/server/__tests__/chat.test.ts`, remove `record_match` from the impor
 - [ ] **Step 8: Strip the auto-call branch from the DM page**
 
 In `src/routes/app/chat/[id]/+page.svelte`:
+
 - Delete the `auto` / `auto_tried` declarations and their comment (lines 66-69).
 - Delete the auto-answer branch inside `handleSignal`'s `offer` case, leaving:
 
@@ -589,15 +602,17 @@ git commit -m "feat: remove /random discover flow, its match lobby DO, and the a
 Two real bugs, one shared fix:
 
 1. **Peer keeps showing an active call after the other end hangs up.** `endCall()` only tears down locally — nothing is ever signalled to the peer. Declining also leaves the caller stuck on "calling…".
-2. **No audio.** `remoteVideo`/`localVideo` are plain `let`s, not `$state()`. The `$effect` assigning `srcObject` tracks `remoteStream` but not the element ref, and the `<video>` only mounts once `callState === 'connected'` — which happens *after* `ontrack` fires. The effect therefore runs while the ref is still `undefined` and never re-runs, so `srcObject` is never set and nothing plays.
+2. **No audio.** `remoteVideo`/`localVideo` are plain `let`s, not `$state()`. The `$effect` assigning `srcObject` tracks `remoteStream` but not the element ref, and the `<video>` only mounts once `callState === 'connected'` — which happens _after_ `ontrack` fires. The effect therefore runs while the ref is still `undefined` and never re-runs, so `srcObject` is never set and nothing plays.
 
 Both are fixed once, in shared code: a `CallMesh` (a 1:1 call is a mesh of one peer) and a `RemoteVideo` component that owns the `srcObject` wiring. Task 9 builds room calls on the same `CallMesh`.
 
 **Files:**
+
 - Create: `src/lib/call.ts`, `src/lib/__tests__/call.test.ts`, `src/lib/components/RemoteVideo.svelte`
 - Modify: `src/routes/app/chat/[id]/+page.svelte:71-80,127-276,339-350`
 
 **Interfaces:**
+
 - Produces (consumed by Task 9):
   - `type CallSignal = {type:'join'} | {type:'here'} | {type:'offer'; sdp: RTCSessionDescriptionInit} | {type:'answer'; sdp: RTCSessionDescriptionInit} | {type:'ice'; candidate: RTCIceCandidateInit} | {type:'bye'}`
   - `class CallMesh` with constructor `(opts: MeshOpts)` and methods `open(video: boolean): Promise<MediaStream>`, `announce(members: string[]): void`, `invite(uid: string): Promise<void>`, `accept(uid: string): Promise<void>`, `handle(from: string, s: CallSignal): Promise<void>`, `setMic(on: boolean): void`, `setVideo(on: boolean): Promise<void>`, `hangup(silent?: boolean): void`, getters `peers: string[]` and `active: boolean`
@@ -622,14 +637,31 @@ class FakePC {
 	ontrack: ((e: { streams: unknown[] }) => void) | null = null;
 	onconnectionstatechange: (() => void) | null = null;
 	connectionState = 'new';
-	async createOffer() { return { type: 'offer', sdp: 'OFFER' }; }
-	async createAnswer() { return { type: 'answer', sdp: 'ANSWER' }; }
-	async setLocalDescription(d: unknown) { this.localDescription = d; }
-	async setRemoteDescription(d: unknown) { this.remoteDescription = d; }
-	async addIceCandidate(c: unknown) { this.ice.push(c); }
-	addTrack(t: unknown) { this.senders.push({ track: t }); return { track: t }; }
-	getSenders() { return this.senders; }
-	close() { this.closed = true; }
+	async createOffer() {
+		return { type: 'offer', sdp: 'OFFER' };
+	}
+	async createAnswer() {
+		return { type: 'answer', sdp: 'ANSWER' };
+	}
+	async setLocalDescription(d: unknown) {
+		this.localDescription = d;
+	}
+	async setRemoteDescription(d: unknown) {
+		this.remoteDescription = d;
+	}
+	async addIceCandidate(c: unknown) {
+		this.ice.push(c);
+	}
+	addTrack(t: unknown) {
+		this.senders.push({ track: t });
+		return { track: t };
+	}
+	getSenders() {
+		return this.senders;
+	}
+	close() {
+		this.closed = true;
+	}
 }
 
 type FakeTrack = { kind: string; enabled: boolean; stop: ReturnType<typeof vi.fn> };
@@ -658,8 +690,16 @@ function harness(me: string, opts: Partial<MeshOpts> = {}) {
 		me,
 		send: (to, signal) => sent.push({ to, signal }),
 		onremote: (uid, stream) => remotes.push({ uid, stream }),
-		makePC: () => { const pc = new FakePC(); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
-		getMedia: async () => { const { stream, tracks } = fakeStream(); made.push(tracks); return stream; },
+		makePC: () => {
+			const pc = new FakePC();
+			pcs.push(pc);
+			return pc as unknown as RTCPeerConnection;
+		},
+		getMedia: async () => {
+			const { stream, tracks } = fakeStream();
+			made.push(tracks);
+			return stream;
+		},
 		...opts
 	});
 	return { mesh, sent, remotes, pcs, made };
@@ -670,7 +710,9 @@ describe('CallMesh glare avoidance', () => {
 		const { mesh, sent } = harness('alice');
 		await mesh.open(false);
 		await mesh.handle('bob', { type: 'join' });
-		expect(sent).toEqual([{ to: 'bob', signal: { type: 'offer', sdp: { type: 'offer', sdp: 'OFFER' } } }]);
+		expect(sent).toEqual([
+			{ to: 'bob', signal: { type: 'offer', sdp: { type: 'offer', sdp: 'OFFER' } } }
+		]);
 	});
 
 	it('replies "here" instead of offering when the joiner sorts below me', async () => {
@@ -821,7 +863,8 @@ export class CallMesh {
 
 	async open(video: boolean): Promise<MediaStream> {
 		if (this.local) return this.local;
-		const get = this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
+		const get =
+			this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
 		this.local = await get({ audio: true, video });
 		return this.local;
 	}
@@ -865,10 +908,16 @@ export class CallMesh {
 				await this.answer(from, s.sdp);
 				return;
 			case 'answer':
-				await this.pcs.get(from)?.setRemoteDescription(s.sdp).catch(() => {});
+				await this.pcs
+					.get(from)
+					?.setRemoteDescription(s.sdp)
+					.catch(() => {});
 				return;
 			case 'ice':
-				await this.pcs.get(from)?.addIceCandidate(s.candidate).catch(() => {});
+				await this.pcs
+					.get(from)
+					?.addIceCandidate(s.candidate)
+					.catch(() => {});
 				return;
 			case 'bye':
 				this.drop(from);
@@ -883,7 +932,8 @@ export class CallMesh {
 	async setVideo(on: boolean): Promise<void> {
 		if (!this.local) return;
 		if (on) {
-			const get = this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
+			const get =
+				this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
 			const s = await get({ video: true });
 			for (const t of s.getVideoTracks()) this.local.addTrack(t);
 		} else {
@@ -993,75 +1043,75 @@ Create `src/lib/components/RemoteVideo.svelte`. This is the audio fix: `el` is `
 In `src/routes/app/chat/[id]/+page.svelte`, add imports:
 
 ```ts
-	import { CallMesh, type CallSignal } from '$lib/call';
-	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
+import { CallMesh, type CallSignal } from '$lib/call';
+import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 ```
 
 Replace the WebRTC block (lines 71-80: `pc`, `localStream`, `remoteStream`, `callState`, `videoOn`, `micOn`, `pendingOffer`, `stun`) with:
 
 ```ts
-	let mesh: CallMesh | null = null;
-	let localStream = $state<MediaStream | null>(null);
-	let remoteStream = $state<MediaStream | null>(null);
-	let callState = $state<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
-	let videoOn = $state(false);
-	let micOn = $state(true);
+let mesh: CallMesh | null = null;
+let localStream = $state<MediaStream | null>(null);
+let remoteStream = $state<MediaStream | null>(null);
+let callState = $state<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
+let videoOn = $state(false);
+let micOn = $state(true);
 
-	function resetCall() {
-		mesh = null;
-		localStream = null;
-		remoteStream = null;
-		callState = 'idle';
-		micOn = true;
-	}
+function resetCall() {
+	mesh = null;
+	localStream = null;
+	remoteStream = null;
+	callState = 'idle';
+	micOn = true;
+}
 
-	function makeMesh(): CallMesh {
-		return new CallMesh({
-			me: me!,
-			send: (to, signal) => ws_send({ type: 'signal', to, signal }),
-			onremote: (uid, stream) => {
-				if (uid !== data.peer) return;
-				if (!stream) return resetCall(); // peer hung up or dropped
-				remoteStream = stream;
-				callState = 'connected';
-			},
-			onincoming: () => (callState = 'ringing')
-		});
-	}
+function makeMesh(): CallMesh {
+	return new CallMesh({
+		me: me!,
+		send: (to, signal) => ws_send({ type: 'signal', to, signal }),
+		onremote: (uid, stream) => {
+			if (uid !== data.peer) return;
+			if (!stream) return resetCall(); // peer hung up or dropped
+			remoteStream = stream;
+			callState = 'connected';
+		},
+		onincoming: () => (callState = 'ringing')
+	});
+}
 ```
 
 Replace `createPC`, `handleSignal`, `startCall`, `answerCall`, `toggleVideo`, `toggleMic`, `endCall` and the two `$effect`s wiring `srcObject` (lines 157-266) with:
 
 ```ts
-	async function startCall() {
-		mesh = makeMesh();
-		localStream = await mesh.open(videoOn);
-		await mesh.invite(data.peer);
-		callState = 'calling';
-	}
+async function startCall() {
+	mesh = makeMesh();
+	localStream = await mesh.open(videoOn);
+	await mesh.invite(data.peer);
+	callState = 'calling';
+}
 
-	async function answerCall() {
-		if (!mesh) return;
-		localStream = await mesh.open(videoOn);
-		await mesh.accept(data.peer);
-		callState = 'connected';
-	}
+async function answerCall() {
+	if (!mesh) return;
+	localStream = await mesh.open(videoOn);
+	await mesh.accept(data.peer);
+	callState = 'connected';
+}
 
-	async function toggleVideo() {
-		videoOn = !videoOn;
-		await mesh?.setVideo(videoOn);
-	}
+async function toggleVideo() {
+	videoOn = !videoOn;
+	await mesh?.setVideo(videoOn);
+}
 
-	function toggleMic() {
-		micOn = !micOn;
-		mesh?.setMic(micOn);
-	}
+function toggleMic() {
+	micOn = !micOn;
+	mesh?.setMic(micOn);
+}
 
-	/** hangs up locally AND tells the peer, so their UI leaves the call too */
-	function endCall(silent = false) {
-		mesh?.hangup(silent);
-		resetCall();
-	}
+/** hangs up locally AND tells the peer, so their UI leaves the call too */
+function endCall(silent = false) {
+	mesh?.hangup(silent);
+	resetCall();
+}
 ```
 
 In `connect()` (lines 129-152), change the `ws_down` branch and the `signal` branch:
@@ -1087,18 +1137,18 @@ In `connect()` (lines 129-152), change the `ws_down` branch and the `signal` bra
 Replace the `{#if callState === 'connected'}` video block (lines 339-350) with:
 
 ```svelte
-	{#if callState === 'connected'}
-		<div class="relative mb-4 overflow-hidden rounded-lg border border-line bg-black">
-			<RemoteVideo stream={remoteStream} class="w-full max-h-[300px] object-contain" />
-			{#if localStream}
-				<RemoteVideo
-					stream={localStream}
-					muted
-					class="absolute bottom-3 right-3 h-24 w-32 rounded-lg border border-line bg-black object-cover"
-				/>
-			{/if}
-		</div>
-	{/if}
+{#if callState === 'connected'}
+	<div class="relative mb-4 overflow-hidden rounded-lg border border-line bg-black">
+		<RemoteVideo stream={remoteStream} class="w-full max-h-[300px] object-contain" />
+		{#if localStream}
+			<RemoteVideo
+				stream={localStream}
+				muted
+				class="absolute bottom-3 right-3 h-24 w-32 rounded-lg border border-line bg-black object-cover"
+			/>
+		{/if}
+	</div>
+{/if}
 ```
 
 - [ ] **Step 8: Type-check and run the suite**
@@ -1127,6 +1177,7 @@ git commit -m "fix: signal hang-up to the peer and bind srcObject via \$state so
 UI route only. `/api/groups/*`, `$lib/server/group.ts` and the Qdrant payload `s: 'g'` are deliberately untouched.
 
 **Files:**
+
 - Move: `src/routes/app/groups/` → `src/routes/app/rooms/`
 - Modify: `src/routes/+layout.svelte:38`; `src/routes/app/rooms/+page.svelte:40,51`; `src/routes/app/rooms/[id]/+page.svelte:86,123`; `src/routes/app/user/[id]/+page.svelte:98`; `src/routes/api/send/+server.ts:105`; `src/lib/server/scheduled.ts:107`; `static/manifest.webmanifest`; `src/lib/__tests__/pwa-assets.test.ts:135`
 
@@ -1177,7 +1228,7 @@ These are UI URLs opened by a notification tap — leaving them at `/app/groups`
 `src/lib/__tests__/pwa-assets.test.ts:135`:
 
 ```ts
-			expect.arrayContaining(['/app', '/app/rooms'])
+expect.arrayContaining(['/app', '/app/rooms']);
 ```
 
 - [ ] **Step 5: Verify no UI route reference survives**
@@ -1204,6 +1255,7 @@ git commit -m "refactor: rename the /app/groups route to /app/rooms"
 ### Task 8: Create-room modal + one-line description in search results
 
 **Files:**
+
 - Modify: `src/routes/app/rooms/+page.svelte:1-16` (imports/state), `:77-111` (search results), `:113-127` (create form)
 
 - [ ] **Step 1: Truncate the description in search results**
@@ -1211,20 +1263,22 @@ git commit -m "refactor: rename the /app/groups route to /app/rooms"
 In `src/routes/app/rooms/+page.svelte`, change the search-result description (line 95) to clamp to one line. Leave the "your rooms" list (line 137) at full length.
 
 ```svelte
-					{#if g.description}
-						<p class="mt-1.5 max-w-[60ch] truncate text-[14.5px] leading-[1.5] text-ink-soft">{g.description}</p>
-					{/if}
+{#if g.description}
+	<p class="mt-1.5 max-w-[60ch] truncate text-[14.5px] leading-[1.5] text-ink-soft">
+		{g.description}
+	</p>
+{/if}
 ```
 
 - [ ] **Step 2: Import Modal and add the open flag**
 
 ```ts
-	import Modal from '$lib/components/Modal.svelte';
-	import { Search, Plus, Users } from '@lucide/svelte';
+import Modal from '$lib/components/Modal.svelte';
+import { Search, Plus, Users } from '@lucide/svelte';
 ```
 
 ```ts
-	let creatingOpen = $state(false);
+let creatingOpen = $state(false);
 ```
 
 - [ ] **Step 3: Close the modal on successful create**
@@ -1232,9 +1286,9 @@ In `src/routes/app/rooms/+page.svelte`, change the search-result description (li
 In `create()`, the `goto` already navigates away, but the flag must be cleared so a back-navigation doesn't reopen it. Change the tail of `create()`:
 
 ```ts
-		const { g } = await res.json();
-		creatingOpen = false;
-		goto(`/app/rooms/${g.id}`);
+const { g } = await res.json();
+creatingOpen = false;
+goto(`/app/rooms/${g.id}`);
 ```
 
 - [ ] **Step 4: Replace the inline form section with a trigger + modal**
@@ -1254,10 +1308,14 @@ Replace the whole `start a room` section (lines 113-127) with:
 		<textarea
 			bind:value={description}
 			rows="3"
-			placeholder="what is this room about? this is what people search against."
-		></textarea>
-		<button class="btn btn-amber flex items-center gap-1.5 self-start" type="submit" disabled={creating}>
-			<Plus size={15} /> {creating ? 'creating' : 'create room'}
+			placeholder="what is this room about? this is what people search against."></textarea>
+		<button
+			class="btn btn-amber flex items-center gap-1.5 self-start"
+			type="submit"
+			disabled={creating}
+		>
+			<Plus size={15} />
+			{creating ? 'creating' : 'create room'}
 		</button>
 		{#if err}<p class="text-[13px] text-red-400">{err}</p>{/if}
 	</form>
@@ -1290,9 +1348,11 @@ git commit -m "feat: move room creation into a modal, clamp search-result descri
 Builds directly on `CallMesh` from Task 6. Signalling reuses the existing `signal` message type in `ChatHub` unchanged — each offer/answer/ice is already addressed to a single `to` uid, and `join` fan-out happens client-side over `g.members`.
 
 **Files:**
+
 - Modify: `src/routes/app/rooms/[id]/+page.svelte:1-33` (imports/state), `:94-116` (ws handler), `:134-143` (header controls), and the thread area for the call strip
 
 **Interfaces:**
+
 - Consumes: `CallMesh`, `CallSignal` from `$lib/call`; `RemoteVideo` from `$lib/components/RemoteVideo.svelte`; `ws_send` from `$lib/ws`
 
 - [ ] **Step 1: Add call state and the mesh**
@@ -1300,63 +1360,73 @@ Builds directly on `CallMesh` from Task 6. Signalling reuses the existing `signa
 In `src/routes/app/rooms/[id]/+page.svelte`, extend the imports:
 
 ```ts
-	import { ws_on, ws_send } from '$lib/ws';
-	import { CallMesh, type CallSignal } from '$lib/call';
-	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
-	import { ArrowLeft, Image, Send as SendIcon, Phone, PhoneOff, Mic, MicOff, Video, VideoOff } from '@lucide/svelte';
+import { ws_on, ws_send } from '$lib/ws';
+import { CallMesh, type CallSignal } from '$lib/call';
+import RemoteVideo from '$lib/components/RemoteVideo.svelte';
+import {
+	ArrowLeft,
+	Image,
+	Send as SendIcon,
+	Phone,
+	PhoneOff,
+	Mic,
+	MicOff,
+	Video,
+	VideoOff
+} from '@lucide/svelte';
 ```
 
 Add after the `owner` derivation (line 22):
 
 ```ts
-	// ponytail: full mesh — every participant connects to every other. Comfortable to ~4-6
-	// people; an SFU is the upgrade path if rooms need to be bigger.
-	let mesh: CallMesh | null = null;
-	let inCall = $state(false);
-	let localStream = $state<MediaStream | null>(null);
-	let remotes = $state<{ uid: string; stream: MediaStream }[]>([]);
-	let micOn = $state(true);
-	let videoOn = $state(false);
+// ponytail: full mesh — every participant connects to every other. Comfortable to ~4-6
+// people; an SFU is the upgrade path if rooms need to be bigger.
+let mesh: CallMesh | null = null;
+let inCall = $state(false);
+let localStream = $state<MediaStream | null>(null);
+let remotes = $state<{ uid: string; stream: MediaStream }[]>([]);
+let micOn = $state(true);
+let videoOn = $state(false);
 
-	function makeMesh(): CallMesh {
-		return new CallMesh({
-			me: me!,
-			send: (to, signal) => ws_send({ type: 'signal', to, signal }),
-			onremote: (uid, stream) => {
-				remotes = stream
-					? [...remotes.filter((r) => r.uid !== uid), { uid, stream }]
-					: remotes.filter((r) => r.uid !== uid);
-			}
-			// no onincoming: room calls auto-answer once you've joined
-		});
-	}
+function makeMesh(): CallMesh {
+	return new CallMesh({
+		me: me!,
+		send: (to, signal) => ws_send({ type: 'signal', to, signal }),
+		onremote: (uid, stream) => {
+			remotes = stream
+				? [...remotes.filter((r) => r.uid !== uid), { uid, stream }]
+				: remotes.filter((r) => r.uid !== uid);
+		}
+		// no onincoming: room calls auto-answer once you've joined
+	});
+}
 
-	async function joinCall() {
-		mesh ??= makeMesh();
-		localStream = await mesh.open(videoOn);
-		inCall = true;
-		mesh.announce(g.members);
-	}
+async function joinCall() {
+	mesh ??= makeMesh();
+	localStream = await mesh.open(videoOn);
+	inCall = true;
+	mesh.announce(g.members);
+}
 
-	function leaveCall(silent = false) {
-		mesh?.hangup(silent);
-		mesh = null;
-		inCall = false;
-		localStream = null;
-		remotes = [];
-		micOn = true;
-		videoOn = false;
-	}
+function leaveCall(silent = false) {
+	mesh?.hangup(silent);
+	mesh = null;
+	inCall = false;
+	localStream = null;
+	remotes = [];
+	micOn = true;
+	videoOn = false;
+}
 
-	function toggleMic() {
-		micOn = !micOn;
-		mesh?.setMic(micOn);
-	}
+function toggleMic() {
+	micOn = !micOn;
+	mesh?.setMic(micOn);
+}
 
-	async function toggleVideo() {
-		videoOn = !videoOn;
-		await mesh?.setVideo(videoOn);
-	}
+async function toggleVideo() {
+	videoOn = !videoOn;
+	await mesh?.setVideo(videoOn);
+}
 ```
 
 - [ ] **Step 2: Route `signal` messages into the mesh**
@@ -1364,41 +1434,41 @@ Add after the `owner` derivation (line 22):
 In `onMount`, the current handler returns early on anything that isn't a room message. Replace the body of the `ws_on` callback (lines 95-113) so signals are handled first:
 
 ```ts
-		unsub = ws_on((m) => {
-			if (m.type === 'ws_down') return leaveCall(true);
-			if (m.type === 'signal') {
-				// a `join` from someone else is ignored by the mesh until we've joined too
-				mesh ??= makeMesh();
-				mesh.handle(m.from as string, m.signal as CallSignal);
-				return;
-			}
-			if (m.type !== 'msg' || m.group !== g.id) return;
-			names = { ...names, [m.from as string]: (m.from_name as string) ?? (m.from as string) };
-			messages = [
-				...messages,
-				{
-					s: 'm',
-					id: (m.id as string) ?? String(m.ts),
-					c: '',
-					f: m.from as string,
-					t: '',
-					gr: g.id,
-					x: (m.text as string) ?? '',
-					im: m.image as string | undefined,
-					d: m.ts as number
-				}
-			];
-			scroll_down();
-		});
+unsub = ws_on((m) => {
+	if (m.type === 'ws_down') return leaveCall(true);
+	if (m.type === 'signal') {
+		// a `join` from someone else is ignored by the mesh until we've joined too
+		mesh ??= makeMesh();
+		mesh.handle(m.from as string, m.signal as CallSignal);
+		return;
+	}
+	if (m.type !== 'msg' || m.group !== g.id) return;
+	names = { ...names, [m.from as string]: (m.from_name as string) ?? (m.from as string) };
+	messages = [
+		...messages,
+		{
+			s: 'm',
+			id: (m.id as string) ?? String(m.ts),
+			c: '',
+			f: m.from as string,
+			t: '',
+			gr: g.id,
+			x: (m.text as string) ?? '',
+			im: m.image as string | undefined,
+			d: m.ts as number
+		}
+	];
+	scroll_down();
+});
 ```
 
 And extend `onDestroy` (line 116) so navigating away leaves the call:
 
 ```ts
-	onDestroy(() => {
-		leaveCall();
-		unsub?.();
-	});
+onDestroy(() => {
+	leaveCall();
+	unsub?.();
+});
 ```
 
 - [ ] **Step 3: Add the call controls to the header**
@@ -1406,34 +1476,48 @@ And extend `onDestroy` (line 116) so navigating away leaves the call:
 In the header's control cluster (lines 134-142), add call buttons before the membership button, gated on membership:
 
 ```svelte
-		<div class="ml-auto flex flex-wrap items-center gap-2">
-			{#if mine && !inCall}
-				<button class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]" onclick={joinCall}>
-					<Phone size={14} /> join call
-				</button>
-			{/if}
-			{#if inCall}
-				<button class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]" onclick={toggleMic}>
-					{#if micOn}<Mic size={14} />{:else}<MicOff size={14} />{/if}
-				</button>
-				<button class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]" onclick={toggleVideo}>
-					{#if videoOn}<Video size={14} />{:else}<VideoOff size={14} />{/if}
-				</button>
-				<button
-					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px] text-red-500"
-					onclick={() => leaveCall()}
-				>
-					<PhoneOff size={14} /> leave
-				</button>
-			{/if}
-			{#if owner}
-				<button class="btn px-4 py-2 text-[12px]" onclick={() => (editing = !editing)}>{editing ? 'close' : 'edit'}</button>
-			{:else if mine}
-				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}>leave room</button>
-			{:else}
-				<button class="btn btn-amber px-4 py-2 text-[12px]" onclick={() => membership('join')}>join</button>
-			{/if}
-		</div>
+<div class="ml-auto flex flex-wrap items-center gap-2">
+	{#if mine && !inCall}
+		<button
+			class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]"
+			onclick={joinCall}
+		>
+			<Phone size={14} /> join call
+		</button>
+	{/if}
+	{#if inCall}
+		<button
+			class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]"
+			onclick={toggleMic}
+		>
+			{#if micOn}<Mic size={14} />{:else}<MicOff size={14} />{/if}
+		</button>
+		<button
+			class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]"
+			onclick={toggleVideo}
+		>
+			{#if videoOn}<Video size={14} />{:else}<VideoOff size={14} />{/if}
+		</button>
+		<button
+			class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px] text-red-500"
+			onclick={() => leaveCall()}
+		>
+			<PhoneOff size={14} /> leave
+		</button>
+	{/if}
+	{#if owner}
+		<button class="btn px-4 py-2 text-[12px]" onclick={() => (editing = !editing)}
+			>{editing ? 'close' : 'edit'}</button
+		>
+	{:else if mine}
+		<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}>leave room</button
+		>
+	{:else}
+		<button class="btn btn-amber px-4 py-2 text-[12px]" onclick={() => membership('join')}
+			>join</button
+		>
+	{/if}
+</div>
 ```
 
 - [ ] **Step 4: Add the participant strip**
@@ -1441,27 +1525,29 @@ In the header's control cluster (lines 134-142), add call buttons before the mem
 Insert directly after the header's closing `</header>` (before the `{#if editing}` block on line 145):
 
 ```svelte
-	{#if inCall}
-		<div class="flex flex-wrap items-center gap-2 border-b border-line py-3">
-			<span class="eyebrow mr-2">in call · {remotes.length + 1}</span>
-			{#if localStream}
+{#if inCall}
+	<div class="flex flex-wrap items-center gap-2 border-b border-line py-3">
+		<span class="eyebrow mr-2">in call · {remotes.length + 1}</span>
+		{#if localStream}
+			<RemoteVideo
+				stream={localStream}
+				muted
+				class="h-20 w-28 rounded-[10px] border border-accent bg-black object-cover"
+			/>
+		{/if}
+		{#each remotes as r (r.uid)}
+			<div class="flex flex-col items-center gap-1">
 				<RemoteVideo
-					stream={localStream}
-					muted
-					class="h-20 w-28 rounded-[10px] border border-accent bg-black object-cover"
+					stream={r.stream}
+					class="h-20 w-28 rounded-[10px] border border-line bg-black object-cover"
 				/>
-			{/if}
-			{#each remotes as r (r.uid)}
-				<div class="flex flex-col items-center gap-1">
-					<RemoteVideo
-						stream={r.stream}
-						class="h-20 w-28 rounded-[10px] border border-line bg-black object-cover"
-					/>
-					<span class="max-w-[112px] truncate text-[10.5px] text-mute">{names[r.uid] ?? 'someone'}</span>
-				</div>
-			{/each}
-		</div>
-	{/if}
+				<span class="max-w-[112px] truncate text-[10.5px] text-mute"
+					>{names[r.uid] ?? 'someone'}</span
+				>
+			</div>
+		{/each}
+	</div>
+{/if}
 ```
 
 - [ ] **Step 5: Type-check**
@@ -1490,10 +1576,12 @@ git commit -m "feat: mesh audio/video calls in rooms, reusing the 1:1 CallMesh a
 Presence lives per-uid in `ChatHub` (`/check` returns whether that uid has an open socket). There is no bulk online index, so the filter fans out one DO check per candidate. Capped at 100 uids to bound subrequests. The check fails open — if the ws worker is unreachable we return unfiltered results plus `filtered: false`, so the UI can say so rather than silently lying about who is online.
 
 **Files:**
+
 - Create: `ws/src/online.ts`, `ws/src/__tests__/online.test.ts`
 - Modify: `ws/src/index.ts` (route), `src/routes/api/search/+server.ts`, `src/routes/app/+page.svelte:69-114,116-146`
 
 **Interfaces:**
+
 - Produces: `online(body: unknown, ns: HubNs) => Promise<string[] | null>` in `ws/src/online.ts`; `POST /online {uids: string[]} => {online: string[]}` on the ws worker; `GET /api/search?online=1` returning `{ r: [...], filtered: boolean }`
 
 - [ ] **Step 1: Write the failing online-fanout test**
@@ -1595,12 +1683,12 @@ import { online } from './online';
 And add the route just after the `/relay` block:
 
 ```ts
-		if (url.pathname === '/online' && request.method === 'POST') {
-			const body = await request.json().catch(() => null);
-			const uids = await online(body, env.CHAT_HUB);
-			if (!uids) return new Response('bad body', { status: 400 });
-			return Response.json({ online: uids });
-		}
+if (url.pathname === '/online' && request.method === 'POST') {
+	const body = await request.json().catch(() => null);
+	const uids = await online(body, env.CHAT_HUB);
+	if (!uids) return new Response('bad body', { status: 400 });
+	return Response.json({ online: uids });
+}
 ```
 
 - [ ] **Step 6: Add the filter to the search endpoint**
@@ -1663,58 +1751,59 @@ In `src/routes/api/search/+server.ts`, change the handler signature to take `loc
 In `src/routes/app/+page.svelte`, change the button label (line 112) — dropping "find my people":
 
 ```svelte
-		<button class="btn btn-amber flex items-center justify-center gap-2 whitespace-nowrap" onclick={search} disabled={searching}>
-			{#if !searching}<Search size={15} />{/if} {searching ? 'searching' : 'search'}
-		</button>
+<button
+	class="btn btn-amber flex items-center justify-center gap-2 whitespace-nowrap"
+	onclick={search}
+	disabled={searching}
+>
+	{#if !searching}<Search size={15} />{/if}
+	{searching ? 'searching' : 'search'}
+</button>
 ```
 
 Add the state (near `let country = $state('');`):
 
 ```ts
-	let onlineOnly = $state(false);
-	let presenceUnavailable = $state(false);
+let onlineOnly = $state(false);
+let presenceUnavailable = $state(false);
 ```
 
 Update `search()` to send the flag and read the response:
 
 ```ts
-	async function search() {
-		if (!q.trim()) return;
-		searching = true;
-		const p = new URLSearchParams({ q });
-		if (gender) p.set('gender', gender);
-		if (age_min) p.set('age_min', age_min);
-		if (age_max) p.set('age_max', age_max);
-		if (country) p.set('country', country);
-		if (region) p.set('state', region);
-		if (onlineOnly) p.set('online', '1');
-		const res = await fetch(`/api/search?${p}`);
-		const body = await res.json();
-		results = body.r ?? [];
-		presenceUnavailable = onlineOnly && body.filtered === false;
-		searching = false;
-	}
+async function search() {
+	if (!q.trim()) return;
+	searching = true;
+	const p = new URLSearchParams({ q });
+	if (gender) p.set('gender', gender);
+	if (age_min) p.set('age_min', age_min);
+	if (age_max) p.set('age_max', age_max);
+	if (country) p.set('country', country);
+	if (region) p.set('state', region);
+	if (onlineOnly) p.set('online', '1');
+	const res = await fetch(`/api/search?${p}`);
+	const body = await res.json();
+	results = body.r ?? [];
+	presenceUnavailable = onlineOnly && body.filtered === false;
+	searching = false;
+}
 ```
 
 Add the checkbox at the end of the `.filters` row (after `<LocationPicker … />`, line 145):
 
 ```svelte
-		<label class="flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
-			<input
-				type="checkbox"
-				class="!w-auto accent-accent"
-				bind:checked={onlineOnly}
-			/>
-			online now
-		</label>
+<label class="flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
+	<input type="checkbox" class="!w-auto accent-accent" bind:checked={onlineOnly} />
+	online now
+</label>
 ```
 
 And surface the fail-open case just above the results list (before `{#if results.length}`, line 148):
 
 ```svelte
-	{#if presenceUnavailable}
-		<p class="mt-4 text-[13px] text-mute">couldn't check who's online — showing everyone.</p>
-	{/if}
+{#if presenceUnavailable}
+	<p class="mt-4 text-[13px] text-mute">couldn't check who's online — showing everyone.</p>
+{/if}
 ```
 
 - [ ] **Step 8: Run the suite and type-check**
@@ -1736,10 +1825,12 @@ git commit -m "feat: filter people search by who is online; drop the 'find my pe
 A new `si` flag on the user record gates the interests card on the **public** profile only. It deliberately does not touch `save_profile`'s embedding text — interests keep powering search either way, so turning the flag off costs the user nothing in match quality.
 
 **Files:**
+
 - Modify: `src/lib/types.ts:13`, `src/lib/server/profile.ts:8-51`, `src/routes/api/profile/+server.ts:17-38`, `src/routes/app/profile/+page.svelte`, `src/routes/app/user/[id]/+page.svelte:74`
 - Test: `src/lib/server/__tests__/profile.test.ts`
 
 **Interfaces:**
+
 - Produces: `User.si?: boolean`; `save_profile(env, uid, { …, show_interests?: boolean })`
 
 - [ ] **Step 1: Write the failing tests**
@@ -1831,7 +1922,7 @@ Expected: PASS
 In `src/routes/app/profile/+page.svelte`, add the state (after `let interests = …`, line 37):
 
 ```ts
-	let showInterests = $state(p.si ?? false);
+let showInterests = $state(p.si ?? false);
 ```
 
 Include it in the save body (after `interests,` on line 65):
@@ -1844,10 +1935,10 @@ Include it in the save body (after `interests,` on line 65):
 And add the control directly under the interests field (after the closing `</div>` of the interests box, line 110):
 
 ```svelte
-		<label class="mt-3 flex cursor-pointer items-center gap-2.5 text-[13.5px] text-ink-soft">
-			<input type="checkbox" class="!w-auto accent-accent" bind:checked={showInterests} />
-			show interests on my public profile
-		</label>
+<label class="mt-3 flex cursor-pointer items-center gap-2.5 text-[13.5px] text-ink-soft">
+	<input type="checkbox" class="!w-auto accent-accent" bind:checked={showInterests} />
+	show interests on my public profile
+</label>
 ```
 
 - [ ] **Step 8: Gate the public profile card**
@@ -1877,6 +1968,7 @@ git commit -m "feat: add 'show interests in profile' setting, off by default"
 Local dev currently gets a Miniflare-emulated R2, so uploads land on disk and never appear in `x2-media`. Wrangler 4 supports per-binding remote mode, which keeps the Worker local while proxying that one binding to the real bucket. This is the "if easily possible" path — it is a config flag plus a verification gate, with a documented fallback if the SvelteKit dev proxy does not honour it.
 
 **Files:**
+
 - Modify: `wrangler.jsonc:32`, `package.json:13-26`
 
 - [ ] **Step 1: Confirm you are authenticated and the bucket exists**
@@ -1930,27 +2022,28 @@ git commit -m "chore: point the MEDIA R2 binding at the live bucket in local dev
 
 **Spec coverage** — each ask maps to a task:
 
-| Ask | Task |
-|---|---|
-| Folder edit button on active pill with +/- per chat, not per entry | 3 |
-| Are folders persisted to DB? | 1 — they were not; `owner`/`ow` key mismatch fixed |
-| Peer still shows the call after the other end hangs up | 6 — `bye` signal + `onconnectionstatechange` |
-| Audio doesn't work in call | 6 — `$state()` element refs via `RemoteVideo` |
-| Remove `/random` completely | 5 |
-| Search filter by online | 10 |
-| Select + site scrollbar themed, no track background | 4 |
-| Same Select component everywhere | 3 (removes the last raw `<select>`) + 4 (deletes its dead CSS) |
-| Implement group call | 9, on the Task 6 `CallMesh` |
-| Remove "find my people" | 10 |
-| Rename `/app/groups` → `/app/rooms` | 7 |
-| Create-room dialog → modal | 8, on the Task 2 `Modal` |
-| "show interests in profile", default false | 11 |
-| Local dev on live R2 | 12 |
-| Truncate room description to one line in search results | 8 |
+| Ask                                                                | Task                                                           |
+| ------------------------------------------------------------------ | -------------------------------------------------------------- |
+| Folder edit button on active pill with +/- per chat, not per entry | 3                                                              |
+| Are folders persisted to DB?                                       | 1 — they were not; `owner`/`ow` key mismatch fixed             |
+| Peer still shows the call after the other end hangs up             | 6 — `bye` signal + `onconnectionstatechange`                   |
+| Audio doesn't work in call                                         | 6 — `$state()` element refs via `RemoteVideo`                  |
+| Remove `/random` completely                                        | 5                                                              |
+| Search filter by online                                            | 10                                                             |
+| Select + site scrollbar themed, no track background                | 4                                                              |
+| Same Select component everywhere                                   | 3 (removes the last raw `<select>`) + 4 (deletes its dead CSS) |
+| Implement group call                                               | 9, on the Task 6 `CallMesh`                                    |
+| Remove "find my people"                                            | 10                                                             |
+| Rename `/app/groups` → `/app/rooms`                                | 7                                                              |
+| Create-room dialog → modal                                         | 8, on the Task 2 `Modal`                                       |
+| "show interests in profile", default false                         | 11                                                             |
+| Local dev on live R2                                               | 12                                                             |
+| Truncate room description to one line in search results            | 8                                                              |
 
 **Known ordering constraints:** Task 3 before 4 (4 deletes CSS only dead once 3 lands). Task 5 before 6 (both edit the DM page's call block). Task 7 before 8 and 9 (both edit files under the renamed directory). Task 2 before 3 and 8. Task 6 before 9.
 
 **Deliberately not done** (flag to the user if they want them):
+
 - No delete-folder UI, though `DELETE /api/folders/[id]` exists.
 - Room calls have no ring/notification for members not on the page — you must be viewing the room to see "join call".
 - No TURN server; symmetric NATs will still fail to connect. The `ponytail:` comment in `call.ts` marks the upgrade path.
