@@ -2,8 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { onDestroy } from 'svelte';
 	import RadioGroup from '$lib/components/RadioGroup.svelte';
-	import Shuffle from '@lucide/svelte/icons/shuffle';
-	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import { Shuffle, LoaderCircle } from '@lucide/svelte';
 
 	type Mode = 'text' | 'voice' | 'video';
 

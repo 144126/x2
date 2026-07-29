@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { watch_install, can_install, install, install_hidden, dismiss_install } from '$lib/install';
-	import X from '@lucide/svelte/icons/x';
+	import { X } from '@lucide/svelte';
 
 	let visible = $state(false);
 	let off: (() => void) | null = null;

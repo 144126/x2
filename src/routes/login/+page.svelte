@@ -2,8 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import LogIn from '@lucide/svelte/icons/log-in';
-	import UserPlus from '@lucide/svelte/icons/user-plus';
+	import { LogIn, UserPlus } from '@lucide/svelte';
 
 	const REF_KEY = 'ref_code';
 
@@ -25,15 +24,16 @@
 		}
 	});
 
+	// ref_code is synced from localStorage in onMount (browser-only) — reading localStorage
+	// again here would 500 on SSR, which runs this on the server for every logged-out visitor
 	function google_href() {
-		const c = ref_code || localStorage.getItem(REF_KEY)?.trim().toLowerCase() || '';
-		return c ? `/google?c=${encodeURIComponent(c)}` : '/google';
+		return ref_code ? `/google?c=${encodeURIComponent(ref_code)}` : '/google';
 	}
 
 	async function submit(e: Event) {
 		e.preventDefault();
 		msg = '';
-		const c = ref_code || localStorage.getItem(REF_KEY)?.trim().toLowerCase() || '';
+		const c = ref_code;
 		const res = await fetch(`/api/auth/${mode}`, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },

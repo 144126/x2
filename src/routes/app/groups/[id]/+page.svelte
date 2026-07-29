@@ -6,9 +6,7 @@
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
-	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
-	import Image from '@lucide/svelte/icons/image';
-	import SendIcon from '@lucide/svelte/icons/send';
+	import { ArrowLeft, Image, Send as SendIcon } from '@lucide/svelte';
 
 	let { data } = $props();
 	let g = $state(data.g);

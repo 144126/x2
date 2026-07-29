@@ -3,7 +3,7 @@
 	import { push_available, push_state, enable_push } from '$lib/push-client';
 	import { has_sent } from '$lib/notify-trigger';
 	import { ios_hint_needed, dismiss_install, install_hidden } from '$lib/install';
-	import X from '@lucide/svelte/icons/x';
+	import { X } from '@lucide/svelte';
 
 	let { vapid_key }: { vapid_key: string } = $props();
 

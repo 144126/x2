@@ -4,9 +4,7 @@
 	import Select from '$lib/components/Select.svelte';
 	import { ws_on } from '$lib/ws';
 	import { onMount } from 'svelte';
-	import Search from '@lucide/svelte/icons/search';
-	import FolderPlus from '@lucide/svelte/icons/folder-plus';
-	import MessageCircle from '@lucide/svelte/icons/message-circle';
+	import { Search, FolderPlus, MessageCircle } from '@lucide/svelte';
 	let { data } = $props();
 
 	// thread list was server-rendered only, so a new message never showed up here without a

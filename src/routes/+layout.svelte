@@ -7,11 +7,7 @@
 	import InstallBanner from '$lib/components/InstallBanner.svelte';
 	import { sync_badge } from '$lib/badge';
 	import { sync_subscription } from '$lib/push-client';
-	import Users from '@lucide/svelte/icons/users';
-	import DoorOpen from '@lucide/svelte/icons/door-open';
-	import Shuffle from '@lucide/svelte/icons/shuffle';
-	import UserRound from '@lucide/svelte/icons/user-round';
-	import LogOut from '@lucide/svelte/icons/log-out';
+	import { Users, DoorOpen, Shuffle, UserRound, LogOut } from '@lucide/svelte';
 
 	let { children, data } = $props();
 	let vapid_key = $state('');

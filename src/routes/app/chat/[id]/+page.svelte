@@ -5,20 +5,22 @@
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
 	import { upload_file, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
-	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
-	import Phone from '@lucide/svelte/icons/phone';
-	import PhoneOff from '@lucide/svelte/icons/phone-off';
-	import Video from '@lucide/svelte/icons/video';
-	import VideoOff from '@lucide/svelte/icons/video-off';
-	import Mic from '@lucide/svelte/icons/mic';
-	import MicOff from '@lucide/svelte/icons/mic-off';
-	import Paperclip from '@lucide/svelte/icons/paperclip';
-	import Clock from '@lucide/svelte/icons/clock';
-	import Search from '@lucide/svelte/icons/search';
-	import SendIcon from '@lucide/svelte/icons/send';
-	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
-	import FileText from '@lucide/svelte/icons/file-text';
-	import X from '@lucide/svelte/icons/x';
+	import {
+		ArrowLeft,
+		Phone,
+		PhoneOff,
+		Video,
+		VideoOff,
+		Mic,
+		MicOff,
+		Paperclip,
+		Clock,
+		Search,
+		Send as SendIcon,
+		LoaderCircle,
+		FileText,
+		X
+	} from '@lucide/svelte';
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
 	let { data } = $props();

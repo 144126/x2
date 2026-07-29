@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import type { GroupView } from '$lib/server/group';
-	import Search from '@lucide/svelte/icons/search';
-	import Plus from '@lucide/svelte/icons/plus';
-	import Users from '@lucide/svelte/icons/users';
+	import { Search, Plus, Users } from '@lucide/svelte';
 
 	let { data } = $props();
 	let mine = $state(data.mine as GroupView[]);
