@@ -2,11 +2,23 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
-	import { ws_on } from '$lib/ws';
+	import { ws_on, ws_send } from '$lib/ws';
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
-	import { ArrowLeft, Image, Send as SendIcon } from '@lucide/svelte';
+	import { CallMesh, type CallSignal } from '$lib/call';
+	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
+	import {
+		ArrowLeft,
+		Image,
+		Send as SendIcon,
+		Phone,
+		PhoneOff,
+		Mic,
+		MicOff,
+		Video,
+		VideoOff
+	} from '@lucide/svelte';
 
 	let { data } = $props();
 	let g = $state(data.g);
@@ -25,6 +37,55 @@
 	let editing = $state(false);
 	let ename = $state(g.name);
 	let edesc = $state(g.description);
+
+	// ponytail: full mesh — every participant connects to every other. Comfortable to ~4-6
+	// people; an SFU is the upgrade path if rooms need to be bigger.
+	let mesh: CallMesh | null = null;
+	let inCall = $state(false);
+	let localStream = $state<MediaStream | null>(null);
+	let remotes = $state<{ uid: string; stream: MediaStream }[]>([]);
+	let micOn = $state(true);
+	let videoOn = $state(false);
+
+	function makeMesh(): CallMesh {
+		return new CallMesh({
+			me: me!,
+			send: (to, signal) => ws_send({ type: 'signal', to, signal }),
+			onremote: (uid, stream) => {
+				remotes = stream
+					? [...remotes.filter((r) => r.uid !== uid), { uid, stream }]
+					: remotes.filter((r) => r.uid !== uid);
+			}
+			// no onincoming: room calls auto-answer once you've joined
+		});
+	}
+
+	async function joinCall() {
+		mesh ??= makeMesh();
+		localStream = await mesh.open(videoOn);
+		inCall = true;
+		mesh.announce(g.members);
+	}
+
+	function leaveCall(silent = false) {
+		mesh?.hangup(silent);
+		mesh = null;
+		inCall = false;
+		localStream = null;
+		remotes = [];
+		micOn = true;
+		videoOn = false;
+	}
+
+	function toggleMic() {
+		micOn = !micOn;
+		mesh?.setMic(micOn);
+	}
+
+	async function toggleVideo() {
+		videoOn = !videoOn;
+		await mesh?.setVideo(videoOn);
+	}
 
 	let thread: HTMLDivElement | undefined = $state();
 	function scroll_down() {
@@ -93,6 +154,13 @@
 
 	onMount(() => {
 		unsub = ws_on((m) => {
+			if (m.type === 'ws_down') return leaveCall(true);
+			if (m.type === 'signal') {
+				// a `join` from someone else is ignored by the mesh until we've joined too
+				mesh ??= makeMesh();
+				mesh.handle(m.from as string, m.signal as CallSignal);
+				return;
+			}
 			if (m.type !== 'msg' || m.group !== g.id) return;
 			names = { ...names, [m.from as string]: (m.from_name as string) ?? (m.from as string) };
 			messages = [
@@ -113,7 +181,10 @@
 		});
 		scroll_down();
 	});
-	onDestroy(() => unsub?.());
+	onDestroy(() => {
+		leaveCall();
+		unsub?.();
+	});
 </script>
 
 <section class="mx-auto flex h-[calc(100dvh-140px)] max-w-[760px] flex-col sm:h-[calc(100dvh-110px)]">
@@ -131,16 +202,57 @@
 				>{g.members.length} member{g.members.length === 1 ? '' : 's'}</span
 			>
 		</div>
-		<div class="ml-auto flex items-center gap-2">
+		<div class="ml-auto flex flex-wrap items-center gap-2">
+			{#if mine && !inCall}
+				<button class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]" onclick={joinCall}>
+					<Phone size={14} /> join call
+				</button>
+			{/if}
+			{#if inCall}
+				<button class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]" onclick={toggleMic}>
+					{#if micOn}<Mic size={14} />{:else}<MicOff size={14} />{/if}
+				</button>
+				<button class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]" onclick={toggleVideo}>
+					{#if videoOn}<Video size={14} />{:else}<VideoOff size={14} />{/if}
+				</button>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px] text-red-500"
+					onclick={() => leaveCall()}
+				>
+					<PhoneOff size={14} /> leave
+				</button>
+			{/if}
 			{#if owner}
 				<button class="btn px-4 py-2 text-[12px]" onclick={() => (editing = !editing)}>{editing ? 'close' : 'edit'}</button>
 			{:else if mine}
-				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}>leave</button>
+				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}>leave room</button>
 			{:else}
 				<button class="btn btn-amber px-4 py-2 text-[12px]" onclick={() => membership('join')}>join</button>
 			{/if}
 		</div>
 	</header>
+
+	{#if inCall}
+		<div class="flex flex-wrap items-center gap-3 border-b border-line py-3">
+			<span class="eyebrow mr-1">in call · {remotes.length + 1}</span>
+			{#if localStream}
+				<RemoteVideo
+					stream={localStream}
+					muted
+					class="h-20 w-28 rounded-[10px] border border-accent bg-black object-cover"
+				/>
+			{/if}
+			{#each remotes as r (r.uid)}
+				<div class="flex flex-col items-center gap-1">
+					<RemoteVideo
+						stream={r.stream}
+						class="h-20 w-28 rounded-[10px] border border-line bg-black object-cover"
+					/>
+					<span class="max-w-[112px] truncate text-[10.5px] text-mute">{names[r.uid] ?? 'someone'}</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
 
 	{#if editing}
 		<form class="flex flex-col gap-2 border-b border-line py-4" onsubmit={(e) => (e.preventDefault(), save_edits())}>
