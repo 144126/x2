@@ -46,11 +46,16 @@
 	let remotes = $state<{ uid: string; stream: MediaStream }[]>([]);
 	let micOn = $state(true);
 	let videoOn = $state(false);
+	let callError = $state('');
 
 	function makeMesh(): CallMesh {
 		return new CallMesh({
 			me: me!,
-			send: (to, signal) => ws_send({ type: 'signal', to, signal }),
+			// `ctx` scopes signals to this room — without it a DM call's offer/ice to
+			// this uid would be handled here too (and vice versa), and this mesh
+			// auto-answers, so a signal meant for a different context would silently
+			// join a stranger's call to this room
+			send: (to, signal) => ws_send({ type: 'signal', to, signal, ctx: `room:${g.id}` }),
 			onremote: (uid, stream) => {
 				remotes = stream
 					? [...remotes.filter((r) => r.uid !== uid), { uid, stream }]
@@ -61,10 +66,17 @@
 	}
 
 	async function joinCall() {
+		callError = '';
 		mesh ??= makeMesh();
-		localStream = await mesh.open(videoOn);
-		inCall = true;
-		mesh.announce(g.members);
+		try {
+			localStream = await mesh.open(videoOn);
+			inCall = true;
+			mesh.announce(g.members);
+		} catch (e) {
+			console.error('[ROOM-CLIENT] joinCall failed', e);
+			callError = 'could not access camera/mic — check permissions.';
+			mesh = null;
+		}
 	}
 
 	function leaveCall(silent = false) {
@@ -156,6 +168,12 @@
 		unsub = ws_on((m) => {
 			if (m.type === 'ws_down') return leaveCall(true);
 			if (m.type === 'signal') {
+				// room calls auto-answer, so without these checks any authenticated user
+				// could address a signal at a room member and get auto-connected into a
+				// call they were never invited to — both checks are load-bearing, not
+				// belt-and-suspenders
+				if (m.ctx !== `room:${g.id}`) return;
+				if (!g.members.includes(m.from as string)) return;
 				// a `join` from someone else is ignored by the mesh until we've joined too
 				mesh ??= makeMesh();
 				mesh.handle(m.from as string, m.signal as CallSignal);
@@ -231,6 +249,10 @@
 			{/if}
 		</div>
 	</header>
+
+	{#if callError}
+		<p class="border-b border-line py-2 text-[12.5px] text-[#e2674c]">{callError}</p>
+	{/if}
 
 	{#if inCall}
 		<div class="flex flex-wrap items-center gap-3 border-b border-line py-3">

@@ -91,6 +91,11 @@ export async function get_messages(env: QEnv, a: string, b: string): Promise<Mes
     .sort((x, y) => x.d - y.d);
 }
 
+// the `/random` discover flow (and record_match, which wrote these) is gone, but existing
+// `s:'x'` match records from before its removal must keep surfacing here — dropping these
+// two reads would silently vanish already-visible threads for anyone who matched but never
+// exchanged a message. Deliberately kept despite nothing writing new rows; revisit once the
+// last pre-removal match record has aged out or been backfilled into a real conversation.
 export async function list_conversations(env: QEnv, uid: string): Promise<{ peer: string; last: number; preview: string }[]> {
   await ensure(env);
   const [sent, recv, matched_a, matched_b] = await Promise.all([

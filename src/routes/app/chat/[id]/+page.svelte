@@ -71,6 +71,7 @@
 	let callState = $state<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
 	let videoOn = $state(false);
 	let micOn = $state(true);
+	let callError = $state('');
 
 	function resetCall() {
 		mesh = null;
@@ -83,10 +84,18 @@
 	function makeMesh(): CallMesh {
 		return new CallMesh({
 			me: me!,
-			send: (to, signal) => ws_send({ type: 'signal', to, signal }),
+			// `ctx` scopes this signal to the DM call — without it, a room call's `join`
+			// broadcast (sent to every room member, including this peer) would be handled
+			// here too and could renegotiate this connection out from under itself
+			send: (to, signal) => ws_send({ type: 'signal', to, signal, ctx: 'dm' }),
 			onremote: (uid, stream) => {
 				if (uid !== data.peer) return;
-				if (!stream) return resetCall(); // peer hung up or dropped
+				if (!stream) {
+					// peer hung up or dropped — mesh already removed them internally;
+					// hangup(true) just releases our own mic/camera, no bye to send
+					mesh?.hangup(true);
+					return resetCall();
+				}
 				remoteStream = stream;
 				callState = 'connected';
 			},
@@ -163,7 +172,7 @@
 			});
 			} else if (m.type === 'msg') {
 				console.log('[CHAT-CLIENT] incoming msg but NOT from current peer, ignoring here', { from: m.from, expectedPeer: data.peer });
-			} else if (m.type === 'signal' && m.from === data.peer) {
+			} else if (m.type === 'signal' && m.from === data.peer && m.ctx === 'dm') {
 				// lazily create the mesh so an inbound offer can ring before we've called
 				mesh ??= makeMesh();
 				mesh.handle(m.from as string, m.signal as CallSignal);
@@ -174,17 +183,33 @@
 	}
 
 	async function startCall() {
+		callError = '';
 		mesh = makeMesh();
-		localStream = await mesh.open(videoOn);
-		await mesh.invite(data.peer);
-		callState = 'calling';
+		try {
+			localStream = await mesh.open(videoOn);
+			await mesh.invite(data.peer);
+			callState = 'calling';
+		} catch (e) {
+			console.error('[CHAT-CLIENT] startCall failed', e);
+			callError = 'could not access camera/mic — check permissions.';
+			mesh = null;
+			callState = 'idle';
+		}
 	}
 
 	async function answerCall() {
 		if (!mesh) return;
-		localStream = await mesh.open(videoOn);
-		await mesh.accept(data.peer);
-		callState = 'connected';
+		callError = '';
+		try {
+			localStream = await mesh.open(videoOn);
+			await mesh.accept(data.peer);
+			callState = 'connected';
+		} catch (e) {
+			console.error('[CHAT-CLIENT] answerCall failed', e);
+			callError = 'could not access camera/mic — check permissions.';
+			mesh = null;
+			callState = 'idle';
+		}
 	}
 
 	async function toggleVideo() {
@@ -271,6 +296,9 @@
 			{/if}
 		</div>
 	</header>
+	{#if callError}
+		<p class="border-b border-line py-2 text-[12.5px] text-[#e2674c]">{callError}</p>
+	{/if}
 	{#if callState === 'connected'}
 		<div class="reveal relative mb-4 overflow-hidden rounded-[16px] border border-accent/40 bg-black shadow-[0_0_0_1px_rgba(217,139,95,0.08),0_20px_50px_-20px_rgba(0,0,0,0.6)]">
 			<RemoteVideo stream={remoteStream} class="w-full max-h-[300px] object-contain" />

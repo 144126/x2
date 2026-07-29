@@ -36,4 +36,13 @@ describe('online', () => {
 		const r = await online({ uids }, ns(states));
 		expect(r).toHaveLength(100);
 	});
+
+	it('fails open (returns null) when most of the batch could not be checked', async () => {
+		// "nobody's online" would otherwise be indistinguishable from "our own fanout broke"
+		const r = await online(
+			{ uids: ['ada', 'bob', 'cy'] },
+			ns({ ada: true, bob: true, cy: true }, ['ada', 'bob'])
+		);
+		expect(r).toBeNull();
+	});
 });

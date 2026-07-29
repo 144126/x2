@@ -41,6 +41,14 @@ const worker: ExportedHandler<Env> = {
 		}
 
 		if (url.pathname === '/online' && request.method === 'POST') {
+			// unlike /ws (per-uid token) and /relay (called only from the trusted
+			// service binding), this is a bare presence oracle — 100 uids in, who's
+			// online out — and this worker is also reachable at its public
+			// workers.dev URL, so it needs its own gate: the same shared SECRET the
+			// two workers already use to sign ws tokens.
+			const secret = await get_secret(env.SECRET, env.DEV_SECRET);
+			const auth = request.headers.get('authorization');
+			if (!secret || auth !== `Bearer ${secret}`) return new Response('denied', { status: 403 });
 			const body = await request.json().catch(() => null);
 			const uids = await online(body, env.CHAT_HUB);
 			if (!uids) return new Response('bad body', { status: 400 });

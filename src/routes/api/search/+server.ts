@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
-import { ensure, search, f, eq, range, type Cond } from '$lib/server/qdrant';
+import { ensure, search, f, eq, range, get_secret, type Cond } from '$lib/server/qdrant';
 import { embed } from '$lib/server/or';
 import type { User } from '$lib/types';
 
@@ -54,9 +54,10 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	let filtered = true;
 	if (only_online) {
 		try {
+			const secret = await get_secret(env.SECRET);
 			const res = await locals.x2_ws.fetch('https://x2-ws/online', {
 				method: 'POST',
-				headers: { 'content-type': 'application/json' },
+				headers: { 'content-type': 'application/json', authorization: `Bearer ${secret}` },
 				body: JSON.stringify({ uids: r.map((x) => x.id) })
 			});
 			const data = (await res.json()) as { online?: unknown };

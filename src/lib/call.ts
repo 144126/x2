@@ -29,6 +29,9 @@ export type MeshOpts = {
 // ponytail: free Google STUN only — add TURN for symmetric NATs in prod
 const STUN: RTCIceServer = { urls: 'stun:stun.l.google.com:19302' };
 
+/** how long a 'disconnected' peer connection gets to recover before we treat it as gone */
+export const DISCONNECT_GRACE_MS = 10_000;
+
 export class CallMesh {
 	private o: MeshOpts;
 	private pcs = new Map<string, RTCPeerConnection>();
@@ -80,12 +83,15 @@ export class CallMesh {
 	async handle(from: string, s: CallSignal): Promise<void> {
 		switch (s.type) {
 			case 'join':
-				if (!this.active) return;
+				if (!this.active || this.pcs.has(from)) return;
 				if (this.o.me < from) await this.offer(from);
 				else this.o.send(from, { type: 'here' });
 				return;
 			case 'here':
-				if (!this.active) return;
+				// already connecting to this peer — join/here crossed in flight (both
+				// joined near-simultaneously); a second offer would renegotiate a
+				// connection that's already being set up
+				if (!this.active || this.pcs.has(from)) return;
 				if (this.o.me < from) await this.offer(from);
 				return;
 			case 'offer':
@@ -125,12 +131,21 @@ export class CallMesh {
 				this.local.removeTrack(t);
 			}
 		}
-		// re-point every existing sender at the current track set
-		for (const pc of this.pcs.values()) {
+		// a call that started audio-only has no video sender yet — replaceTrack only
+		// works on a sender that already exists, so the first time video turns on we
+		// must addTrack + renegotiate, not just swap an existing sender's track
+		for (const [uid, pc] of this.pcs) {
+			let needs_renegotiate = false;
 			for (const t of this.local.getTracks()) {
 				const sender = pc.getSenders().find((x) => x.track?.kind === t.kind);
-				if (sender) await sender.replaceTrack(t).catch(() => {});
+				if (sender) {
+					if (sender.track !== t) await sender.replaceTrack(t).catch(() => {});
+				} else {
+					pc.addTrack(t, this.local);
+					needs_renegotiate = true;
+				}
 			}
+			if (needs_renegotiate) await this.offer(uid);
 		}
 	}
 
@@ -162,8 +177,17 @@ export class CallMesh {
 		};
 		pc.ontrack = (e) => this.o.onremote(uid, e.streams[0]);
 		pc.onconnectionstatechange = () => {
-			// covers the peer vanishing without a bye (tab killed, network dropped)
-			if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) this.drop(uid);
+			// covers the peer vanishing without a bye (tab killed, network dropped).
+			// 'disconnected' is routinely transient (a Wi-Fi hop, a few seconds of
+			// packet loss) and ICE often recovers on its own — only drop on it if it
+			// hasn't recovered after a grace period, so a blip doesn't eject someone
+			// from the call outright.
+			if (['failed', 'closed'].includes(pc.connectionState)) this.drop(uid);
+			else if (pc.connectionState === 'disconnected') {
+				setTimeout(() => {
+					if (this.pcs.get(uid) === pc && pc.connectionState === 'disconnected') this.drop(uid);
+				}, DISCONNECT_GRACE_MS);
+			}
 		};
 		for (const t of this.local?.getTracks() ?? []) pc.addTrack(t, this.local!);
 		this.pcs.set(uid, pc);

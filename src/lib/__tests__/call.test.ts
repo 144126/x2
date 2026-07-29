@@ -1,11 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CallMesh, type CallSignal, type MeshOpts } from '../call';
+import { CallMesh, type CallSignal, type MeshOpts, DISCONNECT_GRACE_MS } from '../call';
+
+type FakeSender = { track: unknown; replaceTrack: (t: unknown) => Promise<void> };
 
 class FakePC {
 	localDescription: unknown = null;
 	remoteDescription: unknown = null;
 	ice: unknown[] = [];
-	senders: { track: unknown }[] = [];
+	senders: FakeSender[] = [];
 	closed = false;
 	onicecandidate: ((e: { candidate: unknown }) => void) | null = null;
 	ontrack: ((e: { streams: unknown[] }) => void) | null = null;
@@ -16,7 +18,11 @@ class FakePC {
 	async setLocalDescription(d: unknown) { this.localDescription = d; }
 	async setRemoteDescription(d: unknown) { this.remoteDescription = d; }
 	async addIceCandidate(c: unknown) { this.ice.push(c); }
-	addTrack(t: unknown) { this.senders.push({ track: t }); return { track: t }; }
+	addTrack(t: unknown) {
+		const sender: FakeSender = { track: t, replaceTrack: async (nt: unknown) => { sender.track = nt; } };
+		this.senders.push(sender);
+		return sender;
+	}
 	getSenders() { return this.senders; }
 	close() { this.closed = true; }
 }
@@ -142,5 +148,154 @@ describe('CallMesh 1:1 ring flow', () => {
 		await mesh.open(false);
 		await mesh.accept('bob');
 		expect(sent[0]).toMatchObject({ to: 'bob', signal: { type: 'answer' } });
+	});
+});
+
+describe('CallMesh simultaneous join', () => {
+	it('does not send a second offer when join and here cross in flight for the same peer', async () => {
+		const { mesh, sent, pcs } = harness('alice');
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' }); // alice < bob -> alice offers, pc created
+		await mesh.handle('bob', { type: 'here' }); // same peer replies here before seeing the offer
+
+		expect(sent.filter((s) => s.signal.type === 'offer')).toHaveLength(1);
+		expect(pcs).toHaveLength(1);
+	});
+
+	it('sends only one offer across two joins from the same peer once a connection exists', async () => {
+		const { mesh, sent, pcs } = harness('alice');
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' }); // alice < bob -> offers, pc created
+		await mesh.handle('bob', { type: 'join' }); // a duplicate/retried join from the same peer
+
+		expect(sent.filter((s) => s.signal.type === 'offer')).toHaveLength(1);
+		expect(pcs).toHaveLength(1);
+	});
+});
+
+describe('CallMesh announce', () => {
+	it('sends join to every member except myself', async () => {
+		const { mesh, sent } = harness('alice');
+		await mesh.open(false);
+		mesh.announce(['alice', 'bob', 'carol']);
+		expect(sent.map((s) => s.to).sort()).toEqual(['bob', 'carol']);
+		expect(sent.every((s) => s.signal.type === 'join')).toBe(true);
+	});
+});
+
+describe('CallMesh ICE forwarding', () => {
+	it('forwards local ICE candidates to the right peer', async () => {
+		const { mesh, sent, pcs } = harness('alice');
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' });
+		sent.length = 0;
+
+		pcs[0].onicecandidate?.({ candidate: { toJSON: () => ({ candidate: 'c1' }) } });
+
+		expect(sent).toEqual([{ to: 'bob', signal: { type: 'ice', candidate: { candidate: 'c1' } } }]);
+	});
+
+	it('applies an incoming ICE signal to the matching connection', async () => {
+		const { mesh, pcs } = harness('alice');
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' });
+
+		await mesh.handle('bob', { type: 'ice', candidate: { candidate: 'remote' } });
+
+		expect(pcs[0].ice).toEqual([{ candidate: 'remote' }]);
+	});
+});
+
+describe('CallMesh video renegotiation', () => {
+	it('adds a video sender and re-offers when video turns on mid-call (audio-only start)', async () => {
+		let media_calls: MediaStreamConstraints[] = [];
+		const { mesh, sent, pcs } = harness('alice', {
+			getMedia: async (c) => {
+				media_calls.push(c);
+				if (c.video && !c.audio) {
+					const vtrack = track('video');
+					return {
+						getTracks: () => [vtrack],
+						getVideoTracks: () => [vtrack],
+						getAudioTracks: () => []
+					} as unknown as MediaStream;
+				}
+				const { stream } = fakeStream(); // audio-only, for open()
+				return stream;
+			}
+		});
+		await mesh.open(false); // audio-only call
+		await mesh.handle('bob', { type: 'join' }); // pc created with one audio sender
+		sent.length = 0;
+
+		await mesh.setVideo(true);
+
+		expect(media_calls).toContainEqual({ video: true });
+		// a fresh video sender was added (not replaceTrack'd onto the audio sender)
+		expect(pcs[0].senders.some((s) => (s.track as FakeTrack).kind === 'video')).toBe(true);
+		// turning video on renegotiates — a new offer goes out on the existing connection
+		expect(sent.some((s) => s.to === 'bob' && s.signal.type === 'offer')).toBe(true);
+	});
+
+	it('replaces an existing sender in place without re-offering when the track kind already has a sender', async () => {
+		const { mesh, sent, pcs } = harness('alice');
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' });
+		sent.length = 0;
+
+		const audioSenderBefore = pcs[0].senders[0];
+		await mesh.setVideo(false); // no video tracks locally — no senders added, no renegotiation
+		expect(sent.filter((s) => s.signal.type === 'offer')).toHaveLength(0);
+		expect(pcs[0].senders[0]).toBe(audioSenderBefore);
+	});
+});
+
+describe('CallMesh connection-state recovery', () => {
+	it('drops the peer after the grace period if a disconnected state does not recover', async () => {
+		vi.useFakeTimers();
+		try {
+			const { mesh, pcs, remotes } = harness('alice');
+			await mesh.open(false);
+			await mesh.handle('bob', { type: 'join' });
+
+			pcs[0].connectionState = 'disconnected';
+			pcs[0].onconnectionstatechange?.();
+			expect(mesh.peers).toEqual(['bob']); // not dropped immediately
+
+			vi.advanceTimersByTime(DISCONNECT_GRACE_MS);
+			expect(mesh.peers).toEqual([]);
+			expect(remotes.at(-1)).toEqual({ uid: 'bob', stream: null });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('does not drop the peer if the connection recovers before the grace period elapses', async () => {
+		vi.useFakeTimers();
+		try {
+			const { mesh, pcs } = harness('alice');
+			await mesh.open(false);
+			await mesh.handle('bob', { type: 'join' });
+
+			pcs[0].connectionState = 'disconnected';
+			pcs[0].onconnectionstatechange?.();
+			pcs[0].connectionState = 'connected'; // recovered before the timer fires
+
+			vi.advanceTimersByTime(DISCONNECT_GRACE_MS);
+			expect(mesh.peers).toEqual(['bob']);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('drops immediately on failed, without waiting for the grace period', async () => {
+		const { mesh, pcs } = harness('alice');
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' });
+
+		pcs[0].connectionState = 'failed';
+		pcs[0].onconnectionstatechange?.();
+
+		expect(mesh.peers).toEqual([]);
 	});
 });
