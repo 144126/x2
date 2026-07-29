@@ -12,10 +12,12 @@
 	let mine = $state(data.mine as GroupView[]);
 	let folders = $state(data.folders as Folder[]);
 	let activeFolder = $state<string | null>(null);
+	let onlyCreated = $state(false);
 	let visibleGroups = $derived(
-		activeFolder
+		(activeFolder
 			? mine.filter((g) => folders.find((fo) => fo.id === activeFolder)?.convs.includes(g.id))
 			: mine
+		).filter((g) => !onlyCreated || g.owner === data.user?.id)
 	);
 
 	let q = $state('');
@@ -166,11 +168,6 @@
 							>
 						{/if}
 					</div>
-					{#if g.description}
-						<p class="mt-1.5 max-w-[60ch] truncate text-[14.5px] leading-[1.5] text-ink-soft">
-							{g.description}
-						</p>
-					{/if}
 					<div class="mt-3 flex items-center gap-3">
 						<span class="flex items-center gap-1 text-[12px] text-mute">
 							<Users size={13} />
@@ -218,7 +215,11 @@
 </Modal>
 
 <section>
-	<div class="eyebrow mb-1">your rooms</div>
+	<div class="eyebrow mb-1">joined rooms</div>
+	<label class="mt-2 flex w-fit cursor-pointer items-center gap-2 text-[12px] text-mute">
+		<input type="checkbox" class="!w-auto accent-accent" bind:checked={onlyCreated} />
+		rooms you created
+	</label>
 	<div class="mt-3">
 		<FolderBar
 			bind:folders
@@ -243,11 +244,6 @@
 						<div class="text-[12px] tracking-[0.04em] text-mute mt-1">
 							{[g.city, g.state, g.country].filter(Boolean).join(' · ')}
 						</div>
-					{/if}
-					{#if g.description}
-						<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">
-							{g.description}
-						</p>
 					{/if}
 				</li>
 			{/each}

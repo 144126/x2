@@ -1,27 +1,51 @@
 [WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
 $ vite dev
 
-  VITE v8.1.5  ready in 1647 ms
+  VITE v8.1.5  ready in 5540 ms
 
   ➜  Local:   http://localhost:7227/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
 ⎔ Establishing remote connection...
 ⎔ Establishing remote connection...
-11:25:32 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-11:25:32 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-11:25:32 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-11:25:32 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
-⎔ Establishing remote connection...
 Using secrets defined in .env
 Using secrets defined in .env
-Using secrets defined in .env
-11:26:49 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:26:49 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:26:49 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:54:5 Visible, non-interactive element `<div>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:30:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:44:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:45:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:46:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:44 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:47:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:30:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:44:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:45:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:46:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:41:57 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:47:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
 [WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
 [WSTOKEN] SECRET resolved { present: true, length: 64 }
 [WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
@@ -43,246 +67,108 @@ https://svelte.dev/e/a11y_click_events_have_key_events
   ws_origin: 'ws://localhost:8787',
   uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
 }
-11:26:52 PM [vite-plugin-svelte] src/routes/app/+page.svelte:164:4 Non-interactive element `<li>` cannot have interactive role 'button'
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+12:42:20 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:42:20 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:42:20 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-11:26:52 PM [vite-plugin-svelte] src/routes/app/+page.svelte:164:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:42:20 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-11:26:59 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:11:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:42:37 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:26:59 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:42:37 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:26:59 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:179:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:42:37 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-11:26:59 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:179:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:42:37 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-11:27:14 PM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:11:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:42:51 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:27:14 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:107:0 `<div>` with a click or keydown handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-11:27:14 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:149:3 `<div>` with a click handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-
-[1;31m[500] GET /api/credits[0m
-SyntaxError: Unexpected token 'W', "Worker "x2"... is not valid JSON
-    at JSON.parse (<anonymous>)
-    at parseJSONFromBytes (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/infra/index.js:164:15)
-    at successSteps (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/fetch/body.js:445:23)
-    at readAllBytes (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/fetch/util.js:998:9)
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
-
-[1;31m[500] GET /api/credits[0m
-SyntaxError: Unexpected token 'W', "Worker "x2"... is not valid JSON
-    at JSON.parse (<anonymous>)
-    at parseJSONFromBytes (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/infra/index.js:164:15)
-    at successSteps (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/fetch/body.js:445:23)
-    at readAllBytes (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/fetch/util.js:998:9)
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
-11:30:04 PM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:11:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:42:51 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:30:04 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:107:0 `<div>` with a click or keydown handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-11:30:04 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:149:3 `<div>` with a click handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-
-[1;31m[500] GET /api/credits[0m
-SyntaxError: Unexpected token 'W', "Worker "x2"... is not valid JSON
-    at JSON.parse (<anonymous>)
-    at parseJSONFromBytes (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/infra/index.js:164:15)
-    at successSteps (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/fetch/body.js:445:23)
-    at readAllBytes (/home/ed/i/x2/node_modules/.pnpm/undici@7.28.0/node_modules/undici/lib/web/fetch/util.js:998:9)
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
-11:35:20 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:26:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:42:51 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:54:5 Visible, non-interactive element `<div>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+12:43:22 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:35:20 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:22 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:35:20 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:35:20 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:35:20 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:35:20 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[SEND] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573' }
-[SEND] parsed body {
-  to: undefined,
-  group: 'e161b5f0-7520-4a1e-96cb-ccb6b75fa861',
-  textLen: 3,
-  hasImage: false,
-  hasFile: false,
-  at: undefined
-}
-[SEND] group message stored {
-  id: '3d6278f8-3c30-434d-8bc7-5a1b0c657892',
-  group: 'e161b5f0-7520-4a1e-96cb-ccb6b75fa861',
-  members: [
-    'b81d6b36-c618-432a-8ae0-0bfff86da801',
-    'e7bb811d-4c81-4a23-8870-63d4ba299573'
-  ]
-}
-[SEND→RELAY] posting to x2-ws /relay {
-  members: [ 'b81d6b36-c618-432a-8ae0-0bfff86da801' ],
-  group: 'e161b5f0-7520-4a1e-96cb-ccb6b75fa861',
-  from: 'e7bb811d-4c81-4a23-8870-63d4ba299573',
-  from_name: 'gold',
-  text: 'hii',
-  image: undefined,
-  file: undefined,
-  ts: 1785364529094
-}
-[SEND→RELAY] x2-ws responded { status: 503 }
-[SEND→RELAY] x2-ws response body null
-[SEND→RELAY] malformed/missing undelivered array — treating all targets as undelivered [ 'b81d6b36-c618-432a-8ae0-0bfff86da801' ]
-[SEND→PUSH] sending web push to [ 'b81d6b36-c618-432a-8ae0-0bfff86da801' ] {
-  title: 'Citiiii',
-  body: 'gold: hii',
-  url: '/app/rooms/e161b5f0-7520-4a1e-96cb-ccb6b75fa861',
-  conv: 'g:e161b5f0-7520-4a1e-96cb-ccb6b75fa861',
-  id: '3d6278f8-3c30-434d-8bc7-5a1b0c657892',
-  ts: 1785364529094,
-  kind: 'r',
-  reply_to: 'e161b5f0-7520-4a1e-96cb-ccb6b75fa861',
-  unread: 1
-}
-[SEND→PUSH] notify() result { sent: 0, pruned: 0 }
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-
-[1;31m[500] GET /media/e7bb811d-4c81-4a23-8870-63d4ba299573/30067c45-1b59-426c-abbd-4974bbde3d66.png[0m
-DevalueError: Cannot stringify arbitrary non-POJOs
-    at flatten (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71392:19)
-    at flatten (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71303:22)
-    at stringify2 (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71448:17)
-    at stringifyWithStreams (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71658:28)
-    at #call (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:92557:25)
-    at Proxy.writeHttpMetadata (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:92546:34)
-    at GET (src/routes/media/[...key]/+server.ts:13:6)
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-11:39:00 PM [vite-plugin-svelte] src/routes/app/+page.svelte:164:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:43:22 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:231:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-11:39:00 PM [vite-plugin-svelte] src/routes/app/+page.svelte:164:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:43:22 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:231:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-11:39:00 PM [vite] (client) hmr update /src/routes/app/+page.svelte, /src/app.css
-11:39:00 PM [vite] (ssr) page reload src/routes/app/+page.svelte
-11:39:00 PM [vite-plugin-svelte] src/routes/app/+page.svelte:164:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:43:22 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
+12:43:22 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
+12:43:23 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:43:23 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:43:23 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:231:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-11:39:00 PM [vite-plugin-svelte] src/routes/app/+page.svelte:164:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:43:23 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:231:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
 [WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
 [WSTOKEN] SECRET resolved { present: true, length: 64 }
@@ -291,691 +177,205 @@ https://svelte.dev/e/a11y_click_events_have_key_events
   ws_origin: 'ws://localhost:8787',
   uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
 }
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:26:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite] (client) hmr update /src/routes/app/rooms/[id]/+page.svelte, /src/app.css
-11:40:16 PM [vite] (ssr) page reload src/routes/app/rooms/[id]/+page.svelte
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:26:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:40:16 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-11:43:19 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:26:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:43:19 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:43:19 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:43:19 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:43:19 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:43:19 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
-[WSTOKEN] SECRET resolved { present: true, length: 64 }
-[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
-[WSTOKEN] issuing token {
-  ws_origin: 'ws://localhost:8787',
-  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
-}
-11:51:04 PM [vite] (client) hmr update /src/app.css
-11:51:04 PM [vite] (ssr) page reload src/lib/server/group.ts
-11:51:12 PM [vite] (client) hmr update /src/app.css
-11:51:12 PM [vite] (ssr) page reload src/lib/server/group.ts
-11:52:10 PM [vite] (client) hmr update /src/app.css
-11:52:10 PM [vite] (ssr) page reload src/lib/server/group.ts
-11:53:44 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:11:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:53:44 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-11:53:44 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:179:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-11:53:44 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:179:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-11:55:26 PM [vite] (client) page reload plan.json
-11:55:26 PM [vite] (ssr) page reload plan.json
-11:56:44 PM [vite] (client) hmr update /src/app.css
-11:56:44 PM [vite] (ssr) page reload src/routes/app/profile/__tests__/page.svelte.test.ts
-11:56:45 PM [vite] (ssr) page reload plan.json
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-11:56:52 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-11:56:52 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-11:56:52 PM [vite] (client) page reload .svelte-kit/generated/root.js
-11:56:52 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
-11:56:52 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-11:57:42 PM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:11:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:29 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
+12:43:29 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-11:57:42 PM [vite] (client) hmr update /src/routes/app/profile/+page.svelte, /src/app.css
-11:57:42 PM [vite] (ssr) page reload src/routes/app/profile/+page.svelte
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-11:57:50 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-11:57:50 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-11:57:50 PM [vite] (client) page reload .svelte-kit/generated/root.js
-11:57:50 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
-11:57:50 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-11:58:37 PM [vite] (client) hmr update /src/app.css
-11:58:37 PM [vite] (ssr) page reload src/routes/api/search/__tests__/server.test.ts
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-11:58:46 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-11:58:46 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-11:58:46 PM [vite] (client) page reload .svelte-kit/generated/root.js
-11:58:46 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
-11:58:46 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-11:59:23 PM [vite] (client) hmr update /src/app.css
-11:59:23 PM [vite] (ssr) page reload src/routes/api/search/+server.ts
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-11:59:32 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-11:59:32 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-11:59:32 PM [vite] (client) page reload .svelte-kit/generated/root.js
-11:59:32 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
-11:59:32 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:00:27 AM [vite] (client) hmr update /src/app.css
-12:00:27 AM [vite] (ssr) page reload src/routes/api/search/__tests__/server.test.ts
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:00:33 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:00:33 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:00:33 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:00:33 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:00:33 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:01:26 AM [vite] (client) hmr update /src/app.css
-12:01:26 AM [vite] (ssr) page reload src/lib/components/__tests__/Modal.test.ts
-12:01:29 AM [vite] (client) hmr update /src/app.css
-12:01:29 AM [vite] (ssr) page reload src/lib/components/__tests__/Modal.test.ts
-12:01:32 AM [vite] (client) hmr update /src/app.css
-12:01:32 AM [vite] (ssr) page reload src/lib/components/__tests__/Modal.test.ts
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:01:41 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:01:41 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:01:41 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:01:41 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:01:41 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:02:19 AM [vite] (client) hmr update /src/lib/components/Modal.svelte, /src/app.css
-12:02:19 AM [vite] (ssr) page reload src/lib/components/Modal.svelte
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:02:24 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:02:24 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:02:24 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:02:24 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:02:24 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:05:31 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:05:31 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:05:31 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:05:31 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:05:31 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:06:19 AM [vite] (client) hmr update /src/app.css
-12:06:19 AM [vite] (ssr) page reload src/routes/api/groups/+server.ts
-12:06:23 AM [vite] (client) hmr update /src/app.css
-12:06:23 AM [vite] (ssr) page reload src/routes/api/groups/[id]/+server.ts
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:204:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:204:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:43:29 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:36 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
-12:06:36 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:204:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:204:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:34 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
+12:43:34 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:228:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:228:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:43:34 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:42 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
-12:06:42 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:44 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+12:43:44 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:228:4 Non-interactive element `<li>` cannot have interactive role 'button'
+12:43:44 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:54:5 Visible, non-interactive element `<div>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+12:44:01 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+12:44:01 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+12:44:01 AM [vite] (client) page reload .svelte-kit/generated/root.js
+12:44:01 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+12:44:01 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+12:44:25 AM [vite] (client) hmr update /src/app.css
+12:44:25 AM [vite] (ssr) page reload src/routes/app/rooms/__tests__/page.svelte.test.ts
+12:44:32 AM [vite] (client) hmr update /src/app.css
+12:44:32 AM [vite] (ssr) page reload src/routes/app/rooms/__tests__/page.svelte.test.ts
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+12:44:41 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+12:44:41 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+12:44:41 AM [vite] (client) page reload .svelte-kit/generated/root.js
+12:44:41 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+12:44:41 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+12:49:35 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+12:49:35 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+12:49:35 AM [vite] (client) page reload .svelte-kit/generated/root.js
+12:49:35 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+12:49:35 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+12:49:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:49:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:49:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Non-interactive element `<li>` cannot have interactive role 'button'
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:42 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:228:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+12:49:36 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:235:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
 https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:47 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
-12:06:47 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:229:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:52 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
-12:06:52 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:52 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-12:06:57 AM [vite] (client) hmr update /src/routes/app/rooms/+page.svelte, /src/app.css
-12:06:57 AM [vite] (ssr) page reload src/routes/app/rooms/+page.svelte
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:06:57 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-12:07:01 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:01 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:01 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:01 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:30:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:01 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:01 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:44:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:01 AM [vite] (client) hmr update /src/routes/app/rooms/[id]/+page.svelte, /src/app.css
-12:07:01 AM [vite] (ssr) page reload src/routes/app/rooms/[id]/+page.svelte
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:30:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:44:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:45:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:46:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:47:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:05 AM [vite] (client) hmr update /src/routes/app/rooms/[id]/+page.svelte, /src/app.css
-12:07:05 AM [vite] (ssr) page reload src/routes/app/rooms/[id]/+page.svelte
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:30:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:44:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:45:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:46:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:47:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:09 AM [vite] (client) hmr update /src/routes/app/rooms/[id]/+page.svelte, /src/app.css
-12:07:09 AM [vite] (ssr) page reload src/routes/app/rooms/[id]/+page.svelte
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:27:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:28:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:29:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:30:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:43:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:44:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:45:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:46:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:13 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:47:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:14 AM [vite] (client) hmr update /src/routes/app/rooms/[id]/+page.svelte, /src/app.css
-12:07:14 AM [vite] (ssr) page reload src/routes/app/rooms/[id]/+page.svelte
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:07:23 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:07:23 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:07:23 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:07:23 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:07:23 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:07:24 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:12:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:24 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:07:24 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:07:24 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:234:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-12:08:40 AM [vite] (client) hmr update /src/app.css
-12:08:40 AM [vite] (ssr) page reload src/lib/server/__tests__/credit_client.test.ts
-12:08:47 AM [vite] (client) hmr update /src/app.css
-12:08:47 AM [vite] (ssr) page reload src/lib/server/__tests__/credit_client.test.ts
-12:08:51 AM [vite] (client) hmr update /src/app.css
-12:08:51 AM [vite] (ssr) page reload src/lib/server/__tests__/credit_client.test.ts
-12:08:57 AM [vite] (client) hmr update /src/app.css
-12:08:57 AM [vite] (ssr) page reload src/routes/api/credits/__tests__/server.test.ts
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:09:03 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:09:03 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:09:03 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:09:03 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:09:03 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:09:46 AM [vite] (client) hmr update /src/app.css
-12:09:46 AM [vite] (ssr) page reload src/lib/server/credit_client.ts
-12:09:56 AM [vite] (client) hmr update /src/app.css
-12:09:56 AM [vite] (ssr) page reload src/lib/server/groq.ts
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:10:02 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:10:02 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:10:02 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:10:02 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:10:02 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:10:47 AM [vite] (client) hmr update /src/app.css
-12:10:47 AM [vite] (ssr) page reload src/routes/api/credits/+server.ts
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:10:55 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:10:55 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:10:55 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:10:55 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:10:55 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:10:59 AM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:10:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:10:59 AM [vite] (client) hmr update /src/routes/app/profile/+page.svelte, /src/app.css
-12:10:59 AM [vite] (ssr) page reload src/routes/app/profile/+page.svelte
-12:11:02 AM [vite] (ssr) page reload src/routes/app/profile/+page.svelte
-12:11:06 AM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:10:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:11:06 AM [vite] (client) hmr update /src/routes/app/profile/+page.svelte, /src/app.css
-12:11:06 AM [vite] (ssr) page reload src/routes/app/profile/+page.svelte
-12:11:12 AM [vite] (client) hmr update /src/app.css
-12:11:12 AM [vite] (ssr) page reload src/routes/app/profile/__tests__/page.svelte.test.ts
-12:11:17 AM [vite] (client) hmr update /src/app.css
-12:11:17 AM [vite] (ssr) page reload src/routes/app/profile/__tests__/page.svelte.test.ts
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:11:32 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:11:32 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:11:32 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:11:32 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:11:32 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:11:49 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:11:49 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:11:49 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:11:49 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:11:49 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:11:49 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:11:49 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:11:49 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:11:50 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:13:05 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:13:05 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:13:05 AM [vite] (client) page reload .svelte-kit/generated/root.js
-12:13:05 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:13:05 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte

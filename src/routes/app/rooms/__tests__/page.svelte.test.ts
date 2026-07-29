@@ -20,7 +20,7 @@ const baseMine = [
 ];
 
 function data(over: Record<string, unknown> = {}) {
-	return { mine: baseMine, folders: [], ...over };
+	return { mine: baseMine, folders: [], user: { id: 'me', username: 'me' }, ...over };
 }
 
 beforeEach(() => {
@@ -45,5 +45,21 @@ describe('/app/rooms page', () => {
 	it('shows no location line for a room without one', () => {
 		render(Page, { props: { data: data() } });
 		expect(screen.queryByText(/·/)).toBeNull();
+	});
+
+	it('filters joined rooms down to rooms you created when the toggle is checked', async () => {
+		const { fireEvent } = await import('@testing-library/svelte');
+		const mine = [
+			{ ...baseMine[0], id: 'g1', name: 'Mine', owner: 'me' },
+			{ ...baseMine[0], id: 'g2', name: 'Theirs', owner: 'someone-else' }
+		];
+		render(Page, { props: { data: data({ mine }) } });
+		expect(screen.getByText('Mine')).toBeInTheDocument();
+		expect(screen.getByText('Theirs')).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByLabelText('rooms you created'));
+
+		expect(screen.getByText('Mine')).toBeInTheDocument();
+		expect(screen.queryByText('Theirs')).toBeNull();
 	});
 });
