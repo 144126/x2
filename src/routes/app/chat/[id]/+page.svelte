@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
 	import { upload_file, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
@@ -11,9 +11,17 @@
 	let messages = $state(
 		data.messages as { id: string; f: string; x: string; im?: string; fl?: FileAttach; d: number }[]
 	);
+	let threadEl: HTMLDivElement | undefined = $state();
+	const AT_BOTTOM_SLACK = 80; // px of slop still counted as "at the bottom"
+	function isAtBottom(): boolean {
+		if (!threadEl) return true;
+		return threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight < AT_BOTTOM_SLACK;
+	}
 	function add_msg(m: { id: string; f: string; x: string; im?: string; fl?: FileAttach; d: number }) {
 		if (messages.some((e) => e.id === m.id)) return;
+		const wasAtBottom = isAtBottom();
 		messages = [...messages, m];
+		if (wasAtBottom) tick().then(() => threadEl?.scrollTo({ top: threadEl.scrollHeight }));
 	}
 	let pendingFile: File | null = $state(null);
 	let searchQ = $state('');
@@ -334,7 +342,7 @@
 			{/if}
 		</div>
 	{:else}
-	<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7">
+	<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7" bind:this={threadEl}>
 		{#each messages as m (m.id)}
 			<div class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me ? 'self-end items-end' : 'self-start'}">
 				<div
