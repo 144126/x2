@@ -24,6 +24,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		state?: string;
 		city?: string;
 		whatsapp?: string;
+		show_interests?: boolean;
 	};
 	await save_profile(env, locals.user.id, {
 		username: b.username,
@@ -34,7 +35,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		country: b.country,
 		state: b.state,
 		city: b.city,
-		whatsapp: b.whatsapp
+		whatsapp: b.whatsapp,
+		show_interests: typeof b.show_interests === 'boolean' ? b.show_interests : undefined
 	});
 	return json({ ok: true });
 };

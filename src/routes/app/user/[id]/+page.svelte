@@ -71,7 +71,7 @@
 		</div>
 	{/if}
 
-	{#if u.i?.length}
+	{#if u.si && u.i?.length}
 		<div class="card mb-6 flex flex-wrap gap-2">
 			{#each u.i as t}
 				<span class="rounded-full border border-line bg-panel px-3 py-1 text-[13px] text-ink">{t}</span>

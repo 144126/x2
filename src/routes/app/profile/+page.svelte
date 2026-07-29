@@ -36,6 +36,7 @@
 	let username = $state(p.u ?? '');
 	let interests = $state<string[]>(p.i ?? []);
 	let interestInput = $state('');
+	let showInterests = $state(p.si ?? false);
 	let age = $state(p.ag ?? '');
 	let gender = $state(p.r ?? '');
 	let country = $state(p.co ?? '');
@@ -63,6 +64,7 @@
 				about,
 				username,
 				interests,
+				show_interests: showInterests,
 				age: age ? Number(age) : undefined,
 				gender,
 				country,
@@ -108,6 +110,10 @@
 				placeholder={interests.length ? '' : 'add an interest…'}
 			/>
 		</div>
+		<label class="mt-3 flex cursor-pointer items-center gap-2.5 text-[13.5px] text-ink-soft">
+			<input type="checkbox" class="!w-auto accent-accent" bind:checked={showInterests} />
+			show interests on my public profile
+		</label>
 
 		<label class="eyebrow mt-6" for="p-about">more about me</label>
 		<textarea id="p-about" rows="4" bind:value={about} placeholder="tell people more about yourself — what you're into, what you're building…"></textarea>
