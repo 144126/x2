@@ -158,7 +158,7 @@ describe('POST /api/send — what the notification says', () => {
 
 	it('opens the room when a group notification is tapped', async () => {
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		expect(note()[2]).toMatchObject({ url: '/app/groups/g1', conv: 'g:g1' });
+		expect(note()[2]).toMatchObject({ url: '/app/rooms/g1', conv: 'g:g1' });
 	});
 
 	it('carries an attached photo so the notification can show it', async () => {

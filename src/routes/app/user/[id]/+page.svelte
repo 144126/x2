@@ -95,7 +95,7 @@
 					{#each shared as g (g.id)}
 						<li>
 							<a
-								href="/app/groups/{g.id}"
+								href="/app/rooms/{g.id}"
 								class="text-[14px] text-ink transition-colors duration-300 hover:text-accent"
 							>
 								{g.name}

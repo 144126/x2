@@ -100,7 +100,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		await push(env, targets, {
 			title: g.name,
 			body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
-			url: `/app/groups/${group}`,
+			url: `/app/rooms/${group}`,
 			conv: group_conv_id(group),
 			id: m.id,
 			ts: m.d,

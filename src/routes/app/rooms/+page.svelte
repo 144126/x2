@@ -37,7 +37,7 @@
 			return;
 		}
 		const { g } = await res.json();
-		goto(`/app/groups/${g.id}`);
+		goto(`/app/rooms/${g.id}`);
 	}
 
 	async function join(g: GroupView) {
@@ -48,7 +48,7 @@
 		});
 		if (res.ok) {
 			mine = [(await res.json()).g, ...mine.filter((m) => m.id !== g.id)];
-			goto(`/app/groups/${g.id}`);
+			goto(`/app/rooms/${g.id}`);
 		}
 	}
 </script>
@@ -81,7 +81,7 @@
 				<li class="card reveal" style="--i:{i}">
 					<div class="flex flex-wrap items-baseline justify-between gap-2">
 						<a
-							href="/app/groups/{g.id}"
+							href="/app/rooms/{g.id}"
 							class="font-display text-[22px] font-medium tracking-[-0.01em] hover:text-accent"
 							>{g.name}</a
 						>
@@ -98,7 +98,7 @@
 						<span class="flex items-center gap-1 text-[12px] text-mute">
 							<Users size={13} /> {g.members.length} member{g.members.length === 1 ? '' : 's'}
 						</span>
-						<button class="btn ml-auto px-4 py-2 text-[12px]" onclick={() => (joined ? goto(`/app/groups/${g.id}`) : join(g))}>
+						<button class="btn ml-auto px-4 py-2 text-[12px]" onclick={() => (joined ? goto(`/app/rooms/${g.id}`) : join(g))}>
 							{joined ? 'open' : 'join'}
 						</button>
 					</div>
@@ -131,7 +131,7 @@
 	{#if mine.length}
 		<ul class="mt-5 grid gap-3.5">
 			{#each mine as g, i (g.id)}
-				<li class="card person reveal" style="--i:{i}" onclick={() => goto(`/app/groups/${g.id}`)} role="button" tabindex="0">
+				<li class="card person reveal" style="--i:{i}" onclick={() => goto(`/app/rooms/${g.id}`)} role="button" tabindex="0">
 					<div class="font-display text-[22px] font-medium tracking-[-0.01em]">{g.name}</div>
 					{#if g.description}
 						<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">{g.description}</p>

@@ -42,7 +42,7 @@
 	],
 	"shortcuts": [
 		{ "name": "Chats", "url": "/app" },
-		{ "name": "Groups", "url": "/app/groups" }
+		{ "name": "Rooms", "url": "/app/rooms" }
 	],
 	"share_target": {
 		"action": "/app/share",

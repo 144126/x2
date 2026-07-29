@@ -83,7 +83,7 @@
 
 	async function remove() {
 		const res = await fetch(`/api/groups/${g.id}`, { method: 'DELETE' });
-		if (res.ok) goto('/app/groups');
+		if (res.ok) goto('/app/rooms');
 	}
 
 	function onpick(e: Event) {
@@ -120,7 +120,7 @@
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
 		<button
 			class="bg-none leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
-			onclick={() => goto('/app/groups')}
+			onclick={() => goto('/app/rooms')}
 			aria-label="back"
 		>
 			<ArrowLeft size={22} />

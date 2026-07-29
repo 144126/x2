@@ -104,7 +104,7 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 					await push(env, g.members.filter((u) => u !== sm.f), {
 						title: g.name,
 						body: sm.file ? `📎 ${sm.file.name}` : sm.text,
-						url: `/app/groups/${sm.group}`,
+						url: `/app/rooms/${sm.group}`,
 						conv: group_conv_id(sm.group),
 						id: m.id,
 						ts: m.d
