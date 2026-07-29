@@ -13,46 +13,75 @@ let heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
 let lastMessage = 0;
 
 async function open() {
-	if (sock || intentionallyClosed || typeof window === 'undefined') return;
+	console.log('[WS-CLIENT] open() called', { sock: !!sock, intentionallyClosed, tries });
+	if (sock || intentionallyClosed || typeof window === 'undefined') {
+		console.log('[WS-CLIENT] open() bailing early', { sock: !!sock, intentionallyClosed, isWindow: typeof window !== 'undefined' });
+		return;
+	}
+	console.log('[WS-CLIENT] fetching /api/wstoken…');
 	const r = await fetch('/api/wstoken');
-	if (!r.ok) return retry();
+	console.log('[WS-CLIENT] /api/wstoken responded', { status: r.status, ok: r.ok });
+	if (!r.ok) {
+		console.error('[WS-CLIENT] /api/wstoken FAILED, will retry', { status: r.status, body: await r.text().catch(() => '<unreadable>') });
+		return retry();
+	}
 	const { ws } = (await r.json()) as { ws: string };
+	console.log('[WS-CLIENT] opening WebSocket to', ws);
 	const s = new WebSocket(ws);
 	sock = s;
 	s.onopen = () => {
+		console.log('[WS-CLIENT] socket OPEN', { url: ws, handshakeQueued: handshake.length });
 		lastMessage = Date.now();
 		tries = 0;
-		for (const m of handshake) s.send(m);
+		for (const m of handshake) {
+			console.log('[WS-CLIENT] sending queued handshake msg', m);
+			s.send(m);
+		}
 		clearTimeout(heartbeatTimer!);
 		heartbeatTimer = setTimeout(function tick() {
-			if (sock?.readyState === WebSocket.OPEN) sock.send(JSON.stringify({ type: 'ping' }));
-			if (Date.now() - lastMessage > 60_000) { sock?.close(); return; }
+			if (sock?.readyState === WebSocket.OPEN) {
+				console.log('[WS-CLIENT] sending heartbeat ping');
+				sock.send(JSON.stringify({ type: 'ping' }));
+			}
+			if (Date.now() - lastMessage > 60_000) {
+				console.warn('[WS-CLIENT] no message in 60s, closing socket to force reconnect');
+				sock?.close();
+				return;
+			}
 			heartbeatTimer = setTimeout(tick, 30_000);
 		}, 30_000);
 	};
 	s.onmessage = (ev) => {
 		lastMessage = Date.now();
+		console.log('[WS-CLIENT] message received', ev.data);
 		let m: Msg;
 		try {
 			m = JSON.parse(ev.data);
-		} catch {
+		} catch (e) {
+			console.error('[WS-CLIENT] failed to parse incoming message', ev.data, e);
 			return;
 		}
+		console.log('[WS-CLIENT] dispatching to', subs.size, 'subscribers, type=', m.type);
 		for (const fn of subs) fn(m);
 	};
-	s.onclose = () => {
+	s.onclose = (ev) => {
+		console.warn('[WS-CLIENT] socket CLOSED', { code: ev.code, reason: ev.reason, wasClean: ev.wasClean });
 		clearTimeout(heartbeatTimer!);
 		heartbeatTimer = null;
 		if (sock === s) sock = null;
 		for (const fn of subs) fn({ type: 'ws_down' });
 		retry();
 	};
-	s.onerror = () => s.close();
+	s.onerror = (ev) => {
+		console.error('[WS-CLIENT] socket ERROR', ev);
+		s.close();
+	};
 }
 
 function retry() {
 	if (intentionallyClosed || timer || !subs.size) return;
 	const delay = Math.min(30_000, 500 * 2 ** tries++);
+	console.log('[WS-CLIENT] scheduling reconnect in', delay, 'ms (attempt', tries, ')');
 	timer = setTimeout(() => {
 		timer = null;
 		open();
@@ -81,8 +110,13 @@ export function ws_on(fn: (m: Msg) => void): () => void {
 export function ws_send(o: Record<string, unknown>, keep = false): void {
 	const data = JSON.stringify(o);
 	if (keep && !handshake.includes(data)) handshake.push(data);
-	if (sock?.readyState === WebSocket.OPEN) sock.send(data);
-	else open();
+	if (sock?.readyState === WebSocket.OPEN) {
+		console.log('[WS-CLIENT] ws_send → socket open, sending now', o);
+		sock.send(data);
+	} else {
+		console.warn('[WS-CLIENT] ws_send → socket NOT open (readyState=', sock?.readyState, '), triggering open()', o);
+		open();
+	}
 }
 
 /** Stop keeping `o` alive across reconnects (pair with a `keep` send). */

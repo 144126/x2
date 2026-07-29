@@ -44,10 +44,13 @@
 		);
 	}
 
-	onMount(() =>
-		ws_on((m) => {
+	onMount(() => {
+		console.log('[APP-CLIENT] subscribing to ws_on for thread-list live updates');
+		return ws_on((m) => {
+			console.log('[APP-CLIENT] ws message received on threads list', m);
 			if (m.type !== 'msg') return;
 			const peer = m.from as string;
+			console.log('[APP-CLIENT] bumping conv to top of thread list', { peer });
 			const rest = convs.filter((c) => c.peer !== peer);
 			const prev = convs.find((c) => c.peer === peer);
 			convs = [
@@ -59,8 +62,8 @@
 				},
 				...rest
 			];
-		})
-	);
+		});
+	});
 
 	let q = $state('');
 	let gender = $state('');

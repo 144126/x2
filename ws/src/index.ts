@@ -25,16 +25,23 @@ const worker: ExportedHandler<Env> = {
 
 		if (url.pathname === '/ws') {
 			const uid = url.searchParams.get('uid') ?? '';
-			if (!uid) return new Response('no uid', { status: 400 });
-			console.log(`[WS-WORKER] routing /ws to ChatHub DO for uid=${uid}`);
+			if (!uid) {
+				console.warn('[WS-WORKER] /ws request with no uid, rejecting');
+				return new Response('no uid', { status: 400 });
+			}
+			console.log(`[WS-WORKER] routing /ws to ChatHub DO for uid=${uid}, upgrade header=${request.headers.get('upgrade')}`);
 			const id = env.CHAT_HUB.idFromName(uid);
 			const stub = env.CHAT_HUB.get(id);
-			return stub.fetch(request);
+			const res = await stub.fetch(request);
+			console.log(`[WS-WORKER] ChatHub DO responded status=${res.status} for uid=${uid}`);
+			return res;
 		}
 
 		if (url.pathname === '/relay') {
 			const body = await request.json().catch(() => null);
+			console.log('[WS-WORKER] /relay body:', body);
 			const result = await relay(body, env.CHAT_HUB);
+			console.log('[WS-WORKER] /relay result:', result);
 			if (!result) return new Response('no target', { status: 400 });
 			return Response.json(result, { status: result.ok ? 200 : 502 });
 		}

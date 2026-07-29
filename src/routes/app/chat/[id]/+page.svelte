@@ -57,6 +57,7 @@
 
 	async function send() {
 		const body = text.trim();
+		console.log('[CHAT-CLIENT] send() called', { peer: data.peer, bodyLen: body.length, hasPendingFile: !!pendingFile });
 		if ((!body && !pendingFile) || busy) return;
 		busy = true;
 		let image: string | undefined;
@@ -76,17 +77,22 @@
 		const at = scheduleAt ? new Date(scheduleAt).getTime() : undefined;
 		scheduleAt = '';
 		showSchedule = false;
+		console.log('[CHAT-CLIENT] POSTing /api/send', { to: data.peer, textLen: body.length, hasImage: !!image, hasFile: !!file, at });
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ to: data.peer, text: body, image, file, at })
 		});
+		console.log('[CHAT-CLIENT] /api/send responded', { status: res.status, ok: res.ok });
 		busy = false;
 		if (res.ok) {
 			mark_first_send();
 			const body_r = await res.json();
+			console.log('[CHAT-CLIENT] /api/send body', body_r);
 			if (!body_r.scheduled)
 				add_msg({ id: body_r.m.id, f: body_r.m.from, x: body_r.m.text, im: body_r.m.image, fl: body_r.m.file, d: body_r.m.ts });
+		} else {
+			console.error('[CHAT-CLIENT] /api/send FAILED', await res.text().catch(() => '<unreadable>'));
 		}
 	}
 
@@ -95,14 +101,19 @@
 	const check = { type: 'check', peer: data.peer };
 
 	function connect() {
+		console.log('[CHAT-CLIENT] connect() — subscribing to ws_on for peer=', data.peer);
 		unsub = ws_on((m) => {
+			console.log('[CHAT-CLIENT] ws message received in chat page', m);
 			if (m.type === 'ws_down') {
+				console.warn('[CHAT-CLIENT] ws_down — marking peer offline');
 				online = false;
 				endCall();
 			} else if (m.type === 'presence' && m.uid === data.peer) {
+				console.log('[CHAT-CLIENT] presence update for peer', m.online);
 				online = m.online as boolean;
 			}
 			else if (m.type === 'msg' && m.from === data.peer) {
+				console.log('[CHAT-CLIENT] incoming msg from current peer, appending to thread', m);
 				add_msg({
 				id: m.id as string,
 				f: m.from as string,
@@ -111,6 +122,8 @@
 				fl: m.file as FileAttach | undefined,
 				d: m.ts as number
 			});
+			} else if (m.type === 'msg') {
+				console.log('[CHAT-CLIENT] incoming msg but NOT from current peer, ignoring here', { from: m.from, expectedPeer: data.peer });
 			} else if (m.type === 'signal') handleSignal(m as never);
 		});
 		ws_send(watch, true);
