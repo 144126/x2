@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import LogIn from '@lucide/svelte/icons/log-in';
+	import UserPlus from '@lucide/svelte/icons/user-plus';
 
 	const REF_KEY = 'ref_code';
 
@@ -55,7 +57,7 @@
 	<p class="mt-5 text-[14px] leading-[1.6] text-ink-soft">
 		{mode === 'login'
 			? 'your threads are waiting.'
-			: 'one card. real conversations. no algorithms.'}
+			: 'one card, matched by what you\'re into — not what you look like.'}
 	</p>
 
 	<a class="btn btn-amber mt-9 w-full" href={google_href()}>continue with google</a>
@@ -73,15 +75,16 @@
 			required
 			minlength="6"
 		/>
-		<button class="btn btn-amber mt-1.5 w-full" type="submit"
-			>{mode === 'login' ? 'log in' : 'create account'}</button
-		>
+		<button class="btn btn-amber mt-1.5 flex w-full items-center justify-center gap-2" type="submit">
+			{#if mode === 'login'}<LogIn size={16} />{:else}<UserPlus size={16} />{/if}
+			{mode === 'login' ? 'log in' : 'create account'}
+		</button>
 	</form>
 
 	{#if msg}<p class="mt-3.5 text-[13px] text-[#e2674c]">{msg}</p>{/if}
 
 	<p class="mt-6 text-[13.5px] text-mute">
-		{mode === 'login' ? 'new to the studio?' : 'already a member?'}
+		{mode === 'login' ? 'new to x2?' : 'already a member?'}
 		<button
 			class="bg-none p-0 text-accent underline-offset-[3px] hover:underline"
 			onclick={() => (mode = mode === 'login' ? 'register' : 'login')}

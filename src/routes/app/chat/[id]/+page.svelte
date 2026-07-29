@@ -5,6 +5,20 @@
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
 	import { upload_file, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Phone from '@lucide/svelte/icons/phone';
+	import PhoneOff from '@lucide/svelte/icons/phone-off';
+	import Video from '@lucide/svelte/icons/video';
+	import VideoOff from '@lucide/svelte/icons/video-off';
+	import Mic from '@lucide/svelte/icons/mic';
+	import MicOff from '@lucide/svelte/icons/mic-off';
+	import Paperclip from '@lucide/svelte/icons/paperclip';
+	import Clock from '@lucide/svelte/icons/clock';
+	import Search from '@lucide/svelte/icons/search';
+	import SendIcon from '@lucide/svelte/icons/send';
+	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import FileText from '@lucide/svelte/icons/file-text';
+	import X from '@lucide/svelte/icons/x';
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
 	let { data } = $props();
@@ -263,10 +277,12 @@
 <section class="chat mx-auto flex h-[calc(100dvh-150px)] max-w-[760px] flex-col sm:h-[calc(100dvh-110px)]">
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
 		<button
-			class="bg-none text-[22px] leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
+			class="bg-none leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
 			onclick={() => goto('/app')}
-			aria-label="back">←</button
+			aria-label="back"
 		>
+			<ArrowLeft size={22} />
+		</button>
 		<div class="flex min-w-0 flex-col gap-0.5">
 			<a href="/app/user/{data.peer}" class="truncate font-display text-[21px] font-medium tracking-[-0.01em] transition-colors duration-300 hover:text-accent">{data.peer_name}</a>
 			<div
@@ -283,21 +299,35 @@
 		</div>
 		<div class="ml-auto flex items-center gap-2">
 			{#if callState === 'idle' && online}
-				<button class="btn btn-ghost text-[13px]" onclick={startCall}>call</button>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={startCall}>
+					<Phone size={15} /> call
+				</button>
 			{/if}
 			{#if callState === 'calling'}
 				<span class="text-[12px] text-faint">calling…</span>
-				<button class="btn btn-ghost text-[13px]" onclick={endCall}>cancel</button>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={endCall}>
+					<PhoneOff size={15} /> cancel
+				</button>
 			{/if}
 			{#if callState === 'ringing'}
 				<span class="text-[12px] text-accent">incoming call</span>
-				<button class="btn btn-amber text-[13px]" onclick={answerCall}>answer</button>
-				<button class="btn btn-ghost text-[13px]" onclick={endCall}>decline</button>
+				<button class="btn btn-amber flex items-center gap-1.5 text-[13px]" onclick={answerCall}>
+					<Phone size={15} /> answer
+				</button>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={endCall}>
+					<PhoneOff size={15} /> decline
+				</button>
 			{/if}
 			{#if callState === 'connected'}
-				<button class="btn btn-ghost text-[13px]" onclick={toggleMic}>{micOn ? 'mic on' : 'muted'}</button>
-				<button class="btn btn-ghost text-[13px]" onclick={toggleVideo}>{videoOn ? 'video on' : 'video off'}</button>
-				<button class="btn btn-ghost text-[13px] text-red-500" onclick={endCall}>hang up</button>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={toggleMic}>
+					{#if micOn}<Mic size={15} />{:else}<MicOff size={15} />{/if} {micOn ? 'mic on' : 'muted'}
+				</button>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={toggleVideo}>
+					{#if videoOn}<Video size={15} />{:else}<VideoOff size={15} />{/if} {videoOn ? 'video on' : 'video off'}
+				</button>
+				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px] text-red-500" onclick={endCall}>
+					<PhoneOff size={15} /> hang up
+				</button>
 			{/if}
 			{#if auto}
 				<button class="btn btn-ghost text-[13px]" onclick={findNew}>find someone new</button>
@@ -318,14 +348,22 @@
 	{/if}
 
 	<div class="flex items-center gap-2 border-b border-line py-3">
-		<input
-			class="min-w-0 flex-1 px-3 py-1.5 text-[13px]"
-			placeholder="search this thread…"
-			bind:value={searchQ}
-			onkeydown={(e) => e.key === 'Enter' && searchThread()}
-		/>
+		<div class="relative min-w-0 flex-1">
+			<Search size={14} class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint" />
+			<input
+				class="min-w-0 w-full py-1.5 pr-3 pl-8 text-[13px]"
+				placeholder="search this thread…"
+				bind:value={searchQ}
+				onkeydown={(e) => e.key === 'Enter' && searchThread()}
+			/>
+		</div>
 		{#if searchResults !== null}
-			<button class="btn text-[12px] py-1.5 px-3" onclick={() => { searchQ = ''; searchResults = null; }}>clear</button>
+			<button
+				class="btn flex items-center gap-1 py-1.5 px-3 text-[12px]"
+				onclick={() => { searchQ = ''; searchResults = null; }}
+			>
+				<X size={13} /> clear
+			</button>
 		{/if}
 	</div>
 
@@ -363,7 +401,8 @@
 							rel="noopener noreferrer"
 							class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
 						>
-							📎 <span class="truncate">{m.fl.name}</span>
+							<FileText size={15} class="shrink-0" />
+							<span class="truncate">{m.fl.name}</span>
 							<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
 						</a>
 					{/if}
@@ -396,11 +435,13 @@
 		}}
 	>
 		<label
-			class="btn shrink-0 cursor-pointer px-3 py-3 text-[15px]"
+			class="btn shrink-0 cursor-pointer px-3 py-3"
 			aria-label="attach file"
 			title={pendingFile ? pendingFile.name : 'attach file'}
 		>
-			{pendingFile ? '📎·1' : '📎'}
+			<span class="flex items-center gap-1">
+				<Paperclip size={16} />{#if pendingFile}<span class="text-[11px]">1</span>{/if}
+			</span>
 			<input
 				type="file"
 				class="hidden"
@@ -422,13 +463,13 @@
 		/>
 		<button
 			type="button"
-			class="btn shrink-0 px-3 py-3 text-[13px]"
+			class="btn shrink-0 px-3 py-3"
 			class:btn-amber={showSchedule || scheduleAt}
 			aria-label="schedule send"
 			title="schedule send"
 			onclick={() => (showSchedule = !showSchedule)}
 		>
-			⏰
+			<Clock size={16} />
 		</button>
 		<button
 			class="btn btn-amber shrink-0 !px-4"
@@ -438,26 +479,9 @@
 			title="send"
 		>
 			{#if busy}
-				<svg
-					class="h-[18px] w-[18px] animate-spin"
-					viewBox="0 0 24 24"
-					fill="none"
-					aria-hidden="true"
-				>
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
-					<path
-						class="opacity-90"
-						fill="currentColor"
-						d="M12 2a10 10 0 0 1 10 10h-3a7 7 0 0 0-7-7z"
-					/>
-				</svg>
+				<LoaderCircle size={18} class="animate-spin" />
 			{:else}
-				<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-					<path
-						d="M3.4 2.5 21 11.3a1 1 0 0 1 0 1.8L3.4 21.5a1 1 0 0 1-1.4-1.2L4.7 12 2 3.7a1 1 0 0 1 1.4-1.2Z"
-						fill="currentColor"
-					/>
-				</svg>
+				<SendIcon size={18} />
 			{/if}
 		</button>
 	</form>

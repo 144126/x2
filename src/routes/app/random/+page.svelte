@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { onDestroy } from 'svelte';
 	import RadioGroup from '$lib/components/RadioGroup.svelte';
+	import Shuffle from '@lucide/svelte/icons/shuffle';
+	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 
 	type Mode = 'text' | 'voice' | 'video';
 
@@ -48,8 +50,8 @@
 
 	{#if phase === 'pick'}
 		<p class="mb-6 text-[14.5px] leading-[1.6] text-ink-soft">
-			we match you with a stranger by the shape of your studio card — closest vibe first.
-			text is always on; camera and mic are yours to toggle any time, even mid-call.
+			we match you with a stranger by vibe — closest interests first. text is always on;
+			camera and mic are yours to toggle any time, even mid-call.
 		</p>
 		<RadioGroup
 			bind:value={mode}
@@ -59,9 +61,13 @@
 				{ value: 'video', label: 'video + text' }
 			]}
 		/>
-		<button class="btn btn-amber mt-8 w-full" onclick={start}>find someone</button>
+		<button class="btn btn-amber mt-8 flex w-full items-center justify-center gap-2" onclick={start}>
+			<Shuffle size={16} /> find someone
+		</button>
 	{:else if phase === 'searching'}
-		<p class="text-[15px] text-ink-soft">looking for a kindred spirit…</p>
+		<p class="flex items-center gap-2 text-[15px] text-ink-soft">
+			<LoaderCircle size={16} class="animate-spin" /> looking for a kindred spirit…
+		</p>
 		<button class="btn btn-ghost mt-6" onclick={cancel}>cancel</button>
 	{:else}
 		<p class="text-[15px] text-[#e2674c]">couldn't reach the matching service — try again.</p>

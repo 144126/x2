@@ -3,6 +3,7 @@
 	import { push_available, push_state, enable_push } from '$lib/push-client';
 	import { has_sent } from '$lib/notify-trigger';
 	import { ios_hint_needed, dismiss_install, install_hidden } from '$lib/install';
+	import X from '@lucide/svelte/icons/x';
 
 	let { vapid_key }: { vapid_key: string } = $props();
 
@@ -67,6 +68,8 @@
 				enable
 			</button>
 		{/if}
-		<button class="shrink-0 text-mute" onclick={dismiss} aria-label="dismiss">✕</button>
+		<button class="shrink-0 text-mute" onclick={dismiss} aria-label="dismiss">
+			<X size={16} />
+		</button>
 	</div>
 {/if}

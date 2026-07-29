@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { watch_install, can_install, install, install_hidden, dismiss_install } from '$lib/install';
+	import X from '@lucide/svelte/icons/x';
 
 	let visible = $state(false);
 	let off: (() => void) | null = null;
@@ -39,6 +40,8 @@
 		<button class="shrink-0 text-[11px] uppercase tracking-[0.18em] text-accent" onclick={do_install}>
 			install
 		</button>
-		<button class="shrink-0 text-mute" onclick={dismiss} aria-label="dismiss">✕</button>
+		<button class="shrink-0 text-mute" onclick={dismiss} aria-label="dismiss">
+			<X size={16} />
+		</button>
 	</div>
 {/if}

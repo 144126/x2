@@ -4,6 +4,9 @@
 	import Select from '$lib/components/Select.svelte';
 	import { ws_on } from '$lib/ws';
 	import { onMount } from 'svelte';
+	import Search from '@lucide/svelte/icons/search';
+	import FolderPlus from '@lucide/svelte/icons/folder-plus';
+	import MessageCircle from '@lucide/svelte/icons/message-circle';
 	let { data } = $props();
 
 	// thread list was server-rendered only, so a new message never showed up here without a
@@ -92,20 +95,23 @@
 </script>
 
 <section class="mb-[72px]">
-	<div class="eyebrow">the index — find people by meaning, not keywords</div>
+	<div class="eyebrow">search x2 — by vibe, not keywords</div>
 	<h2 class="display mt-3.5 mb-9 text-[clamp(34px,5.5vw,60px)] leading-[0.98]">
-		find someone<br />by what they <em class="italic text-accent">mean</em>.
+		find people who <em class="italic text-accent">get it</em>.
 	</h2>
 
 	<div class="flex flex-col gap-3 sm:flex-row">
-		<input
-			class="min-w-0 px-[18px] py-4 text-[17px]"
-			placeholder="search by vibe, craft, interests…"
-			bind:value={q}
-			onkeydown={(e) => e.key === 'Enter' && search()}
-		/>
-		<button class="btn btn-amber whitespace-nowrap" onclick={search} disabled={searching}>
-			{searching ? 'searching' : 'find people'}
+		<div class="relative min-w-0 flex-1">
+			<Search size={18} class="pointer-events-none absolute top-1/2 left-[18px] -translate-y-1/2 text-faint" />
+			<input
+				class="w-full py-4 pr-[18px] pl-[46px] text-[17px]"
+				placeholder="search by vibe, craft, interests…"
+				bind:value={q}
+				onkeydown={(e) => e.key === 'Enter' && search()}
+			/>
+		</div>
+		<button class="btn btn-amber flex items-center justify-center gap-2 whitespace-nowrap" onclick={search} disabled={searching}>
+			{#if !searching}<Search size={15} />{/if} {searching ? 'searching' : 'find my people'}
 		</button>
 	</div>
 
@@ -166,10 +172,10 @@
 								href={u.wu}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="btn text-[12px] py-1.5 px-3 no-underline"
+								class="btn flex items-center gap-1.5 py-1.5 px-3 text-[12px] no-underline"
 								onclick={(e) => e.stopPropagation()}
 							>
-								chat on whatsapp
+								<MessageCircle size={13} /> chat on whatsapp
 							</a>
 						{/if}
 						<div class="font-display text-[15px] tracking-[0.02em] text-accent">
@@ -202,12 +208,15 @@
 				{fo.name}
 			</button>
 		{/each}
-		<input
-			class="w-[140px] min-w-0 px-2 py-1.5 text-[12px]"
-			placeholder="new folder…"
-			bind:value={newFolderName}
-			onkeydown={(e) => e.key === 'Enter' && createFolder()}
-		/>
+		<div class="relative">
+			<FolderPlus size={13} class="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-faint" />
+			<input
+				class="w-[140px] min-w-0 py-1.5 pr-2 pl-6 text-[12px]"
+				placeholder="new folder…"
+				bind:value={newFolderName}
+				onkeydown={(e) => e.key === 'Enter' && createFolder()}
+			/>
+		</div>
 	</div>
 
 	{#if visibleConvs.length}

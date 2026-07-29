@@ -6,6 +6,9 @@
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Image from '@lucide/svelte/icons/image';
+	import SendIcon from '@lucide/svelte/icons/send';
 
 	let { data } = $props();
 	let g = $state(data.g);
@@ -118,10 +121,12 @@
 <section class="mx-auto flex h-[calc(100dvh-140px)] max-w-[760px] flex-col sm:h-[calc(100dvh-110px)]">
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
 		<button
-			class="bg-none text-[22px] leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
+			class="bg-none leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
 			onclick={() => goto('/app/groups')}
-			aria-label="back">←</button
+			aria-label="back"
 		>
+			<ArrowLeft size={22} />
+		</button>
 		<div class="flex min-w-0 flex-col gap-0.5">
 			<h1 class="truncate font-display text-[21px] font-medium tracking-[-0.01em]">{g.name}</h1>
 			<span class="text-[10.5px] uppercase tracking-[0.2em] text-faint"
@@ -193,8 +198,10 @@
 				}
 			}}
 		>
-			<label class="btn shrink-0 cursor-pointer px-4 py-3 text-[13px]">
-				{pending ? '1 image' : 'image'}
+			<label class="btn shrink-0 cursor-pointer px-3 py-3" aria-label="attach image" title={pending ? pending.name : 'attach image'}>
+				<span class="flex items-center gap-1">
+					<Image size={16} />{#if pending}<span class="text-[11px]">1</span>{/if}
+				</span>
 				<input type="file" accept="image/*" class="hidden" onchange={onpick} />
 			</label>
 			<input
@@ -207,7 +214,9 @@
 					if (f) pending = f;
 				}}
 			/>
-			<button class="btn btn-amber shrink-0" type="submit" disabled={busy}>{busy ? 'sending' : 'send'}</button>
+			<button class="btn btn-amber shrink-0 flex items-center gap-1.5 !px-4" type="submit" disabled={busy}>
+				<SendIcon size={16} /> {busy ? 'sending' : 'send'}
+			</button>
 		</form>
 	{:else}
 		<p class="border-t border-line py-4 text-[14px] text-faint">join the room to post.</p>
