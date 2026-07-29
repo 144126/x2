@@ -6,6 +6,11 @@ export default defineConfig({
 	server: {
 		port: 7227
 	},
+	// @lucide/svelte ships raw .svelte source even in its "compiled" JS barrel (Svelte
+	// components can't be pre-compiled framework-agnostically) — without this, Vite's SSR
+	// pipeline externalizes it as a plain Node import, and Node's ESM loader can't parse
+	// .svelte files, 500ing every page that imports an icon.
+	ssr: { noExternal: ['@lucide/svelte'] },
 	plugins: [tailwindcss(), sveltekit()],
 	test: {
 		projects: [
