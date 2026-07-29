@@ -4,7 +4,8 @@
 	import Select from '$lib/components/Select.svelte';
 	import { ws_on } from '$lib/ws';
 	import { onMount } from 'svelte';
-	import { Search, FolderPlus, MessageCircle } from '@lucide/svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import { Search, FolderPlus, MessageCircle, Pencil, Plus, Minus } from '@lucide/svelte';
 	let { data } = $props();
 
 	// thread list was server-rendered only, so a new message never showed up here without a
@@ -33,16 +34,35 @@
 		if (res.ok) folders = [...folders, (await res.json()).folder];
 	}
 
-	async function assignToFolder(peer: string, folderId: string) {
+	let editingFolder = $state(false);
+	let activeFolderObj = $derived(folders.find((fo) => fo.id === activeFolder) ?? null);
+	const inFolder = (peer: string) => !!activeFolderObj?.convs.includes(peer);
+
+	async function toggleInFolder(peer: string) {
+		const folderId = activeFolder;
 		if (!folderId) return;
-		await fetch(`/api/folders/${folderId}`, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ conv: peer })
-		});
+		const adding = !inFolder(peer);
+		// optimistic — the pill list and the filtered thread list both read from `folders`
 		folders = folders.map((fo) =>
-			fo.id === folderId && !fo.convs.includes(peer) ? { ...fo, convs: [...fo.convs, peer] } : fo
+			fo.id !== folderId
+				? fo
+				: { ...fo, convs: adding ? [...fo.convs, peer] : fo.convs.filter((c) => c !== peer) }
 		);
+		const res = adding
+			? await fetch(`/api/folders/${folderId}`, {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ conv: peer })
+				})
+			: await fetch(`/api/folders/${folderId}?conv=${encodeURIComponent(peer)}`, { method: 'DELETE' });
+		if (!res.ok) {
+			// roll back so the UI never claims a membership the server rejected
+			folders = folders.map((fo) =>
+				fo.id !== folderId
+					? fo
+					: { ...fo, convs: adding ? fo.convs.filter((c) => c !== peer) : [...fo.convs, peer] }
+			);
+		}
 	}
 
 	onMount(() => {
@@ -198,13 +218,26 @@
 			all
 		</button>
 		{#each folders as fo (fo.id)}
-			<button
-				class="btn text-[12px] py-1.5 px-3"
-				class:btn-amber={activeFolder === fo.id}
-				onclick={() => (activeFolder = fo.id)}
-			>
-				{fo.name}
-			</button>
+			<div class="flex items-stretch">
+				<button
+					class="btn text-[12px] py-1.5 px-3"
+					class:btn-amber={activeFolder === fo.id}
+					class:!rounded-r-none={activeFolder === fo.id}
+					onclick={() => (activeFolder = fo.id)}
+				>
+					{fo.name}
+				</button>
+				{#if activeFolder === fo.id}
+					<button
+						class="btn btn-amber !rounded-l-none border-l border-l-accent-ink/15 px-2.5 py-1.5 text-[12px]"
+						onclick={() => (editingFolder = true)}
+						aria-label="edit {fo.name}"
+						title="add or remove chats"
+					>
+						<Pencil size={12} />
+					</button>
+				{/if}
+			</div>
 		{/each}
 		<div class="relative">
 			<FolderPlus size={13} class="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-faint" />
@@ -229,21 +262,38 @@
 						<div class="font-display text-[24px] font-medium tracking-[-0.01em]">{c.name}</div>
 						<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">{c.preview}</p>
 					</div>
-					{#if folders.length}
-						<select
-							class="mt-2 text-[12px]"
-							onchange={(e) => assignToFolder(c.peer, (e.currentTarget as HTMLSelectElement).value)}
-						>
-							<option value="">add to folder…</option>
-							{#each folders as fo (fo.id)}
-								<option value={fo.id}>{fo.name}</option>
-							{/each}
-						</select>
-					{/if}
 				</li>
 			{/each}
 		</ul>
 	{:else}
 		<p class="mt-4 text-[14.5px] text-faint">no conversations yet. search for someone with the same vibe.</p>
 	{/if}
+
+	<Modal bind:open={editingFolder} title="chats in “{activeFolderObj?.name ?? ''}”">
+		{#if convs.length}
+			<ul class="flex flex-col gap-2">
+				{#each convs as c (c.peer)}
+					{@const on = inFolder(c.peer)}
+					<li
+						class="flex items-center gap-3 rounded-[12px] border border-line bg-panel px-3.5 py-2.5 transition-colors duration-300"
+						class:border-accent={on}
+						class:bg-accent-soft={on}
+					>
+						<span class="min-w-0 flex-1 truncate text-[14.5px] text-ink">{c.name}</span>
+						<button
+							class="btn shrink-0 px-3 py-1.5 text-[12px]"
+							class:btn-amber={on}
+							onclick={() => toggleInFolder(c.peer)}
+							aria-label={on ? `remove ${c.name} from folder` : `add ${c.name} to folder`}
+						>
+							{#if on}<Minus size={13} />{:else}<Plus size={13} />{/if}
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="text-[14px] text-faint">no conversations to file yet.</p>
+		{/if}
+	</Modal>
+
 </section>
