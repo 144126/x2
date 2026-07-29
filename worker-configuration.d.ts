@@ -34,4 +34,9 @@ interface Env {
 	GOOGLE_SECRET: string | SecretVal;
 	WS_ORIGIN?: string | SecretVal;
 	X2_WS: Fetcher;
+	PAYSTACK_SECRET_KEY_TEST?: string | SecretVal;
+	PAYSTACK_SECRET_KEY_LIVE?: string | SecretVal;
+	PAYSTACK_TEST?: string | SecretVal;
+	PAYSTACK_BASE_URL?: string | SecretVal;
+	GROQ?: string | SecretVal;
 }

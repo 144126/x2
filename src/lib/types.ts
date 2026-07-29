@@ -17,6 +17,9 @@ export interface User {
 	st?: string; // state iso code
 	ci?: string; // city (free text)
 	w?: string; // whatsapp number (subscriber number, stripped of country code / leading 0)
+	// partner program
+	ac?: string; // this user's own referral code, as a partner
+	invited_by?: string; // uid of the partner whose code this user signed up under
 }
 
 export interface Message {
@@ -27,7 +30,8 @@ export interface Message {
 	t: string; // to uid ('' for group messages)
 	gr?: string; // group id, when this is a group message
 	im?: string; // media key in R2, when an image is attached
-	x: string; // text (may be empty when im is set)
+	fl?: { key: string; name: string; size: number; type: string }; // non-image file attachment
+	x: string; // text (may be empty when im or fl is set)
 	d: number; // ts
 }
 
@@ -38,4 +42,17 @@ export interface Match {
 	f: string; // uid a
 	t: string; // uid b
 	d: number; // matched ts
+}
+
+export interface ScheduledMessage {
+	s: 'sm';
+	id: string;
+	f: string; // sender uid
+	to?: string; // recipient uid (1:1)
+	group?: string; // group id (group send)
+	text: string;
+	image?: string;
+	file?: { key: string; name: string; size: number; type: string };
+	at: number; // unix ms when it should send
+	sent: 0 | 1; // idempotency guard — 0 while pending, 1 once dispatched
 }

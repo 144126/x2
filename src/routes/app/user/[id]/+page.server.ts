@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { ensure, retrieve_one } from '$lib/server/qdrant';
+import { shared_groups } from '$lib/server/group';
 import type { User } from '$lib/types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -13,5 +14,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const wu = u.w && u.co
 		? `https://wa.me/${Country.getCountryByCode(u.co)?.phonecode ?? ''}${u.w}`
 		: undefined;
-	return { id: params.id, u, wu };
+	const shared =
+		params.id === locals.user.id ? [] : await shared_groups(env, params.id, locals.user.id);
+	return { id: params.id, u, wu, shared };
 };

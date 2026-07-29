@@ -3,18 +3,38 @@
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
-	import { upload_image, media_src, image_from_event } from '$lib/attach';
+	import { upload_file, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 
+	type FileAttach = { key: string; name: string; size: number; type: string };
 	let { data } = $props();
-	let messages = $state(data.messages as { id: string; f: string; x: string; im?: string; d: number }[]);
-	function add_msg(m: { id: string; f: string; x: string; im?: string; d: number }) {
+	let messages = $state(
+		data.messages as { id: string; f: string; x: string; im?: string; fl?: FileAttach; d: number }[]
+	);
+	function add_msg(m: { id: string; f: string; x: string; im?: string; fl?: FileAttach; d: number }) {
 		if (messages.some((e) => e.id === m.id)) return;
 		messages = [...messages, m];
 	}
-	let pending: File | null = $state(null);
+	let pendingFile: File | null = $state(null);
+	let searchQ = $state('');
+	let searchResults = $state<{ id: string; x: string; d: number }[] | null>(null);
+	let searching = $state(false);
+
+	async function searchThread() {
+		const q = searchQ.trim();
+		if (!q) {
+			searchResults = null;
+			return;
+		}
+		searching = true;
+		const res = await fetch(`/api/search/messages?q=${encodeURIComponent(q)}&conv=${encodeURIComponent(data.peer)}`);
+		searching = false;
+		if (res.ok) searchResults = (await res.json()).messages;
+	}
 	let busy = $state(false);
 	let text = $state('');
+	let scheduleAt = $state('');
+	let showSchedule = $state(false);
 	let online = $state(false);
 	let unsub: (() => void) | null = null;
 	let me = $derived($page.data.user?.id);
@@ -37,29 +57,36 @@
 
 	async function send() {
 		const body = text.trim();
-		if ((!body && !pending) || busy) return;
+		if ((!body && !pendingFile) || busy) return;
 		busy = true;
 		let image: string | undefined;
-		if (pending) {
-			const r = await upload_image(pending);
-			if (r.error) {
+		let file: FileAttach | undefined;
+		if (pendingFile) {
+			const r = await upload_file(pendingFile);
+			if (r.error || !r.key) {
 				busy = false;
 				return;
 			}
-			image = r.key;
-			pending = null;
+			// images stay inline-rendered (m.im); everything else renders as a download chip
+			if (pendingFile.type.startsWith('image/')) image = r.key;
+			else file = { key: r.key, name: r.name!, size: r.size!, type: r.type! };
+			pendingFile = null;
 		}
 		text = '';
+		const at = scheduleAt ? new Date(scheduleAt).getTime() : undefined;
+		scheduleAt = '';
+		showSchedule = false;
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ to: data.peer, text: body, image })
+			body: JSON.stringify({ to: data.peer, text: body, image, file, at })
 		});
 		busy = false;
 		if (res.ok) {
 			mark_first_send();
-			const { m } = await res.json();
-			add_msg({ id: m.id, f: m.from, x: m.text, im: m.image, d: m.ts });
+			const body_r = await res.json();
+			if (!body_r.scheduled)
+				add_msg({ id: body_r.m.id, f: body_r.m.from, x: body_r.m.text, im: body_r.m.image, fl: body_r.m.file, d: body_r.m.ts });
 		}
 	}
 
@@ -76,7 +103,14 @@
 				online = m.online as boolean;
 			}
 			else if (m.type === 'msg' && m.from === data.peer) {
-				add_msg({ id: m.id as string, f: m.from as string, x: (m.text as string) ?? '', im: m.image as string | undefined, d: m.ts as number });
+				add_msg({
+				id: m.id as string,
+				f: m.from as string,
+				x: (m.text as string) ?? '',
+				im: m.image as string | undefined,
+				fl: m.file as FileAttach | undefined,
+				d: m.ts as number
+			});
 			} else if (m.type === 'signal') handleSignal(m as never);
 		});
 		ws_send(watch, true);
@@ -262,6 +296,31 @@
 		</div>
 	{/if}
 
+	<div class="flex items-center gap-2 border-b border-line py-3">
+		<input
+			class="min-w-0 flex-1 px-3 py-1.5 text-[13px]"
+			placeholder="search this thread…"
+			bind:value={searchQ}
+			onkeydown={(e) => e.key === 'Enter' && searchThread()}
+		/>
+		{#if searchResults !== null}
+			<button class="btn text-[12px] py-1.5 px-3" onclick={() => { searchQ = ''; searchResults = null; }}>clear</button>
+		{/if}
+	</div>
+
+	{#if searchResults !== null}
+		<div class="flex flex-1 flex-col gap-2 overflow-y-auto py-4">
+			{#if searching}
+				<p class="text-[13px] text-faint">searching…</p>
+			{:else if searchResults.length === 0}
+				<p class="text-[13px] text-faint">no matches.</p>
+			{:else}
+				{#each searchResults as r (r.id)}
+					<div class="rounded-[10px] border border-line bg-panel px-3 py-2 text-[14px] text-ink-soft">{r.x}</div>
+				{/each}
+			{/if}
+		</div>
+	{:else}
 	<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7">
 		{#each messages as m (m.id)}
 			<div class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me ? 'self-end items-end' : 'self-start'}">
@@ -276,12 +335,30 @@
 							<img src={media_src(m.im)} alt="" class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover" />
 						</a>
 					{/if}
+					{#if m.fl}
+						<a
+							href={media_src(m.fl.key)}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
+						>
+							📎 <span class="truncate">{m.fl.name}</span>
+							<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
+						</a>
+					{/if}
 					{#if m.x}{m.x}{/if}
 				</div>
 			</div>
 		{/each}
 	</div>
+	{/if}
 
+	{#if showSchedule}
+		<div class="flex items-center gap-2 border-t border-line pt-4 text-[13px] text-ink-soft">
+			<label for="schedule-at">send at</label>
+			<input id="schedule-at" type="datetime-local" bind:value={scheduleAt} />
+		</div>
+	{/if}
 	<form
 		class="flex flex-wrap items-center gap-2 border-t border-line py-4"
 		onsubmit={(e) => {
@@ -290,22 +367,25 @@
 		}}
 		ondragover={(e) => e.preventDefault()}
 		ondrop={(e) => {
-			const f = image_from_event(e);
+			const f = e.dataTransfer?.files?.[0];
 			if (f) {
 				e.preventDefault();
-				pending = f;
+				pendingFile = f;
 			}
 		}}
 	>
-		<label class="btn shrink-0 cursor-pointer px-4 py-3 text-[13px]">
-			{pending ? '1 image' : 'image'}
+		<label
+			class="btn shrink-0 cursor-pointer px-3 py-3 text-[15px]"
+			aria-label="attach file"
+			title={pendingFile ? pendingFile.name : 'attach file'}
+		>
+			{pendingFile ? '📎·1' : '📎'}
 			<input
 				type="file"
-				accept="image/*"
 				class="hidden"
 				onchange={(e) => {
 					const f = (e.currentTarget as HTMLInputElement).files?.[0];
-					if (f) pending = f;
+					if (f) pendingFile = f;
 				}}
 			/>
 		</label>
@@ -316,9 +396,48 @@
 			autocomplete="off"
 			onpaste={(e) => {
 				const f = image_from_event(e);
-				if (f) pending = f;
+				if (f) pendingFile = f;
 			}}
 		/>
-		<button class="btn btn-amber shrink-0" type="submit" disabled={busy}>{busy ? 'sending' : 'send'}</button>
+		<button
+			type="button"
+			class="btn shrink-0 px-3 py-3 text-[13px]"
+			class:btn-amber={showSchedule || scheduleAt}
+			aria-label="schedule send"
+			title="schedule send"
+			onclick={() => (showSchedule = !showSchedule)}
+		>
+			⏰
+		</button>
+		<button
+			class="btn btn-amber shrink-0 !px-4"
+			type="submit"
+			disabled={busy}
+			aria-label="send message"
+			title="send"
+		>
+			{#if busy}
+				<svg
+					class="h-[18px] w-[18px] animate-spin"
+					viewBox="0 0 24 24"
+					fill="none"
+					aria-hidden="true"
+				>
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
+					<path
+						class="opacity-90"
+						fill="currentColor"
+						d="M12 2a10 10 0 0 1 10 10h-3a7 7 0 0 0-7-7z"
+					/>
+				</svg>
+			{:else}
+				<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<path
+						d="M3.4 2.5 21 11.3a1 1 0 0 1 0 1.8L3.4 21.5a1 1 0 0 1-1.4-1.2L4.7 12 2 3.7a1 1 0 0 1 1.4-1.2Z"
+						fill="currentColor"
+					/>
+				</svg>
+			{/if}
+		</button>
 	</form>
 </section>

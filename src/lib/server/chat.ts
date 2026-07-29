@@ -1,5 +1,6 @@
 import type { Message, Match } from '../types';
-import { ensure, upsert, new_id, type QEnv, f, eq, scroll } from './qdrant';
+import { ensure, upsert, new_id, type QEnv, f, f_or, eq, scroll, search, ZV } from './qdrant';
+import { embed } from './or';
 export { get_user_name } from './user';
 
 export { ensure };
@@ -8,12 +9,19 @@ export function conv_id(a: string, b: string): string {
   return [a, b].sort().join('|');
 }
 
+// skip embedding trivially short messages ("ok", "lol") — not worth the embedding API call,
+// they'd never surface as a meaningful search result anyway
+async function msg_vector(env: QEnv, text: string): Promise<number[]> {
+  return text.trim().length >= 3 ? await embed(env, text) : ZV;
+}
+
 export async function send_msg(
   env: QEnv,
   from: string,
   to: string,
   text: string,
-  image?: string
+  image?: string,
+  file?: Message['fl']
 ): Promise<Message> {
   await ensure(env);
   const m: Message = {
@@ -24,9 +32,10 @@ export async function send_msg(
     t: to,
     x: text,
     ...(image ? { im: image } : {}),
+    ...(file ? { fl: file } : {}),
     d: Date.now()
   };
-  await upsert(env, [{ id: m.id, vector: new Array(4096).fill(0), payload: m as unknown as Record<string, unknown> }]);
+  await upsert(env, [{ id: m.id, vector: await msg_vector(env, text), payload: m as unknown as Record<string, unknown> }]);
   return m;
 }
 
@@ -38,7 +47,8 @@ export async function send_group_msg(
   from: string,
   group: string,
   text: string,
-  image?: string
+  image?: string,
+  file?: Message['fl']
 ): Promise<Message> {
   await ensure(env);
   const m: Message = {
@@ -50,10 +60,21 @@ export async function send_group_msg(
     gr: group,
     x: text,
     ...(image ? { im: image } : {}),
+    ...(file ? { fl: file } : {}),
     d: Date.now()
   };
-  await upsert(env, [{ id: m.id, vector: new Array(4096).fill(0), payload: m as unknown as Record<string, unknown> }]);
+  await upsert(env, [{ id: m.id, vector: await msg_vector(env, text), payload: m as unknown as Record<string, unknown> }]);
   return m;
+}
+
+export async function search_messages(env: QEnv, uid: string, q: string, conv?: string, limit = 20): Promise<Message[]> {
+  await ensure(env);
+  const vector = await embed(env, q);
+  const filter = conv
+    ? f(eq('s', 'm'), eq('c', conv))
+    : f_or([eq('s', 'm')], [eq('f', uid), eq('t', uid)]);
+  const pts = await search(env, vector, filter, limit);
+  return pts.map((p) => p.payload as unknown as Message);
 }
 
 export async function get_group_messages(env: QEnv, group: string): Promise<Message[]> {

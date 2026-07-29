@@ -6,6 +6,7 @@ import { get_secret } from '$lib/server/qdrant';
 import { save_user, get_user } from '$lib/server/user';
 import { encode_session } from '$lib/server/session';
 import { uuid_from } from '$lib/server/qdrant';
+import { attribute_referral, ensure_partner_code } from '$lib/server/partner';
 
 const google_client = async (origin: string) =>
 	new Google(
@@ -39,13 +40,16 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 		if (!ures.ok) throw error(400, 'userinfo_failed');
 		const gu = (await ures.json()) as { sub: string; picture?: string; email?: string };
 		if (!gu.email) throw error(400, 'email_required');
-		const id = await save_user(
-			env,
-			gu.sub,
-			gu.picture,
-			gu.email,
-			'google'
-		);
+
+		const id_preview = await uuid_from(gu.sub);
+		const existed = !!(await get_user(env, id_preview));
+		const id = await save_user(env, gu.sub, gu.picture, gu.email, 'google');
+
+		const ref = (cookies.get('ref_code') ?? '').trim();
+		if (!existed && ref) await attribute_referral(env, id, ref);
+		await ensure_partner_code(env, id);
+		cookies.delete('ref_code', { path: '/' });
+
 		const session = await encode_session(env.SECRET, {
 			id,
 			username: gu.email.split('@')[0].toLowerCase(),
@@ -58,7 +62,17 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 		throw redirect(302, '/app');
 	}
 
-	// start leg: kick off the google auth flow
+	// start leg: optional ?c= from client, else keep existing ref cookie
+	const start_ref = (url.searchParams.get('c') ?? '').trim();
+	if (start_ref) {
+		cookies.set('ref_code', start_ref.toLowerCase(), {
+			path: '/',
+			httpOnly: true,
+			maxAge: 60 * 60 * 24 * 14,
+			sameSite: 'lax'
+		});
+	}
+
 	const s = generateState();
 	const verifier = generateCodeVerifier();
 	const g = await google_client(url.origin);

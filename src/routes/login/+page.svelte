@@ -1,21 +1,46 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+
+	const REF_KEY = 'ref_code';
 
 	let mode = $state<'login' | 'register'>('login');
 	let email = $state('');
 	let pw = $state('');
 	let msg = $state('');
+	let ref_code = $state('');
+
+	onMount(() => {
+		const from_url = page.url.searchParams.get('c')?.trim().toLowerCase() ?? '';
+		if (from_url) {
+			localStorage.setItem(REF_KEY, from_url);
+			// non-httpOnly so Google start can also read via query; server cookie set on /google?c=
+			document.cookie = `ref_code=${encodeURIComponent(from_url)};path=/;max-age=${60 * 60 * 24 * 14};samesite=lax`;
+			ref_code = from_url;
+		} else {
+			ref_code = localStorage.getItem(REF_KEY)?.trim().toLowerCase() ?? '';
+		}
+	});
+
+	function google_href() {
+		const c = ref_code || localStorage.getItem(REF_KEY)?.trim().toLowerCase() || '';
+		return c ? `/google?c=${encodeURIComponent(c)}` : '/google';
+	}
 
 	async function submit(e: Event) {
 		e.preventDefault();
 		msg = '';
+		const c = ref_code || localStorage.getItem(REF_KEY)?.trim().toLowerCase() || '';
 		const res = await fetch(`/api/auth/${mode}`, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ e: email, p: pw })
+			body: JSON.stringify(mode === 'register' ? { e: email, p: pw, c } : { e: email, p: pw })
 		});
-		if (res.ok) goto('/app');
-		else
+		if (res.ok) {
+			if (mode === 'register') localStorage.removeItem(REF_KEY);
+			goto('/app');
+		} else
 			msg =
 				(await res.json().catch(() => ({}))).message ??
 				(mode === 'login' ? 'bad credentials' : 'failed');
@@ -33,7 +58,7 @@
 			: 'one card. real conversations. no algorithms.'}
 	</p>
 
-	<a class="btn btn-amber mt-9 w-full" href="/google">continue with google</a>
+	<a class="btn btn-amber mt-9 w-full" href={google_href()}>continue with google</a>
 
 	<div class="my-7 flex items-center gap-3.5 text-[11px] uppercase tracking-[0.24em] text-faint">
 		<span class="h-px flex-1 bg-line"></span>or<span class="h-px flex-1 bg-line"></span>

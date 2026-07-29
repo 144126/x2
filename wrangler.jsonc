@@ -14,7 +14,12 @@
 		{ "binding": "VOXELL_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "VOXELL_KEY" },
 		{ "binding": "SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "SECRET" },
 		{ "binding": "GOOGLE_ID", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GOOGLE_ID" },
-		{ "binding": "GOOGLE_SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GOOGLE_SECRET" }
+		{ "binding": "GOOGLE_SECRET", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GOOGLE_SECRET" },
+		// same slots as ../beee — populate with `wrangler secrets-store secret create` before deploying
+		{ "binding": "PAYSTACK_SECRET_KEY_TEST", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "PAYSTACK_SECRET_KEY_TEST" },
+		{ "binding": "PAYSTACK_SECRET_KEY_LIVE", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "PAYSTACK_SECRET_KEY_LIVE" },
+		{ "binding": "PAYSTACK_TEST", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "PAYSTACK_TEST" },
+		{ "binding": "GROQ", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "GROQ" }
 	],
 	// WS_ORIGIN: the deployed x2-ws worker's public origin, e.g. "wss://x2-ws.<account>.workers.dev".
 	// Local dev falls back to ws://localhost:8787 (see ws/wrangler.jsonc dev port) when unset.

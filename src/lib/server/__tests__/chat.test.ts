@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, scrollMock, idState } = vi.hoisted(() => ({
+const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, idState } = vi.hoisted(() => ({
 	ensureMock: vi.fn(),
 	upsertMock: vi.fn(),
 	retrieveOneMock: vi.fn(),
 	scrollMock: vi.fn(),
+	searchMock: vi.fn(),
+	embedMock: vi.fn(),
 	idState: { n: 0 }
 }));
 
@@ -16,12 +18,22 @@ vi.mock('../qdrant', async () => {
 		upsert: upsertMock,
 		retrieve_one: retrieveOneMock,
 		scroll: scrollMock,
+		search: searchMock,
 		new_id: () => `id-${++idState.n}`
 	};
 });
+vi.mock('../or', () => ({ embed: embedMock }));
 
-import { conv_id, send_msg, get_messages, list_conversations, get_user_name, record_match } from '../chat';
-import { ZV, f, eq } from '../qdrant';
+import {
+	conv_id,
+	send_msg,
+	get_messages,
+	list_conversations,
+	get_user_name,
+	record_match,
+	search_messages
+} from '../chat';
+import { ZV, f, f_or, eq } from '../qdrant';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
 
@@ -30,6 +42,8 @@ beforeEach(() => {
 	idState.n = 0;
 	ensureMock.mockResolvedValue(undefined);
 	upsertMock.mockResolvedValue(undefined);
+	embedMock.mockResolvedValue(ZV);
+	searchMock.mockResolvedValue([]);
 });
 
 describe('conv_id', () => {
@@ -44,9 +58,11 @@ describe('conv_id', () => {
 });
 
 describe('send_msg', () => {
-	it('builds and stores a message with a zero vector, returning it', async () => {
+	it('embeds the message text and stores it, returning the message', async () => {
+		embedMock.mockResolvedValue([1, 0, 0]);
 		const m = await send_msg(ENV, 'alice', 'bob', 'hi there');
 		expect(ensureMock).toHaveBeenCalledWith(ENV);
+		expect(embedMock).toHaveBeenCalledWith(ENV, 'hi there');
 		expect(m).toEqual({
 			s: 'm',
 			id: 'id-1',
@@ -56,7 +72,34 @@ describe('send_msg', () => {
 			x: 'hi there',
 			d: expect.any(Number)
 		});
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: 'id-1', vector: ZV, payload: m }]);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: 'id-1', vector: [1, 0, 0], payload: m }]);
+	});
+
+	it('skips embedding for trivially short messages', async () => {
+		const m = await send_msg(ENV, 'alice', 'bob', 'ok');
+		expect(embedMock).not.toHaveBeenCalled();
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: m.id, vector: ZV, payload: m }]);
+	});
+});
+
+describe('search_messages', () => {
+	it('searches by embedding, restricted to sender-or-recipient when no conv given', async () => {
+		embedMock.mockResolvedValue([9, 9, 9]);
+		searchMock.mockResolvedValue([{ id: '1', payload: { s: 'm', x: 'found it' } }]);
+		const r = await search_messages(ENV, 'ada', 'query text');
+		expect(embedMock).toHaveBeenCalledWith(ENV, 'query text');
+		expect(searchMock).toHaveBeenCalledWith(
+			ENV,
+			[9, 9, 9],
+			f_or([eq('s', 'm')], [eq('f', 'ada'), eq('t', 'ada')]),
+			20
+		);
+		expect(r.map((m) => m.x)).toEqual(['found it']);
+	});
+
+	it('scopes to a single conversation when `conv` is given', async () => {
+		await search_messages(ENV, 'ada', 'query', 'ada|bob');
+		expect(searchMock).toHaveBeenCalledWith(ENV, ZV, f(eq('s', 'm'), eq('c', 'ada|bob')), 20);
 	});
 });
 

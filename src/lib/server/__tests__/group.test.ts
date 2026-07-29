@@ -33,7 +33,8 @@ import {
 	leave_group,
 	list_groups,
 	search_groups,
-	is_member
+	is_member,
+	shared_groups
 } from '../group';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
@@ -167,5 +168,35 @@ describe('list_groups / search_groups', () => {
 		scrollMock.mockResolvedValue([group()]);
 		expect(await search_groups(ENV, 'pots')).toHaveLength(1);
 		expect(searchMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('shared_groups', () => {
+	it('returns groups both users belong to', async () => {
+		scrollMock
+			.mockResolvedValueOnce([
+				group({ id: 'g1', mb: ['a', 'b'] }),
+				group({ id: 'g2', mb: ['a', 'c'] })
+			])
+			.mockResolvedValueOnce([
+				group({ id: 'g1', mb: ['a', 'b'] }),
+				group({ id: 'g3', mb: ['b', 'd'] })
+			]);
+		const shared = await shared_groups(ENV, 'a', 'b');
+		expect(shared.map((g) => g.id)).toEqual(['g1']);
+	});
+
+	it('returns an empty list when there is no overlap', async () => {
+		scrollMock
+			.mockResolvedValueOnce([group({ id: 'g1', mb: ['a'] })])
+			.mockResolvedValueOnce([group({ id: 'g2', mb: ['b'] })]);
+		expect(await shared_groups(ENV, 'a', 'b')).toEqual([]);
+	});
+
+	it('returns every group for a user compared with themself', async () => {
+		scrollMock
+			.mockResolvedValueOnce([group({ id: 'g1', mb: ['a'] })])
+			.mockResolvedValueOnce([group({ id: 'g1', mb: ['a'] })]);
+		expect((await shared_groups(ENV, 'a', 'a')).map((g) => g.id)).toEqual(['g1']);
 	});
 });

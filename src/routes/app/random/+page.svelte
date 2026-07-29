@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onDestroy } from 'svelte';
+	import RadioGroup from '$lib/components/RadioGroup.svelte';
 
 	type Mode = 'text' | 'voice' | 'video';
 
@@ -50,20 +51,14 @@
 			we match you with a stranger by the shape of your studio card — closest vibe first.
 			text is always on; camera and mic are yours to toggle any time, even mid-call.
 		</p>
-		<div class="flex flex-col gap-2.5">
-			<label class="card flex cursor-pointer items-center gap-3 px-4 py-3">
-				<input type="radio" bind:group={mode} value="text" />
-				<span>text only</span>
-			</label>
-			<label class="card flex cursor-pointer items-center gap-3 px-4 py-3">
-				<input type="radio" bind:group={mode} value="voice" />
-				<span>voice + text</span>
-			</label>
-			<label class="card flex cursor-pointer items-center gap-3 px-4 py-3">
-				<input type="radio" bind:group={mode} value="video" />
-				<span>video + text</span>
-			</label>
-		</div>
+		<RadioGroup
+			bind:value={mode}
+			options={[
+				{ value: 'text', label: 'text only' },
+				{ value: 'voice', label: 'voice + text' },
+				{ value: 'video', label: 'video + text' }
+			]}
+		/>
 		<button class="btn btn-amber mt-8 w-full" onclick={start}>find someone</button>
 	{:else if phase === 'searching'}
 		<p class="text-[15px] text-ink-soft">looking for a kindred spirit…</p>

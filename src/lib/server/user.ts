@@ -40,6 +40,19 @@ export async function get_user(env: QEnv, id: string): Promise<User | null> {
 	return p?.s === 'u' ? p : null;
 }
 
+/** merges `patch` onto a user's record, preserving their existing search embedding */
+export async function patch_user(env: QEnv, uid: string, patch: Partial<User>): Promise<User | null> {
+	await ensure(env);
+	const pt = await retrieve_one(env, uid, true);
+	const cur = pt?.payload as unknown as User | undefined;
+	if (!cur || cur.s !== 'u') return null;
+	const merged: User = { ...cur, ...patch };
+	await upsert(env, [
+		{ id: uid, vector: (pt!.vector as number[]) ?? ZV, payload: merged as unknown as Record<string, unknown> }
+	]);
+	return merged;
+}
+
 export async function create_pw_user(env: QEnv, email: string, password: string): Promise<string> {
 	await ensure(env);
 	const id = await uuid_from(email);

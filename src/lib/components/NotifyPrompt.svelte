@@ -9,6 +9,7 @@
 	let visible = $state(false);
 	let ios_hint = $state(false);
 	let busy = $state(false);
+	let android_battery_hint = $state(false);
 
 	onMount(async () => {
 		if (!has_sent() || install_hidden()) return;
@@ -26,7 +27,13 @@
 		busy = true;
 		await enable_push(vapid_key);
 		busy = false;
-		visible = false;
+		// some Android OEMs (Xiaomi/Huawei/Samsung) aggressively kill background activity —
+		// an app-code fix doesn't exist for this, so we just point people at the setting
+		if (/Android/.test(navigator.userAgent)) {
+			android_battery_hint = true;
+		} else {
+			visible = false;
+		}
 	}
 
 	function dismiss() {
@@ -39,7 +46,13 @@
 	<div
 		class="fixed inset-x-4 bottom-[calc(84px+env(safe-area-inset-bottom))] z-20 flex items-center justify-between gap-4 rounded-lg border border-line bg-base/95 px-4 py-3 text-[13px] shadow-lg backdrop-blur-md sm:bottom-6 sm:left-auto sm:w-96"
 	>
-		{#if ios_hint}
+		{#if android_battery_hint}
+			<p class="text-ink-soft">
+				Notifications are on. Some phones aggressively limit background apps to save
+				battery — if messages stop arriving, check your phone's battery settings and
+				allow x2 (or your browser) to run in the background.
+			</p>
+		{:else if ios_hint}
 			<p class="text-ink-soft">
 				To get notified of new messages, add x2 to your home screen: tap
 				<strong>Share</strong> → <strong>Add to Home Screen</strong>.

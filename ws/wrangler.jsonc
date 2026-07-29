@@ -7,15 +7,20 @@
 	"durable_objects": {
 		"bindings": [
 			{ "name": "CHAT_HUB", "class_name": "ChatHub" },
-			{ "name": "MATCH_LOBBY", "class_name": "MatchLobby" }
+			{ "name": "MATCH_LOBBY", "class_name": "MatchLobby" },
+			{ "name": "CREDIT_ACCOUNT", "class_name": "CreditAccount" }
 		]
 	},
 	"migrations": [
 		{ "tag": "v1", "new_sqlite_classes": ["ChatHub"] },
-		{ "tag": "v2", "new_sqlite_classes": ["MatchLobby"] }
+		{ "tag": "v2", "new_sqlite_classes": ["MatchLobby"] },
+		{ "tag": "v3", "new_sqlite_classes": ["CreditAccount"] }
 	],
 	"dev": { "port": 8787 },
-	"vars": { "SECRET": "" },
+	"triggers": { "crons": ["*/1 * * * *"] },
+	// X2_ORIGIN: the deployed x2 (main) worker's public origin — set before deploying so the
+	// cron can reach POST /api/cron/dispatch-scheduled.
+	"vars": { "SECRET": "", "X2_ORIGIN": "" },
 	"secrets_store_secrets": [
 		{ "binding": "QDRANT_URL", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_URL" },
 		{ "binding": "QDRANT_KEY", "store_id": "45748cb1c67946df943075fa14cb8815", "secret_name": "QDRANT_KEY" }

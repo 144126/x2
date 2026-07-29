@@ -23,7 +23,11 @@ function makeState() {
 			tagsBySocket.set(ws, tags);
 			for (const t of tags) socketsByTag.set(t, [...(socketsByTag.get(t) ?? []), ws]);
 		}),
-		getWebSockets: vi.fn((tag?: string) => (tag ? (socketsByTag.get(tag) ?? []) : allSockets)),
+		// real Workers hibernatable-websocket getWebSockets() excludes sockets that have
+		// already closed — mirror that here rather than requiring every test to fake it
+		getWebSockets: vi.fn((tag?: string) =>
+			(tag ? (socketsByTag.get(tag) ?? []) : allSockets).filter((s) => !s.closed)
+		),
 		getTags: vi.fn((ws: FakeSocket) => tagsBySocket.get(ws) ?? []),
 		storage: {
 			get: vi.fn(async (k: string) => store.get(k)),
@@ -212,5 +216,38 @@ describe('ChatHub.webSocketClose', () => {
 		expect(closing.closed).toBe(true);
 		const presenceMsg = JSON.stringify({ type: 'presence', uid: 'alice', online: false });
 		expect(other.sent).toContain(presenceMsg);
+	});
+
+	it('does not announce offline while a second socket for the same uid is still open — multi-tab', async () => {
+		const state = makeState();
+		const closingTab = new FakeSocket();
+		const stillOpenTab = new FakeSocket();
+		const watcher = new FakeSocket();
+		state.acceptWebSocket(closingTab, ['alice']);
+		state.acceptWebSocket(stillOpenTab, ['alice']);
+		state.acceptWebSocket(watcher, ['bob']);
+		const stubFetch = vi.fn().mockResolvedValue(new Response('ok'));
+		const env = { SECRET, CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: stubFetch }) } };
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.webSocketClose(closingTab as unknown as WebSocket);
+		expect(closingTab.closed).toBe(true);
+		const presenceOffline = JSON.stringify({ type: 'presence', uid: 'alice', online: false });
+		expect(watcher.sent).not.toContain(presenceOffline);
+		expect(stillOpenTab.sent).not.toContain(presenceOffline);
+	});
+
+	it('announces offline once the last socket for a uid closes', async () => {
+		const state = makeState();
+		const closing = new FakeSocket();
+		const watcher = new FakeSocket();
+		state.acceptWebSocket(closing, ['alice']);
+		state.acceptWebSocket(watcher, ['bob']);
+		const env = { SECRET, CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: vi.fn() }) } };
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.webSocketClose(closing as unknown as WebSocket);
+		const presenceOffline = JSON.stringify({ type: 'presence', uid: 'alice', online: false });
+		expect(watcher.sent).toContain(presenceOffline);
 	});
 });

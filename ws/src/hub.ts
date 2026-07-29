@@ -95,11 +95,13 @@ export class ChatHub implements DurableObject {
 
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const uid = this.state.getTags(ws)[0];
-		if (uid) {
+		ws.close();
+		// a second tab/device for the same uid may still be connected — only the uid's last
+		// socket closing means it actually went offline
+		if (uid && this.state.getWebSockets(uid).length === 0) {
 			this.announce(uid, false);
 			await this.notify_watchers(uid, false);
 		}
-		ws.close();
 	}
 
 	private async notify_watchers(uid: string, online: boolean): Promise<void> {

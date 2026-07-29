@@ -4,6 +4,22 @@
 	let { data } = $props();
 	let u = $state(data.u as User);
 	let username = $derived(u.u || u.m?.split('@')[0] || 'user');
+	let shared = $derived((data.shared ?? []) as { id: string; name: string }[]);
+	let showAllShared = $state(false);
+
+	let commonText = $state<string | null>(null);
+	let commonLoading = $state(false);
+	let commonError = $state<'insufficient_credits' | 'llm_error' | null>(null);
+
+	async function findCommon() {
+		commonLoading = true;
+		commonError = null;
+		const res = await fetch(`/api/user/${data.id}/common`);
+		const body = await res.json();
+		commonLoading = false;
+		if (body.ok) commonText = body.text;
+		else commonError = body.reason ?? 'llm_error';
+	}
 </script>
 
 <section class="prof reveal mx-auto max-w-[560px]">
@@ -62,6 +78,49 @@
 			{/each}
 		</div>
 	{/if}
+
+	{#if shared.length}
+		<div class="card mb-6">
+			<button
+				class="flex w-full items-center justify-between text-left"
+				onclick={() => (showAllShared = !showAllShared)}
+			>
+				<span class="text-[14.5px] text-ink-soft">
+					{shared.length} group{shared.length === 1 ? '' : 's'} in common
+				</span>
+				<span class="text-[10px] text-faint transition-transform duration-300 {showAllShared ? 'rotate-180' : ''}">▾</span>
+			</button>
+			{#if showAllShared}
+				<ul class="mt-3 flex flex-col gap-2">
+					{#each shared as g (g.id)}
+						<li>
+							<a
+								href="/app/groups/{g.id}"
+								class="text-[14px] text-ink transition-colors duration-300 hover:text-accent"
+							>
+								{g.name}
+							</a>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{/if}
+
+	<div class="card mb-6">
+		{#if commonText}
+			<p class="text-[14px] text-ink">{commonText}</p>
+		{:else}
+			<button class="btn text-[13px]" disabled={commonLoading} onclick={findCommon}>
+				{commonLoading ? 'thinking…' : 'what do we have in common?'}
+			</button>
+			{#if commonError === 'insufficient_credits'}
+				<p class="mt-2 text-[12px] text-mute">out of credits — back tomorrow, or buy more on your profile.</p>
+			{:else if commonError === 'llm_error'}
+				<p class="mt-2 text-[12px] text-mute">couldn't figure that out just now — try again.</p>
+			{/if}
+		{/if}
+	</div>
 
 	<div class="flex gap-3">
 		<button class="btn btn-amber" onclick={() => goto('/app/chat/' + data.id)}>chat</button>

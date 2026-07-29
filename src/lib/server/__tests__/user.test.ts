@@ -18,7 +18,7 @@ vi.mock('../qdrant', async () => {
 	};
 });
 
-import { save_user, get_user, create_pw_user, verify_user_pw } from '../user';
+import { save_user, get_user, create_pw_user, verify_user_pw, patch_user } from '../user';
 import { uuid_from, ZV } from '../qdrant';
 import { hash_pw } from '../pw';
 
@@ -122,5 +122,25 @@ describe('verify_user_pw', () => {
 	it('returns null when the user does not exist', async () => {
 		retrieveOneMock.mockResolvedValue(null);
 		expect(await verify_user_pw(ENV, 'nobody@x.com', 'anything')).toBeNull();
+	});
+});
+
+describe('patch_user', () => {
+	it('merges the patch onto the existing record', async () => {
+		retrieveOneMock.mockResolvedValue({ id: 'x', vector: [1, 2, 3], payload: { s: 'u', u: 'ada', d: 1 } });
+		const merged = await patch_user(ENV, 'x', { ac: 'CODE1' });
+		expect(merged).toMatchObject({ u: 'ada', ac: 'CODE1' });
+	});
+
+	it('preserves the existing search embedding rather than resetting it', async () => {
+		retrieveOneMock.mockResolvedValue({ id: 'x', vector: [1, 2, 3], payload: { s: 'u', u: 'ada', d: 1 } });
+		await patch_user(ENV, 'x', { ac: 'CODE1' });
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual([1, 2, 3]);
+	});
+
+	it('returns null for a user that does not exist', async () => {
+		retrieveOneMock.mockResolvedValue(null);
+		expect(await patch_user(ENV, 'ghost', { ac: 'CODE1' })).toBeNull();
+		expect(upsertMock).not.toHaveBeenCalled();
 	});
 });

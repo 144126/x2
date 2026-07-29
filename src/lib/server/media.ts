@@ -9,6 +9,19 @@ const TYPES: Record<string, string> = {
 
 export const MAX_BYTES = 8 * 1024 * 1024;
 
+// generic (non-image) file attachments — conservative common-document allow-list
+const FILE_TYPES: Record<string, string> = {
+	'application/pdf': 'pdf',
+	'application/zip': 'zip',
+	'text/plain': 'txt',
+	'application/msword': 'doc',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+	'application/vnd.ms-excel': 'xls',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx'
+};
+
+export const MAX_FILE_BYTES = 20 * 1024 * 1024;
+
 export function media_url(key: string): string {
 	return `/media/${key}`;
 }
@@ -26,6 +39,22 @@ export async function put_image(
 		httpMetadata: { contentType: file.type, cacheControl: 'public, max-age=31536000, immutable' }
 	});
 	return { key, url: media_url(key) };
+}
+
+/** null when the file's type isn't in the document allow-list, or is too big */
+export async function put_file(
+	bucket: MediaBucket,
+	uid: string,
+	file: Blob,
+	name = 'file'
+): Promise<{ key: string; url: string; name: string; size: number; type: string } | null> {
+	const ext = FILE_TYPES[file.type];
+	if (!ext || file.size === 0 || file.size > MAX_FILE_BYTES) return null;
+	const key = `${uid}/${crypto.randomUUID()}.${ext}`;
+	await bucket.put(key, await file.arrayBuffer(), {
+		httpMetadata: { contentType: file.type, cacheControl: 'private, max-age=31536000, immutable' }
+	});
+	return { key, url: media_url(key), name, size: file.size, type: file.type };
 }
 
 export async function get_image(bucket: MediaBucket, key: string): Promise<MediaObject | null> {

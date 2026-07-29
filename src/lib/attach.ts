@@ -8,6 +8,17 @@ export async function upload_image(file: File | Blob): Promise<{ key?: string; e
 	return { key };
 }
 
+/** POST one non-image file to R2 via /api/upload. Returns the saved file record, or an error string. */
+export async function upload_file(
+	file: File
+): Promise<{ key?: string; name?: string; size?: number; type?: string; error?: string }> {
+	const body = new FormData();
+	body.append('file', file);
+	const res = await fetch('/api/upload', { method: 'POST', body });
+	if (!res.ok) return { error: (await res.text().catch(() => '')) || 'upload failed' };
+	return res.json();
+}
+
 export const media_src = (key: string): string => `/media/${key}`;
 
 /** first image on a paste/drop event, if any */

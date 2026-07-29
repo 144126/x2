@@ -1,0 +1,59 @@
+import { ensure, upsert, scroll, remove, new_id, f, eq, type QEnv } from './qdrant';
+
+export interface Folder {
+	s: 'fo';
+	id: string;
+	owner: string;
+	name: string;
+	convs: string[]; // conversation ids (peer uid or `g:<gid>`) assigned to this folder
+	d: number;
+}
+
+export async function save_folder(env: QEnv, owner: string, name: string): Promise<Folder> {
+	await ensure(env);
+	const fo: Folder = { s: 'fo', id: new_id(), owner, name, convs: [], d: Date.now() };
+	await upsert(env, [{ id: fo.id, vector: new Array(4096).fill(0), payload: fo as unknown as Record<string, unknown> }]);
+	return fo;
+}
+
+export async function list_folders(env: QEnv, uid: string): Promise<Folder[]> {
+	await ensure(env);
+	const pts = await scroll(env, f(eq('s', 'fo'), eq('ow', uid)), 200);
+	return pts.map((p) => p.payload as unknown as Folder).sort((a, b) => a.d - b.d);
+}
+
+async function owned_folder(env: QEnv, uid: string, folder_id: string): Promise<Folder | null> {
+	const pts = await scroll(env, f(eq('s', 'fo'), eq('ow', uid)), 200);
+	const fo = pts.find((p) => p.id === folder_id)?.payload as unknown as Folder | undefined;
+	return fo ?? null;
+}
+
+async function save(env: QEnv, fo: Folder): Promise<void> {
+	await upsert(env, [{ id: fo.id, vector: new Array(4096).fill(0), payload: fo as unknown as Record<string, unknown> }]);
+}
+
+export async function assign_conv(env: QEnv, uid: string, folder_id: string, conv: string): Promise<boolean> {
+	await ensure(env);
+	const fo = await owned_folder(env, uid, folder_id);
+	if (!fo) return false;
+	if (!fo.convs.includes(conv)) fo.convs = [...fo.convs, conv];
+	await save(env, fo);
+	return true;
+}
+
+export async function unassign_conv(env: QEnv, uid: string, folder_id: string, conv: string): Promise<boolean> {
+	await ensure(env);
+	const fo = await owned_folder(env, uid, folder_id);
+	if (!fo) return false;
+	fo.convs = fo.convs.filter((c) => c !== conv);
+	await save(env, fo);
+	return true;
+}
+
+export async function delete_folder(env: QEnv, uid: string, folder_id: string): Promise<boolean> {
+	await ensure(env);
+	const fo = await owned_folder(env, uid, folder_id);
+	if (!fo) return false;
+	await remove(env, [folder_id]);
+	return true;
+}

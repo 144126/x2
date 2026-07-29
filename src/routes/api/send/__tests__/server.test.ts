@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { sendMsgMock, sendGroupMsgMock, getGroupMock, notifyMock, totalUnreadMock } = vi.hoisted(
-	() => ({
+const { sendMsgMock, sendGroupMsgMock, getGroupMock, notifyMock, totalUnreadMock, saveScheduledMock } =
+	vi.hoisted(() => ({
 		sendMsgMock: vi.fn(),
 		sendGroupMsgMock: vi.fn(),
 		getGroupMock: vi.fn(),
 		notifyMock: vi.fn(),
-		totalUnreadMock: vi.fn()
-	})
-);
+		totalUnreadMock: vi.fn(),
+		saveScheduledMock: vi.fn()
+	}));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/chat', async () => {
@@ -21,6 +21,7 @@ vi.mock('$lib/server/group', async () => {
 });
 vi.mock('$lib/server/notify', () => ({ notify: notifyMock }));
 vi.mock('$lib/server/unread', () => ({ total_unread: totalUnreadMock }));
+vi.mock('$lib/server/scheduled', () => ({ save_scheduled: saveScheduledMock, MIN_LEAD_MS: 60_000 }));
 
 import { POST } from '../+server';
 
@@ -66,6 +67,23 @@ beforeEach(() => {
 	});
 	notifyMock.mockResolvedValue({ sent: 1, pruned: 0 });
 	totalUnreadMock.mockResolvedValue(3);
+	saveScheduledMock.mockResolvedValue({ id: 'sm1', sent: 0 });
+});
+
+describe('POST /api/send — scheduling', () => {
+	it('stores a scheduled message instead of sending when `at` is far enough out', async () => {
+		const res = await POST(event({ to: 'bob', text: 'hi', at: Date.now() + 3_600_000 }));
+		const body = await res.json();
+		expect(body).toEqual({ ok: true, scheduled: true, id: 'sm1' });
+		expect(saveScheduledMock).toHaveBeenCalled();
+		expect(sendMsgMock).not.toHaveBeenCalled();
+	});
+
+	it('sends immediately when `at` is within the minimum lead time', async () => {
+		await POST(event({ to: 'bob', text: 'hi', at: Date.now() + 1000 }));
+		expect(sendMsgMock).toHaveBeenCalled();
+		expect(saveScheduledMock).not.toHaveBeenCalled();
+	});
 });
 
 describe('POST /api/send — existing behaviour still holds', () => {

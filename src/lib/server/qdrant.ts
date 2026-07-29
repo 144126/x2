@@ -66,6 +66,8 @@ export const range = (key: string, gte?: number, lte?: number): Cond => ({
 	range: { ...(gte !== undefined ? { gte } : {}), ...(lte !== undefined ? { lte } : {}) }
 });
 export const f = (...conds: Cond[]) => ({ must: conds });
+// AND every `musts`, but require at least one of `any_of` too (Qdrant's must+should combo)
+export const f_or = (musts: Cond[], any_of: Cond[]) => ({ must: musts, should: any_of });
 
 type Pt = { id: string | number; vector?: number[]; payload: Record<string, unknown> | null; score?: number };
 
@@ -79,9 +81,11 @@ export async function ensure(env: QEnv): Promise<void> {
 	await c
 		.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } })
 		.catch(() => {});
-	for (const key of ['s', 't', 'r', 'c', 'f', 'co', 'st', 'u', 'ow', 'mb', 'gr'])
+	for (const key of ['s', 't', 'r', 'c', 'f', 'co', 'st', 'u', 'ow', 'mb', 'gr', 'uid', 'ac'])
 		await c.createPayloadIndex(C, { field_name: key, field_schema: 'keyword' }).catch(() => {});
 	await c.createPayloadIndex(C, { field_name: 'ag', field_schema: 'integer' }).catch(() => {});
+	for (const key of ['at', 'sent'])
+		await c.createPayloadIndex(C, { field_name: key, field_schema: 'integer' }).catch(() => {});
 	ensured = true;
 }
 

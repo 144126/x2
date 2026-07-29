@@ -20,6 +20,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (s) event.locals.user = s.user;
 		else event.cookies.delete('session', { path: '/' });
 	}
-	event.locals.x2_ws = (event.platform?.env?.X2_WS as Fetcher | undefined) ?? devFetcher();
+	// adapter-cloudflare's platform.env is a Proxy that throws on any property access while
+	// prerendering (e.g. building the static /offline fallback) — there's no real platform then.
+	let x2_ws: Fetcher | undefined;
+	try {
+		x2_ws = event.platform?.env?.X2_WS as Fetcher | undefined;
+	} catch {
+		x2_ws = undefined;
+	}
+	event.locals.x2_ws = x2_ws ?? devFetcher();
 	return resolve(event);
 };

@@ -137,3 +137,10 @@ export async function search_groups(env: QEnv, q: string, limit = 20): Promise<G
 }
 
 export const is_member = (g: GroupView, uid: string): boolean => g.members.includes(uid);
+
+/** groups both `a` and `b` belong to */
+export async function shared_groups(env: QEnv, a: string, b: string): Promise<GroupView[]> {
+	const [a_groups, b_groups] = await Promise.all([list_groups(env, a), list_groups(env, b)]);
+	const b_ids = new Set(b_groups.map((g) => g.id));
+	return a_groups.filter((g) => b_ids.has(g.id));
+}

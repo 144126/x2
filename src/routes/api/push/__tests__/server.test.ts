@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { saveMock, deleteMock, listMock } = vi.hoisted(() => ({
-	saveMock: vi.fn(),
-	deleteMock: vi.fn(),
-	listMock: vi.fn()
-}));
-
-const vapid_env = { VAPID_PUBLIC: 'BPublicKey', VAPID_PRIVATE: 'priv', VAPID_SUBJECT: 'mailto:a@b' };
-const dynamic_env: Record<string, string> = { ...vapid_env };
+const { saveMock, deleteMock, listMock, vapid_env, dynamic_env } = vi.hoisted(() => {
+	const vapid_env = { VAPID_PUBLIC: 'BPublicKey', VAPID_PRIVATE: 'priv', VAPID_SUBJECT: 'mailto:a@b' };
+	return {
+		saveMock: vi.fn(),
+		deleteMock: vi.fn(),
+		listMock: vi.fn(),
+		vapid_env,
+		dynamic_env: { ...vapid_env } as Record<string, string>
+	};
+});
 
 vi.mock('$env/dynamic/private', () => ({ env: dynamic_env }));
 vi.mock('$lib/server/subs', () => ({

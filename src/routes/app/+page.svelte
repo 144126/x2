@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import LocationPicker from '$lib/LocationPicker.svelte';
+	import Select from '$lib/components/Select.svelte';
 	import { ws_on } from '$lib/ws';
 	import { onMount } from 'svelte';
 	let { data } = $props();
@@ -8,7 +9,40 @@
 	// thread list was server-rendered only, so a new message never showed up here without a
 	// reload — the literal "have to reload to see latest" symptom
 	type Conv = { peer: string; last: number; preview: string; name: string };
+	type Folder = { id: string; name: string; convs: string[] };
 	let convs = $state(data.convs as Conv[]);
+	let folders = $state(data.folders as Folder[]);
+	let activeFolder = $state<string | null>(null); // null === "all"
+	let newFolderName = $state('');
+	let visibleConvs = $derived(
+		activeFolder
+			? convs.filter((c) => folders.find((fo) => fo.id === activeFolder)?.convs.includes(c.peer))
+			: convs
+	);
+
+	async function createFolder() {
+		const name = newFolderName.trim();
+		if (!name) return;
+		newFolderName = '';
+		const res = await fetch('/api/folders', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ name })
+		});
+		if (res.ok) folders = [...folders, (await res.json()).folder];
+	}
+
+	async function assignToFolder(peer: string, folderId: string) {
+		if (!folderId) return;
+		await fetch(`/api/folders/${folderId}`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ conv: peer })
+		});
+		folders = folders.map((fo) =>
+			fo.id === folderId && !fo.convs.includes(peer) ? { ...fo, convs: [...fo.convs, peer] } : fo
+		);
+	}
 
 	onMount(() =>
 		ws_on((m) => {
@@ -73,12 +107,18 @@
 	</div>
 
 	<div class="filters mt-3.5 flex flex-wrap items-center gap-3">
-		<select class="w-auto min-w-0 flex-1" bind:value={gender}>
-			<option value="">any gender</option>
-			<option value="m">male</option>
-			<option value="f">female</option>
-			<option value="o">other</option>
-		</select>
+		<div class="min-w-[140px] flex-1">
+			<Select
+				bind:value={gender}
+				aria-label="gender"
+				placeholder="any gender"
+				options={[
+					{ value: 'm', label: 'male' },
+					{ value: 'f', label: 'female' },
+					{ value: 'o', label: 'other' }
+				]}
+			/>
+		</div>
 		<input
 			class="w-[90px] min-w-0"
 			type="number"
@@ -141,18 +181,55 @@
 
 <section>
 	<div class="eyebrow mb-1">recent threads</div>
-	{#if convs.length}
+
+	<div class="mt-3 flex flex-wrap items-center gap-2">
+		<button
+			class="btn text-[12px] py-1.5 px-3"
+			class:btn-amber={activeFolder === null}
+			onclick={() => (activeFolder = null)}
+		>
+			all
+		</button>
+		{#each folders as fo (fo.id)}
+			<button
+				class="btn text-[12px] py-1.5 px-3"
+				class:btn-amber={activeFolder === fo.id}
+				onclick={() => (activeFolder = fo.id)}
+			>
+				{fo.name}
+			</button>
+		{/each}
+		<input
+			class="w-[140px] min-w-0 px-2 py-1.5 text-[12px]"
+			placeholder="new folder…"
+			bind:value={newFolderName}
+			onkeydown={(e) => e.key === 'Enter' && createFolder()}
+		/>
+	</div>
+
+	{#if visibleConvs.length}
 		<ul class="results mt-5 grid gap-3.5">
-			{#each convs as c, i (c.peer)}
-				<li
-					class="card person reveal"
-					style="--i:{i}"
-					onclick={() => goto(`/app/chat/${c.peer}`)}
-					role="button"
-					tabindex="0"
-				>
-					<div class="font-display text-[24px] font-medium tracking-[-0.01em]">{c.name}</div>
-					<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">{c.preview}</p>
+			{#each visibleConvs as c, i (c.peer)}
+				<li class="card person reveal" style="--i:{i}">
+					<div
+						onclick={() => goto(`/app/chat/${c.peer}`)}
+						role="button"
+						tabindex="0"
+					>
+						<div class="font-display text-[24px] font-medium tracking-[-0.01em]">{c.name}</div>
+						<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">{c.preview}</p>
+					</div>
+					{#if folders.length}
+						<select
+							class="mt-2 text-[12px]"
+							onchange={(e) => assignToFolder(c.peer, (e.currentTarget as HTMLSelectElement).value)}
+						>
+							<option value="">add to folder…</option>
+							{#each folders as fo (fo.id)}
+								<option value={fo.id}>{fo.name}</option>
+							{/each}
+						</select>
+					{/if}
 				</li>
 			{/each}
 		</ul>

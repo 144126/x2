@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Select from './components/Select.svelte';
 
 	let {
 		country = $bindable(''),
@@ -38,31 +39,41 @@
 		}));
 	}
 
-	function onCountryChange() {
-		region = '';
-		loadRegions(country);
-	}
-
 	onMount(() => {
 		loadCountries();
 		if (country) loadRegions(country);
 	});
+
+	// country-driven, not a click handler: also fires when `country` is set programmatically
+	// (e.g. a bound parent resetting the filter), matching the native <select onchange> behavior
+	// this replaces only for genuine user-driven changes, not the initial mount value.
+	let prev_country = country;
+	$effect(() => {
+		if (country === prev_country) return;
+		prev_country = country;
+		region = '';
+		loadRegions(country);
+	});
 </script>
 
 <div class="flex min-w-0 flex-wrap gap-3">
-	<select bind:value={country} onchange={onCountryChange} aria-label="country" class="max-w-full">
-		<option value="">{anyLabel}</option>
-		{#each countries as c (c.isoCode)}
-			<option value={c.isoCode}>{c.name}</option>
-		{/each}
-	</select>
+	<div class="min-w-[160px] max-w-full flex-1">
+		<Select
+			bind:value={country}
+			aria-label="country"
+			placeholder={anyLabel}
+			options={countries.map((c) => ({ value: c.isoCode, label: c.name }))}
+		/>
+	</div>
 	{#if country && regions.length}
-		<select bind:value={region} aria-label="state or region" class="max-w-full">
-			<option value="">any state/region</option>
-			{#each regions as r (r.isoCode)}
-				<option value={r.isoCode}>{r.name}</option>
-			{/each}
-		</select>
+		<div class="min-w-[160px] max-w-full flex-1">
+			<Select
+				bind:value={region}
+				aria-label="state or region"
+				placeholder="any state/region"
+				options={regions.map((r) => ({ value: r.isoCode, label: r.name }))}
+			/>
+		</div>
 	{/if}
 	{#if showCity}
 		<input type="text" placeholder="city (optional)" bind:value={city} aria-label="city" class="max-w-full" />

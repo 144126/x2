@@ -5,6 +5,7 @@ import { send_msg, send_group_msg, conv_id, group_conv_id } from '$lib/server/ch
 import { get_group, is_member } from '$lib/server/group';
 import { notify } from '$lib/server/notify';
 import { total_unread } from '$lib/server/unread';
+import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
 
 // A relay that throws, or answers in some shape other than `{ok, undelivered}`, is treated
 // as if nobody received the message — better an extra push than a lost one.
@@ -46,20 +47,29 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		group?: string;
 		text?: string;
 		image?: string;
+		file?: { key: string; name: string; size: number; type: string };
+		at?: number;
 	};
 	const to = b?.to?.trim();
 	const group = b?.group?.trim();
 	const text = (b?.text ?? '').trim();
 	const image = b?.image?.trim() || undefined;
-	if (!text && !image) throw error(400, 'text or image required');
+	const file = b?.file;
+	if (!text && !image && !file) throw error(400, 'text, image or file required');
+	if (!to && !group) throw error(400, 'to or group required');
 
 	const me = locals.user;
+
+	if (b?.at && b.at > Date.now() + MIN_LEAD_MS) {
+		const sm = await save_scheduled(env, me.id, { to, group, text, image, file, at: b.at });
+		return json({ ok: true, scheduled: true, id: sm.id });
+	}
 
 	if (group) {
 		const g = await get_group(env, group);
 		if (!g) throw error(404, 'no group');
 		if (!is_member(g, me.id)) throw error(403, 'not a member');
-		const m = await send_group_msg(env, me.id, group, text, image);
+		const m = await send_group_msg(env, me.id, group, text, image, file);
 		// fan out to every member but the sender, whose UI already appended it
 		const { undelivered } = await relay(
 			{
@@ -69,6 +79,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				from_name: me.username,
 				text,
 				image,
+				file,
 				ts: m.d
 			},
 			locals.x2_ws
@@ -76,27 +87,27 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const targets = undelivered.filter((u) => u !== me.id);
 		await push(env, targets, {
 			title: g.name,
-			body: `${me.username}: ${text}`,
+			body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
 			url: `/app/groups/${group}`,
 			conv: group_conv_id(group),
 			id: m.id,
 			ts: m.d,
 			...(image ? { image: `/media/${image}` } : {})
 		});
-		return json({ ok: true, m: { id: m.id, from: m.f, group, text: m.x, image: m.im, ts: m.d } });
+		return json({ ok: true, m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d } });
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image);
+	const m = await send_msg(env, me.id, to, text, image, file);
 	const { undelivered } = await relay(
-		{ id: m.id, to, from: me.id, from_name: me.username, text, image, ts: m.d },
+		{ id: m.id, to, from: me.id, from_name: me.username, text, image, file, ts: m.d },
 		locals.x2_ws
 	);
 	if (undelivered.includes(to)) {
 		const unread = await total_unread(env, to);
 		await push(env, [to], {
 			title: me.username,
-			body: text,
+			body: file ? `📎 ${file.name}` : text,
 			url: `/app/chat/${me.id}`,
 			conv: conv_id(me.id, to),
 			id: m.id,
@@ -105,5 +116,5 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			...(image ? { image: `/media/${image}` } : {})
 		});
 	}
-	return json({ ok: true, m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, ts: m.d } });
+	return json({ ok: true, m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d } });
 };

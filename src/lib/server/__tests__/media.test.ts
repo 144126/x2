@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { put_image, delete_image, media_url, MAX_BYTES } from '../media';
+import { put_image, put_file, delete_image, media_url, MAX_BYTES, MAX_FILE_BYTES } from '../media';
 
 const bucket = () => ({
 	put: vi.fn().mockResolvedValue(undefined),
@@ -32,6 +32,25 @@ describe('put_image', () => {
 		expect(await put_image(b as never, 'u', img('application/pdf'))).toBeNull();
 		expect(await put_image(b as never, 'u', img('image/png', 0))).toBeNull();
 		expect(await put_image(b as never, 'u', img('image/png', MAX_BYTES + 1))).toBeNull();
+		expect(b.put).not.toHaveBeenCalled();
+	});
+});
+
+describe('put_file', () => {
+	it('accepts allow-listed document types and keeps the original filename', async () => {
+		const b = bucket();
+		const saved = await put_file(b as never, 'user123', img('application/pdf'), 'resume.pdf');
+		expect(saved?.key.startsWith('user123/')).toBe(true);
+		expect(saved?.key.endsWith('.pdf')).toBe(true);
+		expect(saved?.name).toBe('resume.pdf');
+		expect(b.put).toHaveBeenCalledTimes(1);
+	});
+
+	it('rejects types outside the allow-list, empty files and oversized files', async () => {
+		const b = bucket();
+		expect(await put_file(b as never, 'u', img('application/x-executable'))).toBeNull();
+		expect(await put_file(b as never, 'u', img('application/pdf', 0))).toBeNull();
+		expect(await put_file(b as never, 'u', img('application/pdf', MAX_FILE_BYTES + 1))).toBeNull();
 		expect(b.put).not.toHaveBeenCalled();
 	});
 });
