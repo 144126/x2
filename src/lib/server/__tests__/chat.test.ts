@@ -30,7 +30,6 @@ import {
 	get_messages,
 	list_conversations,
 	get_user_name,
-	record_match,
 	search_messages
 } from '../chat';
 import { ZV, f, f_or, eq } from '../qdrant';
@@ -161,20 +160,6 @@ describe('list_conversations', () => {
 			.mockResolvedValueOnce([]); // matched_b
 		const convs = await list_conversations(ENV, 'uid');
 		expect(convs).toEqual([{ peer: 'stranger', last: 999, preview: 'hey!' }]);
-	});
-});
-
-describe('record_match', () => {
-	it('upserts a match record keyed by the conversation id, reusing the f/t schema', async () => {
-		await record_match(ENV, 'alice', 'bob');
-		expect(ensureMock).toHaveBeenCalledWith(ENV);
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [
-			{
-				id: 'match:alice|bob',
-				vector: ZV,
-				payload: { s: 'x', f: 'alice', t: 'bob', d: expect.any(Number) }
-			}
-		]);
 	});
 });
 

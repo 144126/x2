@@ -42,8 +42,7 @@
 	],
 	"shortcuts": [
 		{ "name": "Chats", "url": "/app" },
-		{ "name": "Groups", "url": "/app/groups" },
-		{ "name": "Random match", "url": "/app/random" }
+		{ "name": "Groups", "url": "/app/groups" }
 	],
 	"share_target": {
 		"action": "/app/share",

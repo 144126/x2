@@ -132,7 +132,7 @@ describe('manifest — shortcuts', () => {
 
 	it('offers long-press jumps into the main sections', () => {
 		expect(cuts().map((c) => c.url)).toEqual(
-			expect.arrayContaining(['/app', '/app/groups', '/app/random'])
+			expect.arrayContaining(['/app', '/app/groups'])
 		);
 	});
 

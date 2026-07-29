@@ -30,5 +30,5 @@ export const GET: RequestHandler = async ({ locals }) => {
 	}
 	const qs = `uid=${encodeURIComponent(locals.user.id)}&t=${t}`;
 	console.log('[WSTOKEN] issuing token', { ws_origin, uid: locals.user.id });
-	return json({ t, ws: `${ws_origin}/ws?${qs}`, match: `${ws_origin}/match?${qs}` });
+	return json({ t, ws: `${ws_origin}/ws?${qs}` });
 };

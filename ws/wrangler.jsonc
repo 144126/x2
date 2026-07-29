@@ -7,14 +7,15 @@
 	"durable_objects": {
 		"bindings": [
 			{ "name": "CHAT_HUB", "class_name": "ChatHub" },
-			{ "name": "MATCH_LOBBY", "class_name": "MatchLobby" },
 			{ "name": "CREDIT_ACCOUNT", "class_name": "CreditAccount" }
 		]
 	},
 	"migrations": [
 		{ "tag": "v1", "new_sqlite_classes": ["ChatHub"] },
 		{ "tag": "v2", "new_sqlite_classes": ["MatchLobby"] },
-		{ "tag": "v3", "new_sqlite_classes": ["CreditAccount"] }
+		{ "tag": "v3", "new_sqlite_classes": ["CreditAccount"] },
+		// dropping a DO class without a deleted_classes migration fails the deploy
+		{ "tag": "v4", "deleted_classes": ["MatchLobby"] }
 	],
 	"dev": { "port": 8787 },
 	"triggers": { "crons": ["*/1 * * * *"] },

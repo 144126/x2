@@ -7,7 +7,7 @@
 	import InstallBanner from '$lib/components/InstallBanner.svelte';
 	import { sync_badge } from '$lib/badge';
 	import { sync_subscription } from '$lib/push-client';
-	import { Users, DoorOpen, Shuffle, UserRound, LogOut } from '@lucide/svelte';
+	import { Users, DoorOpen, UserRound, LogOut } from '@lucide/svelte';
 
 	let { children, data } = $props();
 	let vapid_key = $state('');
@@ -36,7 +36,6 @@
 	const nav = [
 		{ href: '/app', label: 'people', icon: Users },
 		{ href: '/app/groups', label: 'rooms', icon: DoorOpen },
-		{ href: '/app/random', label: 'discover', icon: Shuffle },
 		{ href: '/app/profile', label: 'profile', icon: UserRound }
 	];
 	let here = $derived($page.url.pathname);

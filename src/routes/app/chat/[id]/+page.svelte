@@ -63,11 +63,6 @@
 	let unsub: (() => void) | null = null;
 	let me = $derived($page.data.user?.id);
 
-	// present when we landed here from a random match (/app/random): 'text' | 'voice' | 'video'.
-	// text always includes chat; voice/video auto-start a call the moment both sides connect.
-	let auto = $derived($page.url.searchParams.get('auto') as 'text' | 'voice' | 'video' | null);
-	let auto_tried = false;
-
 	// ponytail: free Google STUN only — add TURN for symmetric NATs / prod
 	let pc: RTCPeerConnection | null = $state(null);
 	let localStream: MediaStream | null = $state(null);
@@ -170,39 +165,10 @@
 		} else if (m.signal.type === 'offer') {
 			pendingOffer = m.signal.sdp!;
 			callState = 'ringing';
-			if (!auto_tried && (auto === 'voice' || auto === 'video')) {
-				auto_tried = true;
-				videoOn = auto === 'video';
-				answerCall();
-			}
 		} else if (m.signal.type === 'answer' && pc) {
 			pc.setRemoteDescription(new RTCSessionDescription(m.signal.sdp!));
 			callState = 'connected';
 		}
-	}
-
-	// auto-start a call once both sides are connected, when we landed here via a random match.
-	// Only the lexicographically-lower uid initiates — otherwise both sides would send an
-	// offer at once (WebRTC glare); the other side auto-answers in handleSignal above.
-	$effect(() => {
-		if (
-			!auto_tried &&
-			(auto === 'voice' || auto === 'video') &&
-			online &&
-			callState === 'idle' &&
-			me &&
-			me < data.peer
-		) {
-			auto_tried = true;
-			videoOn = auto === 'video';
-			startCall();
-		}
-	});
-
-	function findNew() {
-		endCall();
-		unsub?.();
-		goto('/app/random');
 	}
 
 	async function startCall() {
@@ -330,9 +296,6 @@
 				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px] text-red-500" onclick={endCall}>
 					<PhoneOff size={15} /> hang up
 				</button>
-			{/if}
-			{#if auto}
-				<button class="btn btn-ghost text-[13px]" onclick={findNew}>find someone new</button>
 			{/if}
 		</div>
 	</header>

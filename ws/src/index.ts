@@ -3,7 +3,6 @@ import { get_secret, type SecretVal } from '../../src/lib/server/qdrant';
 
 interface Env {
 	CHAT_HUB: DurableObjectNamespace;
-	MATCH_LOBBY: DurableObjectNamespace;
 	CREDIT_ACCOUNT: DurableObjectNamespace;
 	SECRET: SecretVal;
 	DEV_SECRET?: SecretVal; // local dev only (ws/.dev.vars); see get_secret
@@ -16,12 +15,6 @@ const worker: ExportedHandler<Env> = {
 	async fetch(request, env): Promise<Response> {
 		const url = new URL(request.url);
 		console.log(`[WS-WORKER] ${request.method} ${url.pathname}`);
-
-		if (url.pathname === '/match') {
-			const id = env.MATCH_LOBBY.idFromName('lobby');
-			const stub = env.MATCH_LOBBY.get(id);
-			return stub.fetch(request);
-		}
 
 		if (url.pathname === '/ws') {
 			const uid = url.searchParams.get('uid') ?? '';
@@ -82,5 +75,4 @@ const worker: ExportedHandler<Env> = {
 
 export default worker;
 export { ChatHub } from './hub';
-export { MatchLobby } from './lobby';
 export { CreditAccount } from './credit_account';

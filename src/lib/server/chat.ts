@@ -118,9 +118,3 @@ export async function list_conversations(env: QEnv, uid: string): Promise<{ peer
     .sort((a, b) => b.last - a.last);
 }
 
-export async function record_match(env: QEnv, a: string, b: string): Promise<void> {
-  await ensure(env);
-  const match: Match = { s: 'x', f: a, t: b, d: Date.now() };
-  await upsert(env, [{ id: `match:${conv_id(a, b)}`, vector: new Array(4096).fill(0), payload: match as unknown as Record<string, unknown> }]);
-}
-
