@@ -2654,3 +2654,244 @@ https://svelte.dev/e/a11y_click_events_have_key_events
   ws_origin: 'ws://localhost:8787',
   uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
 }
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+9:59:39 AM [vite] (client) hmr update /src/app.css
+9:59:39 AM [vite] (ssr) page reload src/lib/server/chat.ts
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+9:59:45 AM [vite] (client) hmr update /src/app.css
+9:59:45 AM [vite] (ssr) page reload src/lib/server/chat.ts
+9:59:49 AM [vite] (client) hmr update /src/app.css
+9:59:49 AM [vite] (ssr) page reload src/lib/server/chat.ts
+9:59:55 AM [vite] (client) hmr update /src/app.css
+9:59:55 AM [vite] (ssr) page reload src/lib/server/chat.ts
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+9:59:59 AM [vite] (client) hmr update /src/app.css
+9:59:59 AM [vite] (ssr) page reload src/routes/api/messages/[id]/edit/+server.ts
+10:00:04 AM [vite] (client) hmr update /src/app.css
+10:00:04 AM [vite] (ssr) page reload src/routes/api/messages/[id]/edit/+server.ts
+10:00:17 AM [vite] (client) hmr update /src/app.css
+10:00:17 AM [vite] (ssr) page reload src/lib/server/scheduled.ts
+10:00:22 AM [vite] (client) hmr update /src/app.css
+10:00:22 AM [vite] (ssr) page reload src/lib/server/scheduled.ts
+10:00:26 AM [vite] (client) hmr update /src/app.css
+10:00:26 AM [vite] (ssr) page reload src/lib/server/scheduled.ts
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+10:00:45 AM [vite] (client) hmr update /src/app.css
+10:00:45 AM [vite] (ssr) page reload src/lib/server/__tests__/chat.test.ts
+10:00:51 AM [vite] (client) hmr update /src/app.css
+10:00:51 AM [vite] (ssr) page reload src/lib/server/__tests__/chat-edit.test.ts
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/9.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+10:01:01 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+10:01:01 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+10:01:01 AM [vite] (client) page reload .svelte-kit/generated/root.js
+10:01:01 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+10:01:02 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/9.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+10:01:16 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+10:01:16 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+10:01:16 AM [vite] (client) page reload .svelte-kit/generated/root.js
+10:01:16 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+10:01:16 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/nodes/9.js
+10:01:34 AM [vite] (client) page reload .svelte-kit/generated/client/app.js
+10:01:35 AM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+10:01:35 AM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+10:01:35 AM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+10:01:35 AM [vite] (client) page reload .svelte-kit/generated/root.js
+10:01:35 AM [vite] (ssr) page reload .svelte-kit/generated/root.js
+10:01:35 AM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}
+[WSTOKEN] request received { uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573', dev: true }
+[WSTOKEN] SECRET resolved { present: true, length: 64 }
+[WSTOKEN] WS_ORIGIN raw from env { value: 'ws://localhost:8787', typeofBinding: 'string' }
+[WSTOKEN] issuing token {
+  ws_origin: 'ws://localhost:8787',
+  uid: 'e7bb811d-4c81-4a23-8870-63d4ba299573'
+}

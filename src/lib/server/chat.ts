@@ -10,10 +10,18 @@ export function conv_id(a: string, b: string): string {
 	return [a, b].sort().join('|');
 }
 
-// skip embedding trivially short messages ("ok", "lol") — not worth the embedding API call,
-// they'd never surface as a meaningful search result anyway
-async function msg_vector(env: QEnv, text: string): Promise<number[]> {
-	return text.trim().length >= 3 ? await embed(env, text) : ZV;
+// The embedding call is ~900ms (measured 660-1195ms against api.voxell.ai), so messages are
+// inserted with ZV and get their real vector patched in afterwards. Callers hand this to
+// locals.bg so it runs after the response.
+//
+// updateVectors, not upsert: it writes the vector only. An upsert here would restore the
+// payload snapshot taken before the embedding call and so undo an edit or delete that
+// landed in the ~900ms window.
+export async function backfill_vector(env: QEnv, id: string, text: string): Promise<void> {
+	if (text.trim().length < 3) return;
+	const vector = await embed(env, text);
+	if (vector === ZV) return;
+	await update_vectors(env, id, vector);
 }
 
 export async function send_msg(
@@ -43,10 +51,6 @@ export async function send_msg(
 			payload: m as unknown as Record<string, unknown>
 		}
 	]);
-	// backfill real vector in background; non-blocking, swallows all errors
-	embed(env, text).then((vec) => {
-		if (vec !== ZV) update_vectors(env, m.id, vec).catch(() => {});
-	});
 	return m;
 }
 
@@ -81,10 +85,6 @@ export async function send_group_msg(
 			payload: m as unknown as Record<string, unknown>
 		}
 	]);
-	// backfill real vector in background; non-blocking, swallows all errors
-	embed(env, text).then((vec) => {
-		if (vec !== ZV) update_vectors(env, m.id, vec).catch(() => {});
-	});
 	return m;
 }
 
@@ -127,15 +127,15 @@ export async function edit_msg(
 	if (!pt || pt.payload?.s !== 'm') throw new Error('not found');
 	const m = pt.payload as unknown as Message;
 	if (m.f !== uid) throw new Error('not author');
-	const vec = await embed(env, new_text);
+	const next = { ...m, x: new_text, e: Date.now() };
 	await upsert(env, [
 		{
 			id: msg_id,
-			vector: vec ?? pt.vector,
-			payload: { ...m, x: new_text, e: Date.now() } as unknown as Record<string, unknown>
+			vector: (pt.vector as number[] | undefined) ?? ZV,
+			payload: next as unknown as Record<string, unknown>
 		}
 	]);
-	return { ...m, x: new_text, e: Date.now() };
+	return next;
 }
 
 export async function delete_msg(

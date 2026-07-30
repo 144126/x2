@@ -58,11 +58,10 @@ describe('conv_id', () => {
 });
 
 describe('send_msg', () => {
-	it('embeds the message text and stores it, returning the message', async () => {
-		embedMock.mockResolvedValue([1, 0, 0]);
+	it('stores the message with ZV (embedding deferred to backfill)', async () => {
 		const m = await send_msg(ENV, 'alice', 'bob', 'hi there');
 		expect(ensureMock).toHaveBeenCalledWith(ENV);
-		expect(embedMock).toHaveBeenCalledWith(ENV, 'hi there');
+		expect(embedMock).not.toHaveBeenCalled();
 		expect(m).toEqual({
 			s: 'm',
 			id: 'id-1',
@@ -72,10 +71,10 @@ describe('send_msg', () => {
 			x: 'hi there',
 			d: expect.any(Number)
 		});
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: 'id-1', vector: [1, 0, 0], payload: m }]);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: 'id-1', vector: ZV, payload: m }]);
 	});
 
-	it('skips embedding for trivially short messages', async () => {
+	it('stores short messages with ZV (no embed at send time)', async () => {
 		const m = await send_msg(ENV, 'alice', 'bob', 'ok');
 		expect(embedMock).not.toHaveBeenCalled();
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: m.id, vector: ZV, payload: m }]);

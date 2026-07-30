@@ -53,12 +53,14 @@ describe('edit_msg', () => {
 		expect(typeof upsertCall.payload.e).toBe('number');
 	});
 
-	it('re-embeds the new text', async () => {
+	it('carries the pre-edit vector forward instead of re-embedding', async () => {
 		const msg = { s: 'm', id: 'm1', c: 'a|b', f: 'ada', t: 'bob', x: 'old', d: 100 };
-		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });
-		embedMock.mockResolvedValue([0.1, 0.2]);
+		const pre = new Array(4096).fill(0.1);
+		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: pre });
 		await edit_msg({} as never, 'ada', 'm1', 'new');
-		expect(embedMock).toHaveBeenCalledWith(expect.anything(), 'new');
+		expect(embedMock).not.toHaveBeenCalled();
+		const upsertCall = upsertMock.mock.calls[0][1][0];
+		expect(upsertCall.vector).toEqual(pre);
 	});
 
 	it('rejects a non-author', async () => {

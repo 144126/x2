@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
-import { edit_msg } from '$lib/server/chat';
+import { edit_msg, backfill_vector } from '$lib/server/chat';
 import { get_group, is_member } from '$lib/server/group';
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
@@ -12,6 +12,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	if (!text) throw error(400, 'text required');
 
 	const m = await edit_msg(env, locals.user.id, id, text);
+	locals.bg(backfill_vector(env, m.id, m.x));
 
 	const targets: string[] = [];
 	if (m.gr) {
