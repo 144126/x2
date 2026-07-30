@@ -13,7 +13,11 @@ import {
 	hub_unmute,
 	hub_mutes,
 	hub_sub,
-	hub_unsub
+	hub_unsub,
+	room_join,
+	room_leave,
+	room_members,
+	room_is_member
 } from '../hub_client';
 import type { QEnv } from '../qdrant';
 
@@ -101,5 +105,55 @@ describe('hub_sub / hub_unsub', () => {
 		await hub_unsub(ENV, w, 'me', 'https://p');
 		const [, init] = (w.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
 		expect(JSON.parse(init.body)).toEqual({ ep: 'https://p' });
+	});
+});
+
+describe('room_join / room_leave / room_members / room_is_member', () => {
+	it('room_join calls POST /room/:id/join with { uid } body', async () => {
+		const w = ws({ members: ['alice', 'bob'] });
+		const r = await room_join(ENV, w, 'g1', 'bob');
+		expect(r).toEqual(['alice', 'bob']);
+		const [url, init] = (w.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+		expect(url).toBe('https://x2-ws/room/g1/join');
+		expect(init.method).toBe('POST');
+		expect(JSON.parse(init.body)).toEqual({ uid: 'bob' });
+		expect(init.headers.authorization).toBe('Bearer shared-secret');
+	});
+
+	it('room_leave calls POST /room/:id/leave with { uid } body', async () => {
+		const w = ws({ members: ['alice'] });
+		const r = await room_leave(ENV, w, 'g1', 'bob');
+		expect(r).toEqual(['alice']);
+		const [url, init] = (w.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+		expect(url).toBe('https://x2-ws/room/g1/leave');
+		expect(init.method).toBe('POST');
+		expect(JSON.parse(init.body)).toEqual({ uid: 'bob' });
+	});
+
+	it('room_members calls GET /room/:id/members', async () => {
+		const w = ws({ members: ['alice', 'bob'] });
+		const r = await room_members(ENV, w, 'g1');
+		expect(r).toEqual(['alice', 'bob']);
+		const [url] = (w.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+		expect(url).toBe('https://x2-ws/room/g1/members');
+	});
+
+	it('room_is_member calls GET /room/:id/is-member?uid=x', async () => {
+		const w = ws({ ok: true });
+		expect(await room_is_member(ENV, w, 'g1', 'bob')).toBe(true);
+		const [url] = (w.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+		expect(url).toBe('https://x2-ws/room/g1/is-member?uid=bob');
+	});
+
+	it('room_is_member returns false when the fetch fails', async () => {
+		const w = { fetch: vi.fn().mockRejectedValue(new Error('down')) } as unknown as Fetcher;
+		expect(await room_is_member(ENV, w, 'g1', 'bob')).toBe(false);
+	});
+
+	it('room_* fails open to empty list when unreachable', async () => {
+		const w = { fetch: vi.fn().mockRejectedValue(new Error('down')) } as unknown as Fetcher;
+		expect(await room_join(ENV, w, 'g1', 'bob')).toEqual([]);
+		expect(await room_leave(ENV, w, 'g1', 'bob')).toEqual([]);
+		expect(await room_members(ENV, w, 'g1')).toEqual([]);
 	});
 });

@@ -108,6 +108,50 @@ export async function hub_sub(
 	});
 }
 
+async function room_call(
+	env: QEnv,
+	ws: Fetcher,
+	id: string,
+	path: string,
+	init?: RequestInit
+): Promise<Response> {
+	const secret = await get_secret(env.SECRET);
+	return ws.fetch(`https://x2-ws/room/${id}${path}`, {
+		...init,
+		headers: { 'content-type': 'application/json', authorization: `Bearer ${secret}` }
+	});
+}
+
+export async function room_join(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<string[]> {
+	const res = await room_call(env, ws, id, '/join', {
+		method: 'POST',
+		body: JSON.stringify({ uid })
+	}).catch(() => null);
+	if (!res?.ok) return [];
+	return (await res.json()).members;
+}
+
+export async function room_leave(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<string[]> {
+	const res = await room_call(env, ws, id, '/leave', {
+		method: 'POST',
+		body: JSON.stringify({ uid })
+	}).catch(() => null);
+	if (!res?.ok) return [];
+	return (await res.json()).members;
+}
+
+export async function room_members(env: QEnv, ws: Fetcher, id: string): Promise<string[]> {
+	const res = await room_call(env, ws, id, '/members').catch(() => null);
+	if (!res?.ok) return [];
+	return (await res.json()).members;
+}
+
+export async function room_is_member(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<boolean> {
+	const res = await room_call(env, ws, id, `/is-member?uid=${uid}`).catch(() => null);
+	if (!res?.ok) return false;
+	return (await res.json()).ok;
+}
+
 export async function hub_unsub(
 	env: QEnv,
 	ws: Fetcher,

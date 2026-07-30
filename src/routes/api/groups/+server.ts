@@ -30,7 +30,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const name = b?.name?.trim();
 	if (!name) throw error(400, 'name required');
 	return json({
-		g: await save_group(env, locals.user.id, {
+		g: await save_group(env, locals.x2_ws, locals.user.id, {
 			name,
 			description: b?.description,
 			country: b?.country,

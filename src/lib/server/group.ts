@@ -13,6 +13,7 @@ import {
 	type QEnv
 } from './qdrant';
 import { embed } from './or';
+import { room_join, room_leave, room_is_member } from './hub_client';
 
 export interface Group {
 	s: 'g';
@@ -70,6 +71,7 @@ async function put_payload(env: QEnv, g: Group): Promise<void> {
 
 export async function save_group(
 	env: QEnv,
+	ws: Fetcher,
 	ownerId: string,
 	data: { name: string; description?: string; country?: string; state?: string; city?: string }
 ): Promise<GroupView> {
@@ -89,6 +91,7 @@ export async function save_group(
 		...(data.city ? { ci: data.city } : {})
 	};
 	await put(env, g);
+	room_join(env, ws, g.id, ownerId).catch(() => {});
 	return view(g);
 }
 
@@ -144,24 +147,25 @@ export async function delete_group(env: QEnv, id: string, uid: string): Promise<
 	return true;
 }
 
-export async function join_group(env: QEnv, id: string, uid: string): Promise<GroupView | null> {
+export async function join_group(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<GroupView | null> {
 	await ensure(env);
 	const cur = await raw_group(env, id);
 	if (!cur) return null;
-	if (cur.mb.includes(uid)) return view(cur);
-	const next: Group = { ...cur, mb: [...cur.mb, uid] };
-	await put_payload(env, next);
-	return view(next);
+	const members = await room_join(env, ws, id, uid);
+	if (members.length !== cur.mb.length || !members.every((m, i) => m === cur.mb[i])) {
+		await set_payload(env, id, { mb: members }).catch(() => {});
+	}
+	return view({ ...cur, mb: members });
 }
 
 /** the owner cannot leave — deleting is the way out, so a group always has an owner */
-export async function leave_group(env: QEnv, id: string, uid: string): Promise<GroupView | null> {
+export async function leave_group(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<GroupView | null> {
 	await ensure(env);
 	const cur = await raw_group(env, id);
 	if (!cur || cur.ow === uid) return null;
-	const next: Group = { ...cur, mb: cur.mb.filter((m) => m !== uid) };
-	await put_payload(env, next);
-	return view(next);
+	const members = await room_leave(env, ws, id, uid);
+	await set_payload(env, id, { mb: members }).catch(() => {});
+	return view({ ...cur, mb: members });
 }
 
 /** groups `uid` belongs to (all groups when uid is omitted) */
@@ -205,7 +209,9 @@ export async function search_groups(
 	return hits.map((h) => view(h.payload as unknown as Group, h.score));
 }
 
-export const is_member = (g: GroupView, uid: string): boolean => g.members.includes(uid);
+export async function is_member(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<boolean> {
+	return room_is_member(env, ws, id, uid);
+}
 
 /** groups both `a` and `b` belong to */
 export async function shared_groups(env: QEnv, a: string, b: string): Promise<GroupView[]> {

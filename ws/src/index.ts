@@ -5,6 +5,7 @@ import { get_secret, type SecretVal } from '../../src/lib/server/qdrant';
 interface Env {
 	CHAT_HUB: DurableObjectNamespace;
 	CREDIT_ACCOUNT: DurableObjectNamespace;
+	ROOM: DurableObjectNamespace;
 	SECRET: SecretVal;
 	DEV_SECRET?: SecretVal;
 	QDRANT_URL: string | { get?: () => Promise<string> };
@@ -79,6 +80,41 @@ const worker: ExportedHandler<Env> = {
 			);
 		}
 
+		if (url.pathname.startsWith('/room/')) {
+			const secret = await get_secret(env.SECRET, env.DEV_SECRET);
+			const auth = request.headers.get('authorization');
+			if (!secret || auth !== `Bearer ${secret}`) return new Response('denied', { status: 403 });
+			const segments = url.pathname.split('/');
+			if (segments.length < 4) return new Response('bad', { status: 400 });
+			const [, , id] = segments;
+			const stub = env.ROOM.get(env.ROOM.idFromName(id));
+			return stub.fetch(
+				new Request(`https://dummy/${segments.slice(3).join('/')}${url.search}`, {
+					method: request.method,
+					headers: { 'content-type': 'application/json' },
+					body: request.method === 'PUT' || request.method === 'DELETE' ? undefined : undefined
+				})
+			);
+		}
+
+		if (url.pathname.startsWith('/room/')) {
+			const secret = await get_secret(env.SECRET, env.DEV_SECRET);
+			const auth = request.headers.get('authorization');
+			if (!secret || auth !== `Bearer ${secret}`) return new Response('denied', { status: 403 });
+			const segments = url.pathname.split('/');
+			if (segments.length < 4) return new Response('bad', { status: 400 });
+			const [, , id] = segments;
+			const stub = env.ROOM.get(env.ROOM.idFromName(id));
+			const body = request.method === 'POST' ? await request.text() : undefined;
+			return stub.fetch(
+				new Request(`https://dummy/${segments.slice(3).join('/')}${url.search}`, {
+					method: request.method,
+					headers: { 'content-type': 'application/json' },
+					body
+				})
+			);
+		}
+
 		return new Response('x2-ws relay+presence worker', { status: 200 });
 	},
 
@@ -97,3 +133,4 @@ const worker: ExportedHandler<Env> = {
 export default worker;
 export { ChatHub } from './hub';
 export { CreditAccount } from './credit_account';
+export { Room } from './room';

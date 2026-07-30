@@ -36,8 +36,8 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	const b = (await request.json().catch(() => null)) as { action?: string };
 	const g =
 		b?.action === 'leave'
-			? await leave_group(env, params.id, locals.user.id)
-			: await join_group(env, params.id, locals.user.id);
+			? await leave_group(env, locals.x2_ws, params.id, locals.user.id)
+			: await join_group(env, locals.x2_ws, params.id, locals.user.id);
 	if (!g) throw error(400, b?.action === 'leave' ? 'owner cannot leave' : 'no group');
 	return json({ g });
 };

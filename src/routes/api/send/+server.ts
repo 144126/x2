@@ -51,7 +51,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (group) {
 		const g = await get_group(env, group);
 		if (!g) throw error(404, 'no group');
-		if (!is_member(g, me.id)) throw error(403, 'not a member');
+		if (!(await is_member(env, locals.x2_ws, g.id, me.id))) throw error(403, 'not a member');
 		const m = await send_group_msg(env, me.id, group, text, image, file).catch(() => {
 			throw error(503, 'not_stored');
 		});

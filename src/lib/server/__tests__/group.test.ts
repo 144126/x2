@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, setPayloadMock } =
+const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, setPayloadMock, roomJoinMock, roomLeaveMock, roomIsMemberMock } =
 	vi.hoisted(() => ({
 		ensureMock: vi.fn(),
 		upsertMock: vi.fn(),
@@ -8,7 +8,10 @@ const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMo
 		scrollMock: vi.fn(),
 		searchMock: vi.fn(),
 		embedMock: vi.fn(),
-		setPayloadMock: vi.fn()
+		setPayloadMock: vi.fn(),
+		roomJoinMock: vi.fn(),
+		roomLeaveMock: vi.fn(),
+		roomIsMemberMock: vi.fn()
 	}));
 
 vi.mock('../qdrant', async () => {
@@ -24,6 +27,11 @@ vi.mock('../qdrant', async () => {
 	};
 });
 vi.mock('../or', () => ({ embed: embedMock }));
+vi.mock('../hub_client', () => ({
+	room_join: roomJoinMock,
+	room_leave: roomLeaveMock,
+	room_is_member: roomIsMemberMock
+}));
 
 import {
 	save_group,
@@ -39,7 +47,8 @@ import {
 } from '../group';
 import { V } from '../qdrant';
 
-const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
+const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' } as unknown as Parameters<typeof import('../group').join_group>[0];
+const WS = {} as Fetcher;
 const VEC = new Array(4096).fill(0.1);
 const stored = (call = 0) => upsertMock.mock.calls[call][1][0];
 
@@ -52,6 +61,9 @@ beforeEach(() => {
 	searchMock.mockResolvedValue([]);
 	embedMock.mockResolvedValue(VEC);
 	setPayloadMock.mockResolvedValue(undefined);
+	roomJoinMock.mockResolvedValue([]);
+	roomLeaveMock.mockResolvedValue([]);
+	roomIsMemberMock.mockResolvedValue(false);
 });
 
 const group = (over: Record<string, unknown> = {}) => ({
@@ -70,7 +82,7 @@ const group = (over: Record<string, unknown> = {}) => ({
 
 describe('save_group', () => {
 	it('stores the group with the owner as its first member', async () => {
-		const g = await save_group(ENV, 'owner1', { name: 'Ceramics', description: 'pots' });
+		const g = await save_group(ENV, WS, 'owner1', { name: 'Ceramics', description: 'pots' });
 		expect(g.name).toBe('Ceramics');
 		expect(g.owner).toBe('owner1');
 		expect(g.members).toEqual(['owner1']);
@@ -78,7 +90,7 @@ describe('save_group', () => {
 	});
 
 	it('embeds name + description only — that is the whole search signal', async () => {
-		await save_group(ENV, 'owner1', { name: 'Ceramics', description: 'wheel-thrown pots' });
+		await save_group(ENV, WS, 'owner1', { name: 'Ceramics', description: 'wheel-thrown pots' });
 		expect(embedMock).toHaveBeenCalledWith(
 			ENV,
 			'group_name: Ceramics | group_about: wheel-thrown pots'
@@ -87,11 +99,11 @@ describe('save_group', () => {
 	});
 
 	it('rejects a blank name', async () => {
-		await expect(save_group(ENV, 'owner1', { name: '  ' })).rejects.toThrow('name_required');
+		await expect(save_group(ENV, WS, 'owner1', { name: '  ' })).rejects.toThrow('name_required');
 	});
 
 	it('saves a room with no location at all', async () => {
-		const g = await save_group(ENV, 'owner1', { name: 'Online', description: '' });
+		const g = await save_group(ENV, WS, 'owner1', { name: 'Online', description: '' });
 		expect(stored().payload.co).toBeUndefined();
 	});
 });
@@ -160,7 +172,8 @@ describe('update_group', () => {
 describe('membership', () => {
 	it('adds a joiner once, and is idempotent — via setPayload, never re-embedding', async () => {
 		retrieveOneMock.mockResolvedValue(group());
-		expect((await join_group(ENV, 'g1', 'bob'))?.members).toEqual(['owner1', 'bob']);
+		roomJoinMock.mockResolvedValue(['owner1', 'bob']);
+		expect((await join_group(ENV, WS, 'g1', 'bob'))?.members).toEqual(['owner1', 'bob']);
 		expect(embedMock).not.toHaveBeenCalled();
 		expect(upsertMock).not.toHaveBeenCalled();
 		expect(setPayloadMock).toHaveBeenCalledWith(
@@ -171,33 +184,31 @@ describe('membership', () => {
 
 		setPayloadMock.mockClear();
 		retrieveOneMock.mockResolvedValue(group({ mb: ['owner1', 'bob'] }));
-		expect((await join_group(ENV, 'g1', 'bob'))?.members).toEqual(['owner1', 'bob']);
-		expect(setPayloadMock).not.toHaveBeenCalled(); // second join wrote nothing
+		roomJoinMock.mockResolvedValue(['owner1', 'bob']); // DO returns same list
+		expect((await join_group(ENV, WS, 'g1', 'bob'))?.members).toEqual(['owner1', 'bob']);
+		expect(setPayloadMock).not.toHaveBeenCalled(); // no change, skipped Qdrant write
 	});
 
 	it('lets a member leave but never the owner, via setPayload not embed', async () => {
 		retrieveOneMock.mockResolvedValue(group({ mb: ['owner1', 'bob'] }));
-		expect((await leave_group(ENV, 'g1', 'bob'))?.members).toEqual(['owner1']);
+		roomLeaveMock.mockResolvedValue(['owner1']);
+		expect((await leave_group(ENV, WS, 'g1', 'bob'))?.members).toEqual(['owner1']);
 		expect(embedMock).not.toHaveBeenCalled();
 		expect(setPayloadMock).toHaveBeenCalledWith(
 			ENV,
 			'g1',
 			expect.objectContaining({ mb: ['owner1'] })
 		);
-		expect(await leave_group(ENV, 'g1', 'owner1')).toBeNull();
+		expect(await leave_group(ENV, WS, 'g1', 'owner1')).toBeNull();
 	});
 
-	it('is_member reflects the member list', () => {
-		const g = {
-			id: 'g1',
-			name: 'n',
-			description: '',
-			owner: 'o',
-			members: ['o', 'bob'],
-			created: 1
-		};
-		expect(is_member(g, 'bob')).toBe(true);
-		expect(is_member(g, 'eve')).toBe(false);
+	it('is_member queries the Room DO', async () => {
+		roomIsMemberMock.mockResolvedValue(true);
+		expect(await is_member(ENV, WS, 'g1', 'bob')).toBe(true);
+		expect(roomIsMemberMock).toHaveBeenCalledWith(ENV, WS, 'g1', 'bob');
+
+		roomIsMemberMock.mockResolvedValue(false);
+		expect(await is_member(ENV, WS, 'g1', 'eve')).toBe(false);
 	});
 });
 

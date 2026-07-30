@@ -23,7 +23,7 @@ function patchEvent(body: unknown, uid = 'me') {
 			headers: { 'content-type': 'application/json' },
 			body: body !== undefined ? JSON.stringify(body) : undefined
 		}),
-		locals: { user: uid ? { id: uid, username: 'Me' } : null }
+		locals: { user: uid ? { id: uid, username: 'Me' } : null, x2_ws: {} }
 	} as unknown as Parameters<typeof PATCH>[0];
 }
 

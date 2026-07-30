@@ -18,7 +18,7 @@ import { GET, POST } from '../+server';
 function getEvent(url: string, uid = 'me') {
 	return {
 		url: new URL(`https://x${url}`),
-		locals: { user: uid ? { id: uid, username: 'Me' } : null }
+		locals: { user: uid ? { id: uid, username: 'Me' } : null, x2_ws: {} }
 	} as unknown as Parameters<typeof GET>[0];
 }
 
@@ -29,7 +29,7 @@ function postEvent(body: unknown, uid = 'me') {
 			headers: { 'content-type': 'application/json' },
 			body: body !== undefined ? JSON.stringify(body) : undefined
 		}),
-		locals: { user: uid ? { id: uid, username: 'Me' } : null }
+		locals: { user: uid ? { id: uid, username: 'Me' } : null, x2_ws: {} }
 	} as unknown as Parameters<typeof POST>[0];
 }
 
@@ -68,7 +68,7 @@ describe('POST /api/groups', () => {
 
 	it('persists country, state and city on create', async () => {
 		await POST(postEvent({ name: 'testroom', country: 'US', state: 'CA', city: 'SF', description: 'desc' }));
-		expect(saveGroupMock).toHaveBeenCalledWith(expect.anything(), 'me', {
+		expect(saveGroupMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'me', {
 			name: 'testroom',
 			description: 'desc',
 			country: 'US',

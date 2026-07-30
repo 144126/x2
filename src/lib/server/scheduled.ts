@@ -93,7 +93,7 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 		try {
 			if (sm.group) {
 				const g = await get_group(env, sm.group);
-				if (g && is_member(g, sm.f)) {
+				if (g && (await is_member(env, ws, g.id, sm.f))) {
 					const m = await send_group_msg(env, sm.f, sm.group, sm.text, sm.image, sm.file);
 					await backfill_vector(env, m.id, sm.text);
 					await relay(ws, {

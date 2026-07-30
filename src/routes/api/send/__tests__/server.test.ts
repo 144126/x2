@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { sendMsgMock, sendGroupMsgMock, getGroupMock, saveScheduledMock, guardMock } = vi.hoisted(
+const { sendMsgMock, sendGroupMsgMock, getGroupMock, isMemberMock, saveScheduledMock, guardMock } = vi.hoisted(
 	() => ({
 		sendMsgMock: vi.fn(),
 		sendGroupMsgMock: vi.fn(),
 		getGroupMock: vi.fn(),
+		isMemberMock: vi.fn(),
 		saveScheduledMock: vi.fn(),
 		guardMock: vi.fn()
 	})
@@ -17,7 +18,7 @@ vi.mock('$lib/server/chat', async () => {
 });
 vi.mock('$lib/server/group', async () => {
 	const actual = await vi.importActual<typeof import('$lib/server/group')>('$lib/server/group');
-	return { ...actual, get_group: getGroupMock };
+	return { ...actual, get_group: getGroupMock, is_member: isMemberMock };
 });
 vi.mock('$lib/server/scheduled', () => ({
 	save_scheduled: saveScheduledMock,
@@ -74,6 +75,7 @@ beforeEach(() => {
 	});
 	saveScheduledMock.mockResolvedValue({ id: 'sm1', sent: 0 });
 	guardMock.mockResolvedValue(undefined);
+	isMemberMock.mockResolvedValue(true);
 });
 
 describe('POST /api/send — scheduling', () => {
@@ -115,6 +117,7 @@ describe('POST /api/send — validation', () => {
 	});
 
 	it('403s a group send from a non-member', async () => {
+		isMemberMock.mockResolvedValue(false);
 		getGroupMock.mockResolvedValue({
 			id: 'g1',
 			name: 'design club',
