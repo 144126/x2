@@ -1,6 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { env } from '$env/dynamic/private';
 import { put_image } from '$lib/server/media';
+import { get_secret } from '$lib/server/qdrant';
 
 export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!locals.user) throw redirect(303, '/login');
@@ -18,7 +20,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 	if (image instanceof Blob && image.size > 0) {
 		const bucket = platform?.env?.MEDIA;
-		const stored = bucket ? await put_image(bucket, locals.user.id, image) : null;
+		const secret = bucket ? await get_secret(env.SECRET) : null;
+		const stored = bucket && secret ? await put_image(bucket, locals.user.id, image, secret) : null;
 		if (stored) params.set('share_image', stored.key);
 	}
 

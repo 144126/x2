@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { putImageMock } = vi.hoisted(() => ({ putImageMock: vi.fn() }));
 
-vi.mock('$env/dynamic/private', () => ({ env: {} }));
+vi.mock('$env/dynamic/private', () => ({ env: { SECRET: 'test-secret' } }));
 vi.mock('$lib/server/media', async () => {
 	const actual = await vi.importActual<typeof import('$lib/server/media')>('$lib/server/media');
 	return { ...actual, put_image: putImageMock };
@@ -38,7 +38,7 @@ async function location_of(p: unknown): Promise<string> {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	putImageMock.mockResolvedValue({ key: 'ada/shared.png', url: '/media/ada/shared.png' });
+	putImageMock.mockResolvedValue({ key: 'ada/shared.png', url: '/media/ada/shared.png?e=1800000000000&s=abcdef1234567890abcdef1234567890' });
 });
 
 describe('POST /app/share — content shared from the OS', () => {
@@ -70,6 +70,7 @@ describe('POST /app/share — content shared from the OS', () => {
 	it('keys the shared image to the sharer, not to whatever the OS claimed', async () => {
 		await location_of(POST(event(form({ image: png() }))));
 		expect(putImageMock.mock.calls[0][1]).toBe('ada');
+		expect(putImageMock.mock.calls[0][3]).toBe('test-secret');
 	});
 
 	it('drops a shared file that is not an image we accept', async () => {
