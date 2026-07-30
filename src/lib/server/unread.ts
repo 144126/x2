@@ -36,6 +36,7 @@ export async function unread_by_conv(
 ): Promise<Record<string, number>> {
 	await ensure(env);
 	const [direct_msgs, group_lists, reads] = await Promise.all([
+		// ponytail: hard 1000-point ceiling — beyond that, under-counts silently
 		scroll(env, f(eq('s', 'm'), eq('t', uid)), 1000),
 		Promise.all(group_convs.map((c) => scroll(env, f(eq('s', 'm'), eq('c', c)), 1000))),
 		scroll(env, f(eq('s', 'rd'), eq('f', uid)), 1000)
@@ -67,6 +68,31 @@ export async function total_unread(
 	group_convs: string[] = []
 ): Promise<number> {
 	const by_conv = await unread_by_conv(env, uid, group_convs);
+	const mutes = await list_mutes(env, uid);
+	const silent = new Set(
+		mutes.map((m) => (m.k === 'r' ? group_conv_id(m.tg) : conv_id(uid, m.tg)))
+	);
+	return Object.entries(by_conv)
+		.filter(([conv]) => !silent.has(conv))
+		.reduce((n, [, count]) => n + count, 0);
+}
+
+// Same as total_unread but takes pre-scrolled group messages so callers sharing one group
+// across multiple members avoid re-scrolling the identical conversation N times.
+export async function total_unread_for_group(
+	env: QEnv,
+	uid: string,
+	group_msgs: Message[],
+	group_conv: string
+): Promise<number> {
+	const by_conv = await unread_by_conv(env, uid, []); // direct messages only
+	const tally = (msgs: Message[]) => {
+		for (const m of msgs) {
+			if (m.f === uid) continue;
+			by_conv[m.c] = (by_conv[m.c] ?? 0) + 1;
+		}
+	};
+	tally(group_msgs);
 	const mutes = await list_mutes(env, uid);
 	const silent = new Set(
 		mutes.map((m) => (m.k === 'r' ? group_conv_id(m.tg) : conv_id(uid, m.tg)))

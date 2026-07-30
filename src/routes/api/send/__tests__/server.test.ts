@@ -8,13 +8,15 @@ const {
 	totalUnreadMock,
 	saveScheduledMock,
 	isMutedMock,
-	dropMutedMock
+	dropMutedMock,
+	totalUnreadForGroupMock
 } = vi.hoisted(() => ({
 	sendMsgMock: vi.fn(),
 	sendGroupMsgMock: vi.fn(),
 	getGroupMock: vi.fn(),
 	notifyMock: vi.fn(),
 	totalUnreadMock: vi.fn(),
+	totalUnreadForGroupMock: vi.fn(),
 	saveScheduledMock: vi.fn(),
 	isMutedMock: vi.fn(),
 	dropMutedMock: vi.fn()
@@ -30,7 +32,10 @@ vi.mock('$lib/server/group', async () => {
 	return { ...actual, get_group: getGroupMock };
 });
 vi.mock('$lib/server/notify', () => ({ notify: notifyMock }));
-vi.mock('$lib/server/unread', () => ({ total_unread: totalUnreadMock }));
+vi.mock('$lib/server/unread', () => ({
+	total_unread: totalUnreadMock,
+	total_unread_for_group: totalUnreadForGroupMock
+}));
 vi.mock('$lib/server/scheduled', () => ({
 	save_scheduled: saveScheduledMock,
 	MIN_LEAD_MS: 60_000
@@ -85,6 +90,7 @@ beforeEach(() => {
 	});
 	notifyMock.mockResolvedValue({ sent: 1, pruned: 0 });
 	totalUnreadMock.mockResolvedValue(3);
+	totalUnreadForGroupMock.mockResolvedValue(3);
 	saveScheduledMock.mockResolvedValue({ id: 'sm1', sent: 0 });
 	isMutedMock.mockResolvedValue(false);
 	dropMutedMock.mockImplementation((_e, _t, uids: string[]) => Promise.resolve(uids));
@@ -233,17 +239,17 @@ describe('POST /api/send — what the notification says', () => {
 	it("includes the recipient's unread total in a room push", async () => {
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
 		await settle();
-		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob', ['g:g1']);
+		expect(totalUnreadForGroupMock).toHaveBeenCalledWith(expect.anything(), 'bob', expect.any(Array), 'g:g1');
 		expect(note()[2].unread).toBe(3);
 	});
 
 	it('computes unread per recipient, not once for the room', async () => {
-		totalUnreadMock.mockResolvedValueOnce(2).mockResolvedValueOnce(5);
+		totalUnreadForGroupMock.mockResolvedValueOnce(2).mockResolvedValueOnce(5);
 		await POST(
 			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
 		);
 		await settle();
-		expect(totalUnreadMock).toHaveBeenCalledTimes(2);
+		expect(totalUnreadForGroupMock).toHaveBeenCalledTimes(2);
 		expect(notifyMock).toHaveBeenCalledTimes(2);
 		const calls = notifyMock.mock.calls;
 		expect(calls[0][2].unread).toBe(2);

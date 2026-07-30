@@ -4,7 +4,8 @@ import { env } from '$env/dynamic/private';
 import { send_msg, send_group_msg, backfill_vector, conv_id, group_conv_id } from '$lib/server/chat';
 import { get_group, is_member } from '$lib/server/group';
 import { notify } from '$lib/server/notify';
-import { total_unread } from '$lib/server/unread';
+import { total_unread, total_unread_for_group } from '$lib/server/unread';
+import { scroll, f, eq } from '$lib/server/qdrant';
 import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
 import { is_muted, drop_muted } from '$lib/server/mute';
 
@@ -86,9 +87,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				locals.x2_ws
 			);
 			const targets = await drop_muted(env, group, undelivered.filter((u) => u !== me.id));
+			const group_msgs = (await scroll(env, f(eq('s', 'm'), eq('c', group_conv_id(group))), 1000))
+				.map((p) => p.payload as import('$lib/types').Message);
 			await Promise.all(
 				targets.map(async (uid) => {
-					const unread = await total_unread(env, uid, [group_conv_id(group)]);
+					const unread = await total_unread_for_group(env, uid, group_msgs, group_conv_id(group));
 					await push(env, [uid], {
 						title: g.name,
 						body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
