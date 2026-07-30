@@ -1,9 +1,11 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { put_image, put_file, MAX_BYTES, MAX_FILE_BYTES } from '$lib/server/media';
+import { guard } from '$lib/server/rl';
 
 export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!locals.user) throw error(401, 'auth');
+	await guard(platform, 'RL_UPLOAD', locals.user.id);
 	const bucket = platform?.env?.MEDIA;
 	if (!bucket) throw error(503, 'media_unconfigured');
 

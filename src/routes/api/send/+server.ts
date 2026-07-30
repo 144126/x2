@@ -8,6 +8,7 @@ import { total_unread, total_unread_for_group } from '$lib/server/unread';
 import { scroll, f, eq } from '$lib/server/qdrant';
 import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
 import { is_muted, drop_muted } from '$lib/server/mute';
+import { guard } from '$lib/server/rl';
 
 async function relay(
 	payload: Record<string, unknown>,
@@ -40,8 +41,9 @@ async function push(env: unknown, uids: string[], payload: Record<string, unknow
 	}
 }
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!locals.user) throw error(401, 'auth');
+	await guard(platform, 'RL_SEND', locals.user.id);
 	const b = (await request.json().catch(() => null)) as {
 		to?: string;
 		group?: string;

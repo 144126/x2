@@ -13,12 +13,15 @@ import {
 	MODAL_START_HOLD_KOBO,
 	MODAL_MAX_SECONDS
 } from '$lib/server/modal';
+import { guard } from '$lib/server/rl';
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!locals.user) throw error(401, 'auth');
 	const uid = locals.user.id;
 	const b = (await request.json().catch(() => null)) as { conv?: string; question?: string } | null;
 	if (!b?.conv || !b?.question?.trim()) throw error(400, 'conv and question required');
+
+	await guard(platform, 'RL_AI', uid);
 
 	await ensure(env);
 

@@ -6,6 +6,10 @@ interface SecretVal {
 	get?: () => Promise<string>;
 }
 
+interface RateLimit {
+	limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
 // Minimal shape of the bits of R2 we use — hand-rolled like the rest of this file so the
 // worker types don't collide with the DOM lib SvelteKit builds against.
 interface MediaObject {
@@ -39,4 +43,8 @@ interface Env {
 	PAYSTACK_TEST?: string | SecretVal;
 	PAYSTACK_BASE_URL?: string | SecretVal;
 	GROQ?: string | SecretVal;
+	RL_SEND?: RateLimit;
+	RL_UPLOAD?: RateLimit;
+	RL_SEARCH?: RateLimit;
+	RL_AI?: RateLimit;
 }

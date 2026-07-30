@@ -13,6 +13,7 @@ import {
 	type Cond
 } from '$lib/server/qdrant';
 import { embed } from '$lib/server/or';
+import { guard } from '$lib/server/rl';
 import type { User } from '$lib/types';
 
 const WANT = 20;
@@ -39,8 +40,9 @@ async function presence(
 	}
 }
 
-export const GET: RequestHandler = async ({ url, locals }) => {
+export const GET: RequestHandler = async ({ url, locals, platform }) => {
 	if (!locals.user) throw error(401, 'auth');
+	await guard(platform, 'RL_SEARCH', locals.user.id);
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	await ensure(env);
 	const conds: Cond[] = [eq('s', 'u')];

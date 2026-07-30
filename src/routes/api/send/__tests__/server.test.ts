@@ -9,7 +9,8 @@ const {
 	saveScheduledMock,
 	isMutedMock,
 	dropMutedMock,
-	totalUnreadForGroupMock
+	totalUnreadForGroupMock,
+	guardMock
 } = vi.hoisted(() => ({
 	sendMsgMock: vi.fn(),
 	sendGroupMsgMock: vi.fn(),
@@ -19,7 +20,8 @@ const {
 	totalUnreadForGroupMock: vi.fn(),
 	saveScheduledMock: vi.fn(),
 	isMutedMock: vi.fn(),
-	dropMutedMock: vi.fn()
+	dropMutedMock: vi.fn(),
+	guardMock: vi.fn()
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
@@ -41,6 +43,7 @@ vi.mock('$lib/server/scheduled', () => ({
 	MIN_LEAD_MS: 60_000
 }));
 vi.mock('$lib/server/mute', () => ({ is_muted: isMutedMock, drop_muted: dropMutedMock }));
+vi.mock('$lib/server/rl', () => ({ guard: guardMock }));
 
 import { POST } from '../+server';
 
@@ -67,7 +70,8 @@ function event(body: unknown, uid: string | null = 'ada', fetcher = ws()) {
 			user: uid ? { id: uid, username: 'ada' } : null,
 			x2_ws: fetcher,
 			bg: (p: Promise<unknown>) => { bg_tasks.push(p); }
-		}
+		},
+		platform: undefined
 	} as unknown as Parameters<typeof POST>[0];
 }
 
@@ -94,6 +98,7 @@ beforeEach(() => {
 	saveScheduledMock.mockResolvedValue({ id: 'sm1', sent: 0 });
 	isMutedMock.mockResolvedValue(false);
 	dropMutedMock.mockImplementation((_e, _t, uids: string[]) => Promise.resolve(uids));
+	guardMock.mockResolvedValue(undefined);
 });
 
 describe('POST /api/send — scheduling', () => {
@@ -345,6 +350,19 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 		);
 		await settle();
 		expect(notifyMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('POST /api/send — rate limiting', () => {
+	it('429s and never calls send_msg when the limiter denies the request', async () => {
+		guardMock.mockRejectedValue({ status: 429, body: { message: 'slow_down' } });
+		await expect(POST(event({ to: 'bob', text: 'hi' }))).rejects.toMatchObject({ status: 429 });
+		expect(sendMsgMock).not.toHaveBeenCalled();
+	});
+
+	it('keys the limiter on the sender uid', async () => {
+		await POST(event({ to: 'bob', text: 'hi' }));
+		expect(guardMock).toHaveBeenCalledWith(undefined, 'RL_SEND', 'ada');
 	});
 });
 
