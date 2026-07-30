@@ -348,6 +348,20 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 	});
 });
 
+describe('POST /api/send — a failed write is surfaced, not silently 200d', () => {
+	it('503s a 1:1 send when send_msg rejects, instead of lying with ok: true', async () => {
+		sendMsgMock.mockRejectedValue(new Error('qdrant down'));
+		await expect(POST(event({ to: 'bob', text: 'hi' }))).rejects.toMatchObject({ status: 503 });
+	});
+
+	it('503s a group send when send_group_msg rejects', async () => {
+		sendGroupMsgMock.mockRejectedValue(new Error('qdrant down'));
+		await expect(POST(event({ group: 'g1', text: 'hi' }))).rejects.toMatchObject({
+			status: 503
+		});
+	});
+});
+
 describe('POST /api/send — background fan-out behaviour', () => {
 	it('response does not wait on the fan-out', async () => {
 		notifyMock.mockReturnValue(new Promise(() => {}));

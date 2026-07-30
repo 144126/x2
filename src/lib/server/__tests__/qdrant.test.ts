@@ -5,7 +5,10 @@ const mockClient = vi.hoisted(() => ({
 	createPayloadIndex: vi.fn().mockResolvedValue(undefined),
 	getCollection: vi.fn().mockRejectedValue(new Error('not found')),
 	scroll: vi.fn().mockResolvedValue({ points: [] }),
-	search: vi.fn().mockResolvedValue([])
+	search: vi.fn().mockResolvedValue([]),
+	upsert: vi.fn().mockResolvedValue(undefined),
+	delete: vi.fn().mockResolvedValue(undefined),
+	updateVectors: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('@qdrant/js-client-rest', () => {
@@ -159,5 +162,29 @@ describe('search', () => {
 
 		const opts = mockClient.search.mock.calls[0][1];
 		expect(opts.offset).toBeUndefined();
+	});
+});
+
+// A failed write must be visible to the caller — a silently swallowed error means the app
+// answers 200 OK for a message that was never stored.
+describe('writes surface failures instead of swallowing them', () => {
+	it('upsert rejects when the client rejects', async () => {
+		mockClient.upsert.mockRejectedValue(new Error('qdrant down'));
+		const { upsert } = await import('../qdrant');
+		await expect(upsert(ENV, [{ id: '1', vector: ZV, payload: {} }])).rejects.toThrow(
+			'qdrant down'
+		);
+	});
+
+	it('remove rejects when the client rejects', async () => {
+		mockClient.delete.mockRejectedValue(new Error('qdrant down'));
+		const { remove } = await import('../qdrant');
+		await expect(remove(ENV, ['1'])).rejects.toThrow('qdrant down');
+	});
+
+	it('update_vectors rejects when the client rejects', async () => {
+		mockClient.updateVectors.mockRejectedValue(new Error('qdrant down'));
+		const { update_vectors } = await import('../qdrant');
+		await expect(update_vectors(ENV, '1', ZV)).rejects.toThrow('qdrant down');
 	});
 });

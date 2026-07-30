@@ -69,7 +69,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const g = await get_group(env, group);
 		if (!g) throw error(404, 'no group');
 		if (!is_member(g, me.id)) throw error(403, 'not a member');
-		const m = await send_group_msg(env, me.id, group, text, image, file);
+		const m = await send_group_msg(env, me.id, group, text, image, file).catch(() => {
+			throw error(503, 'not_stored');
+		});
 
 		const fanout = async () => {
 			const { undelivered } = await relay(
@@ -117,7 +119,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image, file);
+	const m = await send_msg(env, me.id, to, text, image, file).catch(() => {
+		throw error(503, 'not_stored');
+	});
 
 	const fanout = async () => {
 		const { undelivered } = await relay(

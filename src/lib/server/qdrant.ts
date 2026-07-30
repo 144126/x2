@@ -168,30 +168,22 @@ export async function search(
 
 export async function remove(env: QEnv, ids: string[]): Promise<void> {
 	if (!ids.length) return;
-	await (await qc(env)).delete(C, { points: ids }).catch(() => {});
+	await (await qc(env)).delete(C, { points: ids });
 }
 
 export async function upsert(env: QEnv, points: Pt[]): Promise<void> {
 	if (!points.length) return;
-	await (
-		await qc(env)
-	)
-		.upsert(C, {
-			points: points as unknown as {
-				id: string | number;
-				vector: number[];
-				payload: Record<string, unknown>;
-			}[]
-		})
-		.catch(() => {});
+	await (await qc(env)).upsert(C, {
+		points: points as unknown as {
+			id: string | number;
+			vector: number[];
+			payload: Record<string, unknown>;
+		}[]
+	});
 }
 
 export async function update_vectors(env: QEnv, id: string, vector: number[]): Promise<void> {
-	await (
-		await qc(env)
-	)
-		.updateVectors(C, {
-			points: [{ id, vector }]
-		})
-		.catch(() => {});
+	await (await qc(env)).updateVectors(C, {
+		points: [{ id, vector }]
+	});
 }
