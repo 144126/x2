@@ -33,7 +33,6 @@ import {
 	edit_msg,
 	get_messages,
 	get_group_messages,
-	list_conversations,
 	get_user_name,
 	search_messages
 } from '../chat';
@@ -190,54 +189,7 @@ describe('get_group_messages', () => {
 	});
 });
 
-describe('list_conversations', () => {
-	it('picks the latest message per peer from sent+received, sorted by recency', async () => {
-		scrollMock
-			.mockResolvedValueOnce([
-				// sent by uid
-				{ id: '1', payload: { s: 'm', f: 'uid', t: 'peer1', x: 'old sent', d: 100 } },
-				{ id: '2', payload: { s: 'm', f: 'uid', t: 'peer2', x: 'to peer2', d: 300 } }
-			])
-			.mockResolvedValueOnce([
-				// received by uid
-				{ id: '3', payload: { s: 'm', f: 'peer1', t: 'uid', x: 'newer from peer1', d: 500 } }
-			])
-			.mockResolvedValueOnce([]) // matched_a
-			.mockResolvedValueOnce([]); // matched_b
-		const convs = await list_conversations(ENV, 'uid');
-		expect(convs).toEqual([
-			{ peer: 'peer1', last: 500, preview: 'newer from peer1' },
-			{ peer: 'peer2', last: 300, preview: 'to peer2' }
-		]);
-	});
 
-	it('returns an empty list when there are no messages or matches', async () => {
-		scrollMock.mockResolvedValue([]);
-		expect(await list_conversations(ENV, 'uid')).toEqual([]);
-	});
-
-	it('shows a matched-but-unmessaged peer with a placeholder preview', async () => {
-		scrollMock
-			.mockResolvedValueOnce([]) // sent
-			.mockResolvedValueOnce([]) // recv
-			.mockResolvedValueOnce([{ id: 'm1', payload: { s: 'x', f: 'uid', t: 'stranger', d: 111 } }])
-			.mockResolvedValueOnce([]); // matched_b
-		const convs = await list_conversations(ENV, 'uid');
-		expect(convs).toEqual([{ peer: 'stranger', last: 111, preview: 'you matched — say hi!' }]);
-	});
-
-	it('lets a real message override the match placeholder once one exists', async () => {
-		scrollMock
-			.mockResolvedValueOnce([
-				{ id: 'm1', payload: { s: 'm', f: 'uid', t: 'stranger', x: 'hey!', d: 999 } }
-			]) // sent
-			.mockResolvedValueOnce([]) // recv
-			.mockResolvedValueOnce([{ id: 'x1', payload: { s: 'x', f: 'uid', t: 'stranger', d: 111 } }])
-			.mockResolvedValueOnce([]); // matched_b
-		const convs = await list_conversations(ENV, 'uid');
-		expect(convs).toEqual([{ peer: 'stranger', last: 999, preview: 'hey!' }]);
-	});
-});
 
 describe('get_user_name', () => {
 	it('returns the username (not full name)', async () => {

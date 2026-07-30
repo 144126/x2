@@ -17,6 +17,31 @@ async function call(
 	});
 }
 
+export async function hub_convs(
+	env: QEnv,
+	ws: Fetcher,
+	uid: string
+): Promise<{ peer?: string; group?: string; last: number; preview: string; unread: number }[]> {
+	const res = await call(env, ws, uid, '/convs').catch(() => null);
+	if (!res?.ok) return [];
+	return (await res.json()).convs;
+}
+
+export async function hub_conv(
+	env: QEnv,
+	ws: Fetcher,
+	uid: string,
+	conv: string,
+	peer_or_group: { peer: string } | { group: string },
+	last: number,
+	preview: string
+): Promise<void> {
+	await call(env, ws, uid, '/conv', {
+		method: 'POST',
+		body: JSON.stringify({ conv, ...peer_or_group, last, preview })
+	});
+}
+
 export async function hub_unread(
 	env: QEnv,
 	ws: Fetcher,

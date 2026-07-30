@@ -45,7 +45,7 @@ const worker: ExportedHandler<Env> = {
 		}
 
 		const hub = url.pathname.match(
-			/^\/hub\/([^/]+)\/(unread|read|mute|unmute|mutes|sub|unsub)$/
+			/^\/hub\/([^/]+)\/(unread|read|mute|unmute|mutes|sub|unsub|convs|conv)$/
 		);
 		if (hub) {
 			const secret = await get_secret(env.SECRET, env.DEV_SECRET);

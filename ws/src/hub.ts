@@ -11,6 +11,7 @@ interface Env {
 }
 
 type UnreadEntry = { n: number; mute_key: string };
+type ConvEntry = { peer?: string; group?: string; last: number; preview: string };
 type MuteEntry = { k: 'u' | 'r'; until: number };
 type SubEntry = { ep: string; k: string; au: string; ua?: string; d: number };
 
@@ -56,7 +57,14 @@ export class ChatHub implements DurableObject {
 			const payload = build_relay_payload(type, body);
 			const conv = typeof body.conv === 'string' ? body.conv : undefined;
 			const mute_key = typeof body.mute_key === 'string' ? body.mute_key : undefined;
-			if (type === 'msg' && conv) await this.bump_unread(conv, mute_key ?? '');
+			if (type === 'msg' && conv) {
+				await this.bump_unread(conv, mute_key ?? '');
+				await this.state.storage.put('conv:' + conv, {
+					...(body.group ? { group: body.group as string } : { peer: body.from as string }),
+					last: body.ts as number,
+					preview: (body.text as string) || (body.file ? '📎 file' : '📷 image')
+				});
+			}
 			const delivered = this.deliver(to, payload);
 			if (type === 'msg' && !delivered) {
 				const muted = mute_key ? await this.is_muted(mute_key) : false;
@@ -107,6 +115,25 @@ export class ChatHub implements DurableObject {
 		if (url.pathname === '/notify' && request.method === 'POST') {
 			const { uid, online } = (await request.json()) as { uid: string; online: boolean };
 			this.announce(uid, online);
+			return new Response('ok');
+		}
+		if (url.pathname === '/convs' && request.method === 'GET') {
+			const convs = await this.list_convs();
+			return Response.json({ convs });
+		}
+		if (url.pathname === '/conv' && request.method === 'POST') {
+			const body = (await request.json()) as {
+				conv: string;
+				peer?: string;
+				group?: string;
+				last: number;
+				preview: string;
+			};
+			await this.state.storage.put('conv:' + body.conv, {
+				...(body.group ? { group: body.group } : { peer: body.peer }),
+				last: body.last,
+				preview: body.preview
+			});
 			return new Response('ok');
 		}
 		if (url.pathname === '/unread' && request.method === 'GET') {
@@ -263,6 +290,21 @@ export class ChatHub implements DurableObject {
 			total += entry.n;
 		}
 		return { total, by_conv };
+	}
+
+	private async list_convs(): Promise<
+		({ peer?: string; group?: string; last: number; preview: string; unread: number })[]
+	> {
+		const raw = await this.state.storage.list<ConvEntry>({ prefix: 'conv:' });
+		const out: ({ peer?: string; group?: string; last: number; preview: string; unread: number })[] =
+			[];
+		for (const [key, entry] of raw) {
+			const conv = key.slice('conv:'.length);
+			if (entry.peer && (await this.is_muted(entry.peer))) continue;
+			const unread = (await this.state.storage.get<UnreadEntry>('unread:' + conv))?.n ?? 0;
+			out.push({ ...entry, unread });
+		}
+		return out.sort((a, b) => b.last - a.last);
 	}
 
 	private async is_muted(target: string): Promise<boolean> {

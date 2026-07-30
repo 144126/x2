@@ -5,6 +5,7 @@ import { send_msg, send_group_msg, backfill_vector, conv_id, group_conv_id } fro
 import { get_group, is_member } from '$lib/server/group';
 import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
 import { guard } from '$lib/server/rl';
+import { hub_conv } from '$lib/server/hub_client';
 
 // Best-effort: the message is already durably stored by the time this runs. The recipient's
 // own ChatHub Durable Object decides delivery, unread count and push from here — see
@@ -79,7 +80,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 					},
 					locals.x2_ws
 				),
-				backfill_vector(env, m.id, text)
+				backfill_vector(env, m.id, text),
+				hub_conv(env, locals.x2_ws, me.id, group_conv_id(group), { group }, m.d, text || (file ? '📎 file' : '📷 image')).catch(() => {})
 			])
 		);
 
@@ -117,7 +119,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 				},
 				locals.x2_ws
 			),
-			backfill_vector(env, m.id, text)
+			backfill_vector(env, m.id, text),
+			hub_conv(env, locals.x2_ws, me.id, conv_id(me.id, to), { peer: to }, m.d, text || (file ? '📎 file' : '📷 image')).catch(() => {})
 		])
 	);
 

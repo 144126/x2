@@ -28,11 +28,11 @@ vi.mock('$lib/server/rl', () => ({ guard: guardMock }));
 import { POST } from '../+server';
 
 let bg_tasks: Promise<unknown>[] = [];
-let relay_body: unknown;
+let call_bodies: Record<string, unknown>[] = [];
 function ws(response: unknown = { delivered: true }) {
 	return {
 		fetch: vi.fn(async (_url: string, init: { body: string }) => {
-			relay_body = JSON.parse(init.body);
+			call_bodies.push(JSON.parse(init.body));
 			return new Response(JSON.stringify(response), { status: 200 });
 		})
 	};
@@ -61,7 +61,7 @@ const settle = () => Promise.all(bg_tasks);
 beforeEach(() => {
 	vi.clearAllMocks();
 	bg_tasks = [];
-	relay_body = undefined;
+	call_bodies = [];
 	sendMsgMock.mockResolvedValue({ id: 'm1', f: 'ada', t: 'bob', x: 'hi', d: 1_700_000_000_000 });
 	sendGroupMsgMock.mockResolvedValue({ id: 'm2', f: 'ada', x: 'hi', d: 1_700_000_000_000 });
 	getGroupMock.mockResolvedValue({
@@ -167,17 +167,18 @@ describe('POST /api/send — response shape', () => {
 });
 
 describe('POST /api/send — the relay call the recipient’s ChatHub receives', () => {
-	it('one relay call, zero scroll-shaped Qdrant work — the fanout collapses into a single hub call', async () => {
+	it('zero scroll-shaped Qdrant work — relay + sender self-index, no scrolls', async () => {
 		const fetcher = ws();
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', fetcher));
 		await settle();
-		expect(fetcher.fetch).toHaveBeenCalledTimes(1);
+		expect(fetcher.fetch).toHaveBeenCalledTimes(2);
+		// first call is the relay to recipients, second is the sender self-index hub_conv
 	});
 
 	it('1:1: carries conv, mute_key and notification fields for the recipient’s own DO to use', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }));
 		await settle();
-		expect(relay_body).toMatchObject({
+		expect(call_bodies[0]).toMatchObject({
 			to: 'bob',
 			from: 'ada',
 			conv: 'ada|bob',
@@ -193,7 +194,7 @@ describe('POST /api/send — the relay call the recipient’s ChatHub receives',
 	it('group: carries conv, mute_key (the group id) and notification fields', async () => {
 		await POST(event({ group: 'g1', text: 'hi' }));
 		await settle();
-		expect(relay_body).toMatchObject({
+		expect(call_bodies[0]).toMatchObject({
 			group: 'g1',
 			members: ['bob', 'cid'],
 			conv: 'g:g1',
@@ -209,14 +210,14 @@ describe('POST /api/send — the relay call the recipient’s ChatHub receives',
 	it('carries an attached photo in the relay payload', async () => {
 		await POST(event({ to: 'bob', image: 'ada/x.png' }));
 		await settle();
-		expect(relay_body).toMatchObject({ image: '/media/ada/x.png' });
+		expect(call_bodies[0]).toMatchObject({ image: '/media/ada/x.png' });
 	});
 
 	it('names the file in the group push body when a file is attached instead of text', async () => {
 		const file = { key: 'x/doc.pdf', name: 'doc.pdf', size: 1234, type: 'application/pdf' };
 		await POST(event({ group: 'g1', file, text: '' }));
 		await settle();
-		expect(relay_body).toMatchObject({ push_body: 'ada: 📎 doc.pdf' });
+		expect(call_bodies[0]).toMatchObject({ push_body: 'ada: 📎 doc.pdf' });
 	});
 });
 

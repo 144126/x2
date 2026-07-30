@@ -1,4 +1,4 @@
-import type { Message, Match } from '../types';
+import type { Message } from '../types';
 import { ensure, upsert, retrieve_one, remove, new_id, type QEnv, f, f_or, eq, scroll, search, ZV, update_vectors } from './qdrant';
 import { embed } from './or';
 import { get_group } from './group';
@@ -175,38 +175,4 @@ export async function delete_msg(
 	return { media_key: m.im, c: m.c, gr: m.gr, f: m.f, t: m.t };
 }
 
-// the `/random` discover flow (and record_match, which wrote these) is gone, but existing
-// `s:'x'` match records from before its removal must keep surfacing here — dropping these
-// two reads would silently vanish already-visible threads for anyone who matched but never
-// exchanged a message. Deliberately kept despite nothing writing new rows; revisit once the
-// last pre-removal match record has aged out or been backfilled into a real conversation.
-export async function list_conversations(
-	env: QEnv,
-	uid: string
-): Promise<{ peer: string; last: number; preview: string }[]> {
-	await ensure(env);
-	const [sent, recv, matched_a, matched_b] = await Promise.all([
-		scroll(env, f(eq('s', 'm'), eq('f', uid)), 1000),
-		scroll(env, f(eq('s', 'm'), eq('t', uid)), 1000),
-		scroll(env, f(eq('s', 'x'), eq('f', uid)), 1000),
-		scroll(env, f(eq('s', 'x'), eq('t', uid)), 1000)
-	]);
-	const messages = [...sent, ...recv].map((p) => p.payload as unknown as Message);
-	const matches = [...matched_a, ...matched_b].map((p) => p.payload as unknown as Match);
 
-	const by_peer = new Map<string, { last: number; preview: string }>();
-	for (const mt of matches) {
-		const peer = mt.f === uid ? mt.t : mt.f;
-		const cur = by_peer.get(peer);
-		if (!cur || mt.d > cur.last)
-			by_peer.set(peer, { last: mt.d, preview: 'you matched — say hi!' });
-	}
-	for (const m of messages) {
-		const peer = m.f === uid ? m.t : m.f;
-		const cur = by_peer.get(peer);
-		if (!cur || m.d > cur.last) by_peer.set(peer, { last: m.d, preview: m.x });
-	}
-	return [...by_peer.entries()]
-		.map(([peer, v]) => ({ peer, last: v.last, preview: v.preview }))
-		.sort((a, b) => b.last - a.last);
-}

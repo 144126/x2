@@ -681,3 +681,100 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		expect(sendPushMock).not.toHaveBeenCalled();
 	});
 });
+
+// hub_conv_index: ChatHub indexes conversations from relayed messages, and GET /convs
+// returns the full list in recency order merged with unread counts.
+describe('ChatHub — conversation index (hub_conv_index)', () => {
+	let state: ReturnType<typeof makeState>;
+	let env: {
+		CHAT_HUB: { idFromName: (n: string) => string; get: (id: string) => { fetch: ReturnType<typeof vi.fn> } };
+		SECRET: string;
+		VAPID_PUBLIC?: string;
+		VAPID_PRIVATE?: string;
+		VAPID_SUBJECT?: string;
+	};
+
+	beforeEach(() => {
+		state = makeState();
+		env = {
+			SECRET,
+			VAPID_PUBLIC: 'vapid-pub',
+			VAPID_PRIVATE: 'vapid-priv',
+			VAPID_SUBJECT: 'mailto:a@b',
+			CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: vi.fn() }) }
+		};
+	});
+
+	function hub() {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return new ChatHub(state as any, env as any);
+	}
+
+	const relay = (h: ChatHub, body: Record<string, unknown>) =>
+		h.fetch(req('https://dummy/relay', { method: 'POST', body: JSON.stringify(body) }));
+
+	it('writes conv:<conv_id> with peer and preview from a relayed 1:1 msg', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'bob', text: 'hey', ts: 1000, conv: 'bob|me' });
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(body.convs).toEqual([{ peer: 'bob', last: 1000, preview: 'hey', unread: 1 }]);
+	});
+
+	it('writes conv:<conv_id> with group and preview from a relayed group msg', async () => {
+		const h = hub();
+		await relay(h, {
+			to: 'me', from: 'alice', group: 'g1', text: 'hello room', ts: 2000, conv: 'g:g1'
+		});
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(body.convs).toEqual([{ group: 'g1', last: 2000, preview: 'hello room', unread: 1 }]);
+	});
+
+	it('a second message to the same conv overwrites last and preview', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'bob', text: 'first', ts: 100, conv: 'bob|me' });
+		await relay(h, { to: 'me', from: 'bob', text: 'second', ts: 200, conv: 'bob|me' });
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(body.convs).toEqual([{ peer: 'bob', last: 200, preview: 'second', unread: 2 }]);
+	});
+
+	it('returns convs sorted by last descending', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'carol', text: 'old', ts: 50, conv: 'carol|me' });
+		await relay(h, { to: 'me', from: 'bob', text: 'recent', ts: 200, conv: 'bob|me' });
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(body.convs.map((c: { peer: string }) => c.peer)).toEqual(['bob', 'carol']);
+	});
+
+	it('merges unread counts into each conv entry', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'bob', text: 'hey', ts: 100, conv: 'bob|me' });
+		await relay(h, { to: 'me', from: 'bob', text: 'again', ts: 200, conv: 'bob|me' });
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(body.convs[0].unread).toBe(2);
+	});
+
+	it('excludes muted conversations from convs', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/mute', { method: 'POST', body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 }) })
+		);
+		await relay(h, { to: 'me', from: 'bob', text: 'hey', ts: 100, conv: 'bob|me', mute_key: 'bob' });
+		await relay(h, { to: 'me', from: 'carol', text: 'hi', ts: 200, conv: 'carol|me' });
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(body.convs).toEqual([{ peer: 'carol', last: 200, preview: 'hi', unread: 1 }]);
+	});
+
+	it('picks file or image preview when text is empty', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'bob', text: '', file: true, ts: 100, conv: 'bob|me' });
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(['📎 file', '📷 image']).toContain(body.convs[0].preview);
+	});
+});
