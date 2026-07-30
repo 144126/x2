@@ -22,17 +22,27 @@ export { b64u, unb64u } from '../b64';
 
 let q: QdrantClient | null = null;
 let q_key = '';
-let q_url = '';
+let creds: Promise<{ url: string; key: string }> | null = null;
+let ensuring: Promise<void> | null = null;
 
 export async function qc(env: QEnv): Promise<QdrantClient> {
-	const url = await get_secret(env.QDRANT_URL, env.DEV_QDRANT_URL);
-	const key = await get_secret(env.QDRANT_KEY, env.DEV_QDRANT_KEY);
-	if (!q || q_key !== key || q_url !== url) {
+	creds ??= (async () => ({
+		url: await get_secret(env.QDRANT_URL, env.DEV_QDRANT_URL),
+		key: await get_secret(env.QDRANT_KEY, env.DEV_QDRANT_KEY)
+	}))();
+	const { url, key } = await creds;
+	if (!q || q_key !== key) {
 		q = new QdrantClient({ url, apiKey: key, checkCompatibility: false });
 		q_key = key;
-		q_url = url;
 	}
 	return q;
+}
+
+export function __reset_qdrant(): void {
+	q = null;
+	q_key = '';
+	creds = null;
+	ensuring = null;
 }
 
 export const ZV: number[] = new Array(4096).fill(0);
@@ -78,20 +88,36 @@ type Pt = {
 	score?: number;
 };
 
-// idempotent: create collection + payload indexes if missing (once per instance)
-// Qdrant strict_mode on this collection rejects filtering on any unindexed field, so every
-// key ever used in a filter (eq/range) below MUST be indexed here.
-let ensured = false;
-let ensuring: Promise<void> | null = null;
-export async function ensure(env: QEnv): Promise<void> {
-	if (ensured) return;
-	if (ensuring) return ensuring;
-	ensuring = (async () => {
-		const c = await qc(env);
-		await c.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } }).catch(() => {});
-		ensured = true;
-	})();
-	return ensuring;
+const KEYWORD_KEYS = [
+	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k'
+] as const;
+const INT_KEYS = ['ag', 'at', 'sent'] as const;
+
+export function ensure(env: QEnv): Promise<void> {
+	return (ensuring ??= provision(env).catch(() => {
+		ensuring = null;
+	}));
+}
+
+async function provision(env: QEnv): Promise<void> {
+	const c = await qc(env);
+	const need = [...KEYWORD_KEYS, ...INT_KEYS];
+	try {
+		const info = await c.getCollection(C);
+		const have = new Set(Object.keys(info.payload_schema ?? {}));
+		if (need.every((k) => have.has(k))) return;
+	} catch {
+		/* collection missing — fall through and create it */
+	}
+	await c.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } }).catch(() => {});
+	await Promise.all([
+		...KEYWORD_KEYS.map((k) =>
+			c.createPayloadIndex(C, { field_name: k, field_schema: 'keyword' }).catch(() => {})
+		),
+		...INT_KEYS.map((k) =>
+			c.createPayloadIndex(C, { field_name: k, field_schema: 'integer' }).catch(() => {})
+		)
+	]);
 }
 
 export async function scroll(

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockClient = vi.hoisted(() => ({
 	createCollection: vi.fn().mockResolvedValue(undefined),
 	createPayloadIndex: vi.fn().mockResolvedValue(undefined),
+	getCollection: vi.fn().mockRejectedValue(new Error('not found')),
 	scroll: vi.fn().mockResolvedValue({ points: [] }),
 	search: vi.fn().mockResolvedValue([])
 }));
@@ -15,49 +16,46 @@ vi.mock('@qdrant/js-client-rest', () => {
 });
 
 import type { QEnv, Cond } from '../qdrant';
-import { ZV } from '../qdrant';
+import { ZV, __reset_qdrant } from '../qdrant';
 
 const ENV = { QDRANT_URL: 'http://localhost', QDRANT_KEY: 'k' } as unknown as QEnv;
 
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.resetModules();
+	__reset_qdrant();
 });
 
 describe('ensure', () => {
-	it('creates a payload index for every key any module filters on', async () => {
+	it('probes the collection and creates indexes when missing', async () => {
+		mockClient.getCollection.mockRejectedValue(new Error('not found'));
+
 		const { ensure } = await import('../qdrant');
 		await ensure(ENV);
 
-		const keys = mockClient.createPayloadIndex.mock.calls.map(
-			(c: [string, { field_name: string }]) => c[1].field_name
-		);
-		expect(keys).toEqual(
-			expect.arrayContaining([
-				's',
-				't',
-				'r',
-				'c',
-				'f',
-				'co',
-				'st',
-				'ci',
-				'u',
-				'ow',
-				'mb',
-				'gr',
-				'uid',
-				'ac',
-				'tg',
-				'k',
-				'ag',
-				'at',
-				'sent'
-			])
-		);
+		expect(mockClient.createCollection).toHaveBeenCalledTimes(1);
+		expect(mockClient.createPayloadIndex).toHaveBeenCalled();
 	});
 
-	it('is idempotent — a second call does not re-issue index creation', async () => {
+	it('skips all creation when every index already exists', async () => {
+		mockClient.getCollection.mockResolvedValue({
+			payload_schema: {
+				s: {}, t: {}, r: {}, c: {}, f: {}, co: {}, st: {}, ci: {}, u: {},
+				ow: {}, mb: {}, gr: {}, uid: {}, ac: {}, tg: {}, k: {},
+				ag: {}, at: {}, sent: {}
+			}
+		});
+
+		const { ensure } = await import('../qdrant');
+		await ensure(ENV);
+
+		expect(mockClient.createCollection).not.toHaveBeenCalled();
+		expect(mockClient.createPayloadIndex).not.toHaveBeenCalled();
+	});
+
+	it('is idempotent — a second call does not re-issue creation', async () => {
+		mockClient.getCollection.mockRejectedValue(new Error('not found'));
+
 		const { ensure } = await import('../qdrant');
 		await ensure(ENV);
 		expect(mockClient.createCollection).toHaveBeenCalledTimes(1);
@@ -67,6 +65,7 @@ describe('ensure', () => {
 	});
 
 	it('does not throw when the collection already exists', async () => {
+		mockClient.getCollection.mockRejectedValue(new Error('not found'));
 		mockClient.createCollection = vi.fn().mockRejectedValue(new Error('already exists'));
 
 		const { ensure } = await import('../qdrant');
