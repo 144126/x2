@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock } = vi.hoisted(
-	() => ({
+const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, setPayloadMock } =
+	vi.hoisted(() => ({
 		ensureMock: vi.fn(),
 		upsertMock: vi.fn(),
 		retrieveOneMock: vi.fn(),
 		scrollMock: vi.fn(),
 		searchMock: vi.fn(),
-		embedMock: vi.fn()
-	})
-);
+		embedMock: vi.fn(),
+		setPayloadMock: vi.fn()
+	}));
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
@@ -19,7 +19,8 @@ vi.mock('../qdrant', async () => {
 		upsert: upsertMock,
 		retrieve_one: retrieveOneMock,
 		scroll: scrollMock,
-		search: searchMock
+		search: searchMock,
+		set_payload: setPayloadMock
 	};
 });
 vi.mock('../or', () => ({ embed: embedMock }));
@@ -49,6 +50,7 @@ beforeEach(() => {
 	scrollMock.mockResolvedValue([]);
 	searchMock.mockResolvedValue([]);
 	embedMock.mockResolvedValue(VEC);
+	setPayloadMock.mockResolvedValue(undefined);
 });
 
 const group = (over: Record<string, unknown> = {}) => ({
@@ -132,38 +134,55 @@ describe('update_group', () => {
 		expect(upsertMock).not.toHaveBeenCalled();
 	});
 
-	it('updates a location on an existing room', async () => {
+	it('a location-only edit skips the embedding — location is not part of the search text', async () => {
 		retrieveOneMock.mockResolvedValue(group());
-		const g = await update_group(ENV, 'g1', 'owner1', { country: 'GH' });
-		expect(upsertMock.mock.calls[0][1][0].payload).toMatchObject({ co: 'GH' });
+		await update_group(ENV, 'g1', 'owner1', { country: 'GH' });
+		expect(embedMock).not.toHaveBeenCalled();
+		expect(upsertMock).not.toHaveBeenCalled();
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'g1', expect.objectContaining({ co: 'GH' }));
 	});
 
-	it('clears a location when given an empty string', async () => {
+	it('clears a location when given an empty string, via setPayload not upsert', async () => {
 		retrieveOneMock.mockResolvedValue(group({ co: 'GH' }));
-		const g = await update_group(ENV, 'g1', 'owner1', { country: '' });
-		expect(upsertMock.mock.calls[0][1][0].payload.co).toBe('');
+		await update_group(ENV, 'g1', 'owner1', { country: '' });
+		expect(embedMock).not.toHaveBeenCalled();
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'g1', expect.objectContaining({ co: '' }));
 	});
 
 	it('leaves a location alone when the field is undefined', async () => {
 		retrieveOneMock.mockResolvedValue(group({ co: 'GH' }));
-		const g = await update_group(ENV, 'g1', 'owner1', {});
-		expect(upsertMock.mock.calls[0][1][0].payload.co).toBe('GH');
+		await update_group(ENV, 'g1', 'owner1', {});
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'g1', expect.objectContaining({ co: 'GH' }));
 	});
 });
 
 describe('membership', () => {
-	it('adds a joiner once, and is idempotent', async () => {
+	it('adds a joiner once, and is idempotent — via setPayload, never re-embedding', async () => {
 		retrieveOneMock.mockResolvedValue(group());
 		expect((await join_group(ENV, 'g1', 'bob'))?.members).toEqual(['owner1', 'bob']);
+		expect(embedMock).not.toHaveBeenCalled();
+		expect(upsertMock).not.toHaveBeenCalled();
+		expect(setPayloadMock).toHaveBeenCalledWith(
+			ENV,
+			'g1',
+			expect.objectContaining({ mb: ['owner1', 'bob'] })
+		);
 
+		setPayloadMock.mockClear();
 		retrieveOneMock.mockResolvedValue(group({ mb: ['owner1', 'bob'] }));
 		expect((await join_group(ENV, 'g1', 'bob'))?.members).toEqual(['owner1', 'bob']);
-		expect(upsertMock).toHaveBeenCalledTimes(1); // second join wrote nothing
+		expect(setPayloadMock).not.toHaveBeenCalled(); // second join wrote nothing
 	});
 
-	it('lets a member leave but never the owner', async () => {
+	it('lets a member leave but never the owner, via setPayload not embed', async () => {
 		retrieveOneMock.mockResolvedValue(group({ mb: ['owner1', 'bob'] }));
 		expect((await leave_group(ENV, 'g1', 'bob'))?.members).toEqual(['owner1']);
+		expect(embedMock).not.toHaveBeenCalled();
+		expect(setPayloadMock).toHaveBeenCalledWith(
+			ENV,
+			'g1',
+			expect.objectContaining({ mb: ['owner1'] })
+		);
 		expect(await leave_group(ENV, 'g1', 'owner1')).toBeNull();
 	});
 

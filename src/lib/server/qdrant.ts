@@ -187,3 +187,11 @@ export async function update_vectors(env: QEnv, id: string, vector: number[]): P
 		points: [{ id, vector }]
 	});
 }
+
+export async function set_payload(
+	env: QEnv,
+	id: string,
+	payload: Record<string, unknown>
+): Promise<void> {
+	await (await qc(env)).setPayload(C, { payload, points: [id] });
+}

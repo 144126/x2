@@ -8,7 +8,8 @@ const mockClient = vi.hoisted(() => ({
 	search: vi.fn().mockResolvedValue([]),
 	upsert: vi.fn().mockResolvedValue(undefined),
 	delete: vi.fn().mockResolvedValue(undefined),
-	updateVectors: vi.fn().mockResolvedValue(undefined)
+	updateVectors: vi.fn().mockResolvedValue(undefined),
+	setPayload: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('@qdrant/js-client-rest', () => {
@@ -165,8 +166,22 @@ describe('search', () => {
 	});
 });
 
+describe('set_payload', () => {
+	it('writes payload only, for exactly the given point id', async () => {
+		const { set_payload } = await import('../qdrant');
+		await set_payload(ENV, 'g1', { nm: 'renamed' });
+		expect(mockClient.setPayload).toHaveBeenCalledWith('x2', {
+			payload: { nm: 'renamed' },
+			points: ['g1']
+		});
+	});
+});
+
 // A failed write must be visible to the caller — a silently swallowed error means the app
-// answers 200 OK for a message that was never stored.
+// answers 200 OK for a message that was never stored. These reassign rejected implementations
+// onto the shared mockClient and clearAllMocks() (in beforeEach) does not undo that, so keep
+// this describe block last in the file — any success-path test added after would inherit the
+// rejection.
 describe('writes surface failures instead of swallowing them', () => {
 	it('upsert rejects when the client rejects', async () => {
 		mockClient.upsert.mockRejectedValue(new Error('qdrant down'));
@@ -186,5 +201,11 @@ describe('writes surface failures instead of swallowing them', () => {
 		mockClient.updateVectors.mockRejectedValue(new Error('qdrant down'));
 		const { update_vectors } = await import('../qdrant');
 		await expect(update_vectors(ENV, '1', ZV)).rejects.toThrow('qdrant down');
+	});
+
+	it('set_payload rejects when the client rejects', async () => {
+		mockClient.setPayload.mockRejectedValue(new Error('qdrant down'));
+		const { set_payload } = await import('../qdrant');
+		await expect(set_payload(ENV, '1', { x: 1 })).rejects.toThrow('qdrant down');
 	});
 });

@@ -6,6 +6,7 @@ import {
 	new_id,
 	search,
 	scroll,
+	set_payload,
 	f,
 	eq,
 	type QEnv
@@ -60,6 +61,10 @@ async function put(env: QEnv, g: Group): Promise<void> {
 	await upsert(env, [{ id: g.id, vector: vec, payload: g as unknown as Record<string, unknown> }]);
 }
 
+async function put_payload(env: QEnv, g: Group): Promise<void> {
+	await set_payload(env, g.id, g as unknown as Record<string, unknown>);
+}
+
 export async function save_group(
 	env: QEnv,
 	ownerId: string,
@@ -94,7 +99,8 @@ export async function get_group(env: QEnv, id: string): Promise<GroupView | null
 	return g ? view(g) : null;
 }
 
-/** owner-only edit. Re-embeds, since name/description are what search matches on. */
+/** owner-only edit. Re-embeds only when name/description actually changed — that's the whole
+ *  search text; a location-only edit skips the paid embedding call entirely. */
 function apply_location(
 	cur: Group,
 	updates: { country?: string; state?: string; city?: string }
@@ -121,7 +127,8 @@ export async function update_group(
 		ds: updates.description === undefined ? cur.ds : updates.description.trim(),
 		...apply_location(cur, updates)
 	};
-	await put(env, next);
+	const changed = group_text(next.nm, next.ds) !== group_text(cur.nm, cur.ds);
+	await (changed ? put(env, next) : put_payload(env, next));
 	return view(next);
 }
 
@@ -140,7 +147,7 @@ export async function join_group(env: QEnv, id: string, uid: string): Promise<Gr
 	if (!cur) return null;
 	if (cur.mb.includes(uid)) return view(cur);
 	const next: Group = { ...cur, mb: [...cur.mb, uid] };
-	await put(env, next);
+	await put_payload(env, next);
 	return view(next);
 }
 
@@ -150,7 +157,7 @@ export async function leave_group(env: QEnv, id: string, uid: string): Promise<G
 	const cur = await raw_group(env, id);
 	if (!cur || cur.ow === uid) return null;
 	const next: Group = { ...cur, mb: cur.mb.filter((m) => m !== uid) };
-	await put(env, next);
+	await put_payload(env, next);
 	return view(next);
 }
 
