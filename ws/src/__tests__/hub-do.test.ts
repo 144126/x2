@@ -1,6 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ChatHub } from '../hub';
 
+// real workerd provides this globally; vitest's node env does not — every ChatHub
+// constructor call needs it now that it calls setWebSocketAutoResponse unconditionally.
+class FakeReqRespPair {
+	constructor(
+		public request: string,
+		public response: string
+	) {}
+}
+// re-stubbed before every test (not just once at import) because one existing test below
+// calls vi.unstubAllGlobals(), which would otherwise wipe this out for every test after it.
+beforeEach(() => {
+	vi.stubGlobal('WebSocketRequestResponsePair', FakeReqRespPair);
+});
+
 class FakeSocket {
 	sent: string[] = [];
 	closed = false;
@@ -36,6 +50,7 @@ function makeState() {
 			(tag ? (socketsByTag.get(tag) ?? []) : allSockets).filter((s) => !s.closed)
 		),
 		getTags: vi.fn((ws: FakeSocket) => tagsBySocket.get(ws) ?? []),
+		setWebSocketAutoResponse: vi.fn(),
 		storage: {
 			get: vi.fn(async (k: string) => store.get(k)),
 			put: vi.fn(async (k: string, v: unknown) => {
@@ -73,6 +88,24 @@ describe('ChatHub.fetch', () => {
 				get: () => ({ fetch: stubFetch })
 			}
 		};
+	});
+
+	it('registers a ping/pong auto-response so pings never wake the DO', () => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		new ChatHub(state as any, env as any);
+		expect(state.setWebSocketAutoResponse).toHaveBeenCalledTimes(1);
+		const pair = state.setWebSocketAutoResponse.mock.calls[0][0] as FakeReqRespPair;
+		expect(pair.request).toBe('{"type":"ping"}');
+		expect(pair.response).toBe('{"type":"pong"}');
+	});
+
+	it('no longer sends a manual pong — the auto-response handles it before webSocketMessage runs', async () => {
+		const ws = new FakeSocket();
+		state.acceptWebSocket(ws, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.webSocketMessage(ws as unknown as WebSocket, JSON.stringify({ type: 'ping' }));
+		expect(ws.sent).toEqual([]);
 	});
 
 	it('returns 400 for an unrecognized path', async () => {

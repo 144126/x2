@@ -13,6 +13,12 @@ export class ChatHub implements DurableObject {
 	constructor(state: DurableObjectState, env: Env) {
 		this.state = state;
 		this.env = env;
+		state.setWebSocketAutoResponse(
+			new WebSocketRequestResponsePair(
+				JSON.stringify({ type: 'ping' }),
+				JSON.stringify({ type: 'pong' })
+			)
+		);
 	}
 
 	async fetch(request: Request): Promise<Response> {
@@ -98,11 +104,7 @@ export class ChatHub implements DurableObject {
 		const msg = JSON.parse(data);
 		const self = this.state.getTags(ws)[0];
 		if (!self) return;
-		if (msg.type === 'ping') {
-			try {
-				ws.send(JSON.stringify({ type: 'pong' }));
-			} catch {}
-		} else if (msg.type === 'signal') {
+		if (msg.type === 'signal') {
 			msg.from = self;
 			const id = this.env.CHAT_HUB.idFromName(msg.to);
 			const stub = this.env.CHAT_HUB.get(id);
