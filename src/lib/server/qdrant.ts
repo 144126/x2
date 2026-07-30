@@ -158,6 +158,12 @@ export async function retrieve_one(env: QEnv, id: string, with_vector = false): 
 	return (r[0] as Pt) ?? null;
 }
 
+export async function retrieve_many(env: QEnv, ids: string[]): Promise<Pt[]> {
+	if (!ids.length) return [];
+	const r = await (await qc(env)).retrieve(C, { ids, with_payload: true }).catch(() => []);
+	return r as Pt[];
+}
+
 export async function search(
 	env: QEnv,
 	vector: number[],

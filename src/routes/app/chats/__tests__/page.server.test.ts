@@ -1,28 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const {
-	getUserNameMock,
-	ensureMock,
+	getUserNamesMock,
 	listFoldersMock,
 	hubConvsMock,
 	listMutesMock
 } = vi.hoisted(() => ({
-	getUserNameMock: vi.fn(),
-	ensureMock: vi.fn(),
+	getUserNamesMock: vi.fn(),
 	listFoldersMock: vi.fn(),
 	hubConvsMock: vi.fn(),
 	listMutesMock: vi.fn()
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
-vi.mock('$lib/server/chat', async () => {
-	const actual = await vi.importActual<typeof import('$lib/server/chat')>('$lib/server/chat');
-	return { ...actual, get_user_name: getUserNameMock };
-});
-vi.mock('$lib/server/qdrant', async () => {
-	const actual = await vi.importActual<typeof import('$lib/server/qdrant')>('$lib/server/qdrant');
-	return { ...actual, ensure: ensureMock };
-});
+vi.mock('$lib/server/chat', () => ({ get_user_names: getUserNamesMock }));
 vi.mock('$lib/server/folders', () => ({ list_folders: listFoldersMock }));
 vi.mock('$lib/server/hub_client', () => ({ hub_convs: hubConvsMock }));
 vi.mock('$lib/server/mute', () => ({ list_mutes: listMutesMock }));
@@ -37,9 +28,8 @@ function event(uid: string | null = 'me') {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	ensureMock.mockResolvedValue(undefined);
 	hubConvsMock.mockResolvedValue([]);
-	getUserNameMock.mockResolvedValue('Alice');
+	getUserNamesMock.mockResolvedValue({});
 	listFoldersMock.mockResolvedValue([]);
 	listMutesMock.mockResolvedValue([]);
 });
@@ -55,11 +45,12 @@ describe('GET /app/chats', () => {
 	});
 
 	it('returns conversations with resolved usernames', async () => {
-		hubConvsMock.mockResolvedValue([{ peer: 'bob', last: 100, preview: 'hey' }]);
-		getUserNameMock.mockResolvedValue('Bob');
+		hubConvsMock.mockResolvedValue([{ peer: 'bob', last: 100, preview: 'hey' }, { peer: 'carol', last: 50, preview: 'hi' }]);
+		getUserNamesMock.mockResolvedValue({ bob: 'Bobby', carol: 'Carol' });
 		const data = (await load(event('me'))) as { convs: { peer: string; name: string }[] };
-		expect(getUserNameMock).toHaveBeenCalledWith(expect.anything(), 'bob');
-		expect(data.convs[0].name).toBe('Bob');
+		expect(getUserNamesMock).toHaveBeenCalledWith(expect.anything(), ['bob', 'carol']);
+		expect(data.convs[0].name).toBe('Bobby');
+		expect(data.convs[1].name).toBe('Carol');
 	});
 
 	it('unread counts are embedded in each conv entry from the hub', async () => {

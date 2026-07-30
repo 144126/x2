@@ -1,5 +1,5 @@
 import type { User } from '../types';
-import { ensure, upsert, retrieve_one, uuid_from, ZV, V, type QEnv } from './qdrant';
+import { ensure, upsert, retrieve_one, retrieve_many, uuid_from, ZV, V, type QEnv } from './qdrant';
 import { validate_username, available_username } from './username';
 import { hash_pw, verify_pw } from './pw';
 
@@ -97,4 +97,15 @@ export async function verify_user_pw(
 /** username for display — the only user-facing identity. */
 export async function get_user_name(env: QEnv, uid: string): Promise<string> {
 	return (await get_user(env, uid))?.u ?? uid;
+}
+
+export async function get_user_names(env: QEnv, ids: string[]): Promise<Record<string, string>> {
+	const pts = await retrieve_many(env, [...new Set(ids)]);
+	const out: Record<string, string> = {};
+	for (const p of pts) {
+		const u = p.payload as unknown as User;
+		if (u?.s === 'u') out[String(p.id)] = u.u ?? String(p.id);
+	}
+	for (const id of ids) out[id] ??= id;
+	return out;
 }

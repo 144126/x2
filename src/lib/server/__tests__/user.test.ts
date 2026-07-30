@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, scrollMock } = vi.hoisted(() => ({
+const { ensureMock, upsertMock, retrieveOneMock, retrieveManyMock, scrollMock } = vi.hoisted(() => ({
 	ensureMock: vi.fn(),
 	upsertMock: vi.fn(),
 	retrieveOneMock: vi.fn(),
+	retrieveManyMock: vi.fn(),
 	scrollMock: vi.fn()
 }));
 
@@ -14,11 +15,12 @@ vi.mock('../qdrant', async () => {
 		ensure: ensureMock,
 		upsert: upsertMock,
 		retrieve_one: retrieveOneMock,
+		retrieve_many: retrieveManyMock,
 		scroll: scrollMock
 	};
 });
 
-import { save_user, get_user, create_pw_user, verify_user_pw, patch_user } from '../user';
+import { save_user, get_user, create_pw_user, verify_user_pw, patch_user, get_user_names } from '../user';
 import { uuid_from, ZV, V } from '../qdrant';
 import { hash_pw } from '../pw';
 
@@ -168,5 +170,46 @@ describe('patch_user', () => {
 		retrieveOneMock.mockResolvedValue(null);
 		expect(await patch_user(ENV, 'ghost', { ac: 'CODE1' })).toBeNull();
 		expect(upsertMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('get_user_names', () => {
+	it('issues exactly one batched retrieve call for N ids', async () => {
+		retrieveManyMock.mockResolvedValue([
+			{ id: 'bob', payload: { s: 'u', u: 'bobby' } },
+			{ id: 'carol', payload: { s: 'u', u: 'caro' } }
+		]);
+		await get_user_names(ENV, ['bob', 'carol']);
+		expect(retrieveManyMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('dedupes repeated ids', async () => {
+		retrieveManyMock.mockResolvedValue([{ id: 'bob', payload: { s: 'u', u: 'bobby' } }]);
+		const names = await get_user_names(ENV, ['bob', 'bob']);
+		expect(retrieveManyMock).toHaveBeenCalledWith(expect.anything(), ['bob']);
+	});
+
+	it('maps id to username', async () => {
+		retrieveManyMock.mockResolvedValue([
+			{ id: 'bob', payload: { s: 'u', u: 'bobby' } }
+		]);
+		const names = await get_user_names(ENV, ['bob']);
+		expect(names).toEqual({ bob: 'bobby' });
+	});
+
+	it('falls back to the raw id for a point that does not exist in the response', async () => {
+		retrieveManyMock.mockResolvedValue([
+			{ id: 'bob', payload: { s: 'u', u: 'bobby' } }
+		]);
+		const names = await get_user_names(ENV, ['bob', 'ghost']);
+		expect(names).toEqual({ bob: 'bobby', ghost: 'ghost' });
+	});
+
+	it('falls back to the raw id for a point whose payload is not s: "u"', async () => {
+		retrieveManyMock.mockResolvedValue([
+			{ id: 'msg1', payload: { s: 'm', x: 'hello' } }
+		]);
+		const names = await get_user_names(ENV, ['msg1']);
+		expect(names).toEqual({ msg1: 'msg1' });
 	});
 });

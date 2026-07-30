@@ -2,7 +2,7 @@ import type { Message } from '../types';
 import { ensure, upsert, retrieve_one, remove, new_id, type QEnv, f, f_or, eq, scroll, search, ZV, update_vectors } from './qdrant';
 import { embed } from './or';
 import { get_group } from './group';
-export { get_user_name } from './user';
+export { get_user_name, get_user_names } from './user';
 
 export { ensure };
 
