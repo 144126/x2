@@ -1,10 +1,20 @@
-import { get_secret, type SecretVal } from '../../src/lib/server/qdrant';
+import { get_secret, uuid_from, type SecretVal } from '../../src/lib/server/qdrant';
+import { send_push, clamp_payload, push_topic, type PushKeys } from '../../src/lib/server/push';
 
 interface Env {
 	CHAT_HUB: DurableObjectNamespace;
 	SECRET: SecretVal;
 	DEV_SECRET?: SecretVal;
+	VAPID_PUBLIC?: SecretVal;
+	VAPID_PRIVATE?: SecretVal;
+	VAPID_SUBJECT?: SecretVal;
 }
+
+type UnreadEntry = { n: number; mute_key: string };
+type MuteEntry = { k: 'u' | 'r'; until: number };
+type SubEntry = { ep: string; k: string; au: string; ua?: string; d: number };
+
+const is_mute_active = (m: MuteEntry, now = Date.now()): boolean => m.until === 0 || m.until > now;
 
 export class ChatHub implements DurableObject {
 	private state: DurableObjectState;
@@ -43,25 +53,27 @@ export class ChatHub implements DurableObject {
 			const body = (await request.json()) as Record<string, unknown>;
 			const to = body.to as string;
 			const type = (body.type as string) ?? 'msg';
-			let payload: Record<string, unknown>;
-			if (type === 'edit') {
-				payload = { type: 'edit', id: body.id, from: body.from, text: body.text, e: body.e, ts: body.ts };
-			} else if (type === 'delete') {
-				payload = { type: 'delete', id: body.id };
-			} else {
-				payload = {
-					type: 'msg',
-					id: body.id,
-					from: body.from,
-					from_name: body.from_name,
-					text: body.text,
-					image: body.image,
-					file: body.file,
-					group: body.group,
-					ts: body.ts
-				};
-			}
+			const payload = build_relay_payload(type, body);
+			const conv = typeof body.conv === 'string' ? body.conv : undefined;
+			const mute_key = typeof body.mute_key === 'string' ? body.mute_key : undefined;
+			if (type === 'msg' && conv) await this.bump_unread(conv, mute_key ?? '');
 			const delivered = this.deliver(to, payload);
+			if (type === 'msg' && !delivered) {
+				const muted = mute_key ? await this.is_muted(mute_key) : false;
+				if (!muted) {
+					await this.send_push_notification({
+						title: body.title as string | undefined,
+						body: body.push_body as string | undefined,
+						url: body.url as string | undefined,
+						conv,
+						id: body.id as string | undefined,
+						ts: body.ts as number | undefined,
+						kind: body.kind as string | undefined,
+						reply_to: body.reply_to as string | undefined,
+						image: body.image as string | undefined
+					});
+				}
+			}
 			return Response.json({ delivered });
 		}
 		if (url.pathname === '/signal') {
@@ -95,6 +107,58 @@ export class ChatHub implements DurableObject {
 		if (url.pathname === '/notify' && request.method === 'POST') {
 			const { uid, online } = (await request.json()) as { uid: string; online: boolean };
 			this.announce(uid, online);
+			return new Response('ok');
+		}
+		if (url.pathname === '/unread' && request.method === 'GET') {
+			const { total, by_conv } = await this.unread_totals();
+			return Response.json({ total, by_conv });
+		}
+		if (url.pathname === '/read' && request.method === 'POST') {
+			const { conv, ts } = (await request.json()) as { conv: string; ts?: number };
+			const prev = (await this.state.storage.get<number>('read:' + conv)) ?? 0;
+			await this.state.storage.put('read:' + conv, Math.max(prev, ts ?? Date.now()));
+			await this.state.storage.delete('unread:' + conv);
+			const { total } = await this.unread_totals();
+			return Response.json({ total });
+		}
+		if (url.pathname === '/mute' && request.method === 'POST') {
+			const { target, kind, until } = (await request.json()) as {
+				target: string;
+				kind: 'u' | 'r';
+				until: number;
+			};
+			await this.state.storage.put('mute:' + target, { k: kind, until });
+			return new Response('ok');
+		}
+		if (url.pathname === '/unmute' && request.method === 'POST') {
+			const { target } = (await request.json()) as { target: string };
+			await this.state.storage.delete('mute:' + target);
+			return new Response('ok');
+		}
+		if (url.pathname === '/mutes' && request.method === 'GET') {
+			const list = await this.state.storage.list<MuteEntry>({ prefix: 'mute:' });
+			const now = Date.now();
+			const mutes = [...list.entries()]
+				.filter(([, m]) => is_mute_active(m, now))
+				.map(([key, m]) => ({ tg: key.slice('mute:'.length), k: m.k, until: m.until }));
+			return Response.json({ mutes });
+		}
+		if (url.pathname === '/sub' && request.method === 'POST') {
+			const body = (await request.json()) as { ep: string; k: string; au: string; ua?: string };
+			const key = 'sub:' + (await uuid_from(body.ep));
+			const entry: SubEntry = {
+				ep: body.ep,
+				k: body.k,
+				au: body.au,
+				...(body.ua ? { ua: body.ua } : {}),
+				d: Date.now()
+			};
+			await this.state.storage.put(key, entry);
+			return new Response('ok');
+		}
+		if (url.pathname === '/unsub' && request.method === 'POST') {
+			const { ep } = (await request.json()) as { ep: string };
+			await this.state.storage.delete('sub:' + (await uuid_from(ep)));
 			return new Response('ok');
 		}
 		return new Response('bad', { status: 400 });
@@ -178,6 +242,92 @@ export class ChatHub implements DurableObject {
 			} catch {}
 		}
 	}
+
+	// Atomic by construction: Workers serializes concurrent fetch() calls to the same DO
+	// instance, so this read-modify-write needs no CAS — same guarantee credit_account.ts
+	// documents and relies on.
+	private async bump_unread(conv: string, mute_key: string): Promise<void> {
+		const key = 'unread:' + conv;
+		const cur = (await this.state.storage.get<UnreadEntry>(key)) ?? { n: 0, mute_key };
+		await this.state.storage.put(key, { n: cur.n + 1, mute_key: cur.mute_key || mute_key });
+	}
+
+	private async unread_totals(): Promise<{ total: number; by_conv: Record<string, number> }> {
+		const entries = await this.state.storage.list<UnreadEntry>({ prefix: 'unread:' });
+		const by_conv: Record<string, number> = {};
+		let total = 0;
+		for (const [key, entry] of entries) {
+			if (entry.mute_key && (await this.is_muted(entry.mute_key))) continue;
+			const conv = key.slice('unread:'.length);
+			by_conv[conv] = entry.n;
+			total += entry.n;
+		}
+		return { total, by_conv };
+	}
+
+	private async is_muted(target: string): Promise<boolean> {
+		const m = await this.state.storage.get<MuteEntry>('mute:' + target);
+		return !!m && is_mute_active(m);
+	}
+
+	private async send_push_notification(msg: {
+		title?: string;
+		body?: string;
+		url?: string;
+		conv?: string;
+		id?: string;
+		ts?: number;
+		kind?: string;
+		reply_to?: string;
+		image?: string;
+	}): Promise<void> {
+		const pub = await get_secret(this.env.VAPID_PUBLIC);
+		const priv = await get_secret(this.env.VAPID_PRIVATE);
+		const subject = await get_secret(this.env.VAPID_SUBJECT);
+		if (!pub || !priv || !subject) return;
+		const keys: PushKeys = { public: pub, private: priv, subject };
+
+		const subs = await this.state.storage.list<SubEntry>({ prefix: 'sub:' });
+		if (!subs.size) return;
+
+		const { total: unread } = await this.unread_totals();
+		const payload = clamp_payload({ ...msg, unread });
+		const opts = msg.conv ? { topic: push_topic(msg.conv) } : {};
+
+		const gone: string[] = [];
+		await Promise.all(
+			[...subs.entries()].map(async ([key, sub]) => {
+				const r = await send_push(
+					{ endpoint: sub.ep, keys: { p256dh: sub.k, auth: sub.au } },
+					payload,
+					keys,
+					opts
+				);
+				if (r.gone) gone.push(key);
+			})
+		);
+		if (gone.length) await this.state.storage.delete(gone);
+	}
+}
+
+function build_relay_payload(type: string, body: Record<string, unknown>): Record<string, unknown> {
+	if (type === 'edit') {
+		return { type: 'edit', id: body.id, from: body.from, text: body.text, e: body.e, ts: body.ts };
+	}
+	if (type === 'delete') {
+		return { type: 'delete', id: body.id };
+	}
+	return {
+		type: 'msg',
+		id: body.id,
+		from: body.from,
+		from_name: body.from_name,
+		text: body.text,
+		image: body.image,
+		file: body.file,
+		group: body.group,
+		ts: body.ts
+	};
 }
 
 export async function verify_token(secret: string, uid: string, token: string): Promise<boolean> {

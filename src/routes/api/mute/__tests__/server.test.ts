@@ -30,7 +30,7 @@ function event(
 			...(body === undefined ? {} : { body: JSON.stringify(body) })
 		}),
 		url,
-		locals: { user: uid ? { id: uid, username: 'ada' } : null }
+		locals: { user: uid ? { id: uid, username: 'ada' } : null, x2_ws: {} }
 	} as unknown as Parameters<typeof POST>[0];
 }
 
@@ -83,23 +83,23 @@ describe('POST /api/mute', () => {
 
 	it('mutes indefinitely when no expiry is given', async () => {
 		await POST(event('POST', { target: 'bob', kind: 'u' }));
-		expect(muteMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob', 'u', 0);
+		expect(muteMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'ada', 'bob', 'u', 0);
 	});
 
 	it('converts a future expiry into an absolute until', async () => {
 		const future = Date.now() + 10_000;
 		await POST(event('POST', { target: 'bob', kind: 'u', until: future }));
-		expect(muteMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob', 'u', future);
+		expect(muteMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'ada', 'bob', 'u', future);
 	});
 
 	it('ignores an expiry already in the past, muting indefinitely instead', async () => {
 		await POST(event('POST', { target: 'bob', kind: 'u', until: 1 }));
-		expect(muteMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob', 'u', 0);
+		expect(muteMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'ada', 'bob', 'u', 0);
 	});
 
 	it('never lets one user mute on behalf of another', async () => {
 		await POST(event('POST', { target: 'bob', kind: 'u', ow: 'mallory' }));
-		expect(muteMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob', 'u', 0);
+		expect(muteMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'ada', 'bob', 'u', 0);
 	});
 });
 
@@ -112,7 +112,7 @@ describe('DELETE /api/mute', () => {
 
 	it('unmutes the target named in the query string', async () => {
 		await DELETE(event('DELETE', undefined, 'ada', 'target=bob'));
-		expect(unmuteMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob');
+		expect(unmuteMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'ada', 'bob');
 	});
 
 	it('400s on DELETE without a target', async () => {

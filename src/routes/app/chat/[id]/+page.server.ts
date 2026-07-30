@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const [msgs, name, muted] = await Promise.all([
 		get_messages(env, locals.user.id, peer),
 		get_user_name(env, peer),
-		is_muted(env, locals.user.id, peer)
+		is_muted(env, locals.x2_ws, locals.user.id, peer)
 	]);
 	return { peer, peer_name: name, messages: msgs, muted, conv: conv_id(locals.user.id, peer) };
 };

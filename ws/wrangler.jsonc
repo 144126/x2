@@ -45,6 +45,24 @@
 			"binding": "X2_ORIGIN",
 			"store_id": "45748cb1c67946df943075fa14cb8815",
 			"secret_name": "X2_ORIGIN"
+		},
+		// hub_owns_delivery: ChatHub sends web push itself now, so it needs the same VAPID
+		// keys x2's wrangler.jsonc already declares — same store_id/secret_name, populate with
+		// `wrangler secrets-store secret create` before deploying if not already present.
+		{
+			"binding": "VAPID_PUBLIC",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "VAPID_PUBLIC"
+		},
+		{
+			"binding": "VAPID_PRIVATE",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "VAPID_PRIVATE"
+		},
+		{
+			"binding": "VAPID_SUBJECT",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "VAPID_SUBJECT"
 		}
 	],
 	"workers_dev": true,

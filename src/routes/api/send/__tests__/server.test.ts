@@ -1,28 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const {
-	sendMsgMock,
-	sendGroupMsgMock,
-	getGroupMock,
-	notifyMock,
-	totalUnreadMock,
-	saveScheduledMock,
-	isMutedMock,
-	dropMutedMock,
-	totalUnreadForGroupMock,
-	guardMock
-} = vi.hoisted(() => ({
-	sendMsgMock: vi.fn(),
-	sendGroupMsgMock: vi.fn(),
-	getGroupMock: vi.fn(),
-	notifyMock: vi.fn(),
-	totalUnreadMock: vi.fn(),
-	totalUnreadForGroupMock: vi.fn(),
-	saveScheduledMock: vi.fn(),
-	isMutedMock: vi.fn(),
-	dropMutedMock: vi.fn(),
-	guardMock: vi.fn()
-}));
+const { sendMsgMock, sendGroupMsgMock, getGroupMock, saveScheduledMock, guardMock } = vi.hoisted(
+	() => ({
+		sendMsgMock: vi.fn(),
+		sendGroupMsgMock: vi.fn(),
+		getGroupMock: vi.fn(),
+		saveScheduledMock: vi.fn(),
+		guardMock: vi.fn()
+	})
+);
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/chat', async () => {
@@ -33,27 +19,20 @@ vi.mock('$lib/server/group', async () => {
 	const actual = await vi.importActual<typeof import('$lib/server/group')>('$lib/server/group');
 	return { ...actual, get_group: getGroupMock };
 });
-vi.mock('$lib/server/notify', () => ({ notify: notifyMock }));
-vi.mock('$lib/server/unread', () => ({
-	total_unread: totalUnreadMock,
-	total_unread_for_group: totalUnreadForGroupMock
-}));
 vi.mock('$lib/server/scheduled', () => ({
 	save_scheduled: saveScheduledMock,
 	MIN_LEAD_MS: 60_000
 }));
-vi.mock('$lib/server/mute', () => ({ is_muted: isMutedMock, drop_muted: dropMutedMock }));
 vi.mock('$lib/server/rl', () => ({ guard: guardMock }));
 
 import { POST } from '../+server';
 
 let bg_tasks: Promise<unknown>[] = [];
 let relay_body: unknown;
-function ws(response: unknown = { ok: true, undelivered: [] }) {
+function ws(response: unknown = { delivered: true }) {
 	return {
 		fetch: vi.fn(async (_url: string, init: { body: string }) => {
 			relay_body = JSON.parse(init.body);
-			if (response instanceof Error) throw response;
 			return new Response(JSON.stringify(response), { status: 200 });
 		})
 	};
@@ -69,14 +48,15 @@ function event(body: unknown, uid: string | null = 'ada', fetcher = ws()) {
 		locals: {
 			user: uid ? { id: uid, username: 'ada' } : null,
 			x2_ws: fetcher,
-			bg: (p: Promise<unknown>) => { bg_tasks.push(p); }
+			bg: (p: Promise<unknown>) => {
+				bg_tasks.push(p);
+			}
 		},
 		platform: undefined
 	} as unknown as Parameters<typeof POST>[0];
 }
 
 const settle = () => Promise.all(bg_tasks);
-const note = () => notifyMock.mock.calls[0];
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -92,12 +72,7 @@ beforeEach(() => {
 		description: '',
 		created: 1
 	});
-	notifyMock.mockResolvedValue({ sent: 1, pruned: 0 });
-	totalUnreadMock.mockResolvedValue(3);
-	totalUnreadForGroupMock.mockResolvedValue(3);
 	saveScheduledMock.mockResolvedValue({ id: 'sm1', sent: 0 });
-	isMutedMock.mockResolvedValue(false);
-	dropMutedMock.mockImplementation((_e, _t, uids: string[]) => Promise.resolve(uids));
 	guardMock.mockResolvedValue(undefined);
 });
 
@@ -117,7 +92,7 @@ describe('POST /api/send — scheduling', () => {
 	});
 });
 
-describe('POST /api/send — existing behaviour still holds', () => {
+describe('POST /api/send — validation', () => {
 	it('401s when signed out', async () => {
 		await expect(POST(event({ to: 'bob', text: 'hi' }, null))).rejects.toMatchObject({
 			status: 401
@@ -128,228 +103,27 @@ describe('POST /api/send — existing behaviour still holds', () => {
 		await expect(POST(event({ to: 'bob' }))).rejects.toMatchObject({ status: 400 });
 	});
 
-	it('still returns the stored message to the sender', async () => {
-		const body = await (await POST(event({ to: 'bob', text: 'hi' }))).json();
-		expect(body.m).toMatchObject({ id: 'm1', from: 'ada', to: 'bob', text: 'hi' });
+	it('400s with neither to nor group', async () => {
+		await expect(POST(event({ text: 'hi' }))).rejects.toMatchObject({ status: 400 });
 	});
 
-	it('relay body carries file for a 1:1 send with attachment', async () => {
-		const file = { key: 'x/doc.pdf', name: 'doc.pdf', size: 1234, type: 'application/pdf' };
-		const ws = { fetch: vi.fn(async (_url: string, init: { body: string }) => {
-			relay_body = JSON.parse(init.body);
-			return new Response(JSON.stringify({ ok: true, undelivered: [] }), { status: 200 });
-		}) } as never;
-		await POST(event({ to: 'bob', text: 'see attached', file }, 'ada', ws));
-		expect(relay_body).toMatchObject({ file: { key: 'x/doc.pdf', name: 'doc.pdf' }, text: 'see attached' });
+	it('404s a group send to a nonexistent group', async () => {
+		getGroupMock.mockResolvedValue(null);
+		await expect(POST(event({ group: 'ghost', text: 'hi' }))).rejects.toMatchObject({
+			status: 404
+		});
 	});
 
-	it('relay body carries id for a group send', async () => {
-		sendGroupMsgMock.mockResolvedValue({ id: 'm42', f: 'ada', x: 'hi all', d: 1_700_000_000_000 });
-		const ws = { fetch: vi.fn(async (_url: string, init: { body: string }) => {
-			relay_body = JSON.parse(init.body);
-			return new Response(JSON.stringify({ ok: true, undelivered: [] }), { status: 200 });
-		}) } as never;
-		await POST(event({ group: 'g1', text: 'hi all' }, 'ada', ws));
-		expect(relay_body).toMatchObject({ id: 'm42', group: 'g1' });
-	});
-});
-
-describe('POST /api/send — push for whoever the socket relay could not reach', () => {
-	it('pushes to exactly the recipients the relay reports as undelivered', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[1]).toEqual(['bob']);
-	});
-
-	it('does not push when the message was delivered over the socket', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: [] })));
-		await settle();
-		expect(notifyMock).not.toHaveBeenCalled();
-	});
-
-	it('pushes everyone when the relay itself is unreachable', async () => {
-		const broken = ws(new Error('ws down'));
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', broken));
-		await settle();
-		expect(note()[1]).toEqual(['bob']);
-	});
-
-	it('pushes only the group members the relay missed', async () => {
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['cid'] })));
-		await settle();
-		expect(note()[1]).toEqual(['cid']);
-	});
-
-	it('never pushes the sender their own message', async () => {
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['ada', 'cid'] }))
-		);
-		await settle();
-		expect(note()[1]).not.toContain('ada');
-	});
-});
-
-describe('POST /api/send — what the notification says', () => {
-	it('titles a direct message with the sender’s username', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[2]).toMatchObject({ title: 'ada', body: 'hi' });
-	});
-
-	it('opens the conversation with the sender when tapped', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[2].url).toBe('/app/chat/ada');
-	});
-
-	it('tags a direct message with its conversation id, so a thread collapses', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[2].conv).toBe('ada|bob');
-	});
-
-	it('titles a group message with the room and names the speaker in the body', async () => {
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[2]).toMatchObject({ title: 'design club', body: 'ada: hi' });
-	});
-
-	it('opens the room when a group notification is tapped', async () => {
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[2]).toMatchObject({ url: '/app/rooms/g1', conv: 'g:g1' });
-	});
-
-	it('carries an attached photo so the notification can show it', async () => {
-		await POST(
-			event({ to: 'bob', image: 'ada/x.png' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
-		);
-		await settle();
-		expect(note()[2].image).toBe('/media/ada/x.png');
-	});
-
-	it('carries the message timestamp and id', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[2]).toMatchObject({ id: 'm1', ts: 1_700_000_000_000 });
-	});
-
-	it('carries the recipient’s unread total for a direct message, to set the app badge', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob');
-		expect(note()[2].unread).toBe(3);
-	});
-
-	it("includes the recipient's unread total in a room push", async () => {
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(totalUnreadForGroupMock).toHaveBeenCalledWith(expect.anything(), 'bob', expect.any(Array), 'g:g1');
-		expect(note()[2].unread).toBe(3);
-	});
-
-	it('computes unread per recipient, not once for the room', async () => {
-		totalUnreadForGroupMock.mockResolvedValueOnce(2).mockResolvedValueOnce(5);
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
-		);
-		await settle();
-		expect(totalUnreadForGroupMock).toHaveBeenCalledTimes(2);
-		expect(notifyMock).toHaveBeenCalledTimes(2);
-		const calls = notifyMock.mock.calls;
-		expect(calls[0][2].unread).toBe(2);
-		expect(calls[1][2].unread).toBe(5);
-	});
-
-	it('still includes unread in a 1:1 push', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob');
-		expect(note()[2].unread).toBe(3);
-	});
-
-	it('includes kind and reply_to in both push payloads', async () => {
-		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(note()[2]).toMatchObject({ kind: 'r', reply_to: 'g1' });
-
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(notifyMock.mock.calls[1][2]).toMatchObject({ kind: 'u', reply_to: 'ada' });
-	});
-});
-
-describe('POST /api/send — push must never break sending', () => {
-	it('still returns the message when the push layer throws', async () => {
-		notifyMock.mockRejectedValue(new Error('vapid exploded'));
-		const res = await POST(
-			event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
-		);
-		expect((await res.json()).ok).toBe(true);
-	});
-
-	it('still relays over the socket exactly as before', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }));
-		expect(relay_body).toMatchObject({ to: 'bob', from: 'ada', from_name: 'ada', text: 'hi' });
-	});
-
-	it('tolerates a relay response that is not the new JSON shape', async () => {
-		const legacy = { fetch: vi.fn(async () => new Response('ok', { status: 200 })) };
-		const res = await POST(event({ to: 'bob', text: 'hi' }, 'ada', legacy));
-		expect((await res.json()).ok).toBe(true);
-	});
-});
-
-describe('POST /api/send — mutes suppress push at every send path', () => {
-	it('does not push to a recipient who muted the sender', async () => {
-		isMutedMock.mockResolvedValue(true);
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(notifyMock).not.toHaveBeenCalled();
-	});
-
-	it('still pushes when the recipient muted someone else', async () => {
-		isMutedMock.mockResolvedValue(false);
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		await settle();
-		expect(notifyMock).toHaveBeenCalledTimes(1);
-	});
-
-	it('still relays the message over the socket to a muted recipient', async () => {
-		isMutedMock.mockResolvedValue(true);
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
-		expect(relay_body).toMatchObject({ to: 'bob', from: 'ada', text: 'hi' });
-	});
-
-	it('drops muted members from the room push fan-out', async () => {
-		dropMutedMock.mockImplementation((_e, _t, uids: string[]) =>
-			Promise.resolve((uids as string[]).filter((u) => u !== 'bob'))
-		);
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
-		);
-		await settle();
-		expect(notifyMock.mock.calls[0][1]).toEqual(['cid']);
-	});
-
-	it('still pushes to unmuted members when some muted the room', async () => {
-		dropMutedMock.mockImplementation((_e, _t, uids: string[]) =>
-			Promise.resolve((uids as string[]).filter((u) => u !== 'bob'))
-		);
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
-		);
-		await settle();
-		expect(notifyMock).toHaveBeenCalledTimes(1);
-	});
-
-	it('does not push at all when every offline member muted the room', async () => {
-		dropMutedMock.mockResolvedValue([]);
-		await POST(
-			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
-		);
-		await settle();
-		expect(notifyMock).not.toHaveBeenCalled();
+	it('403s a group send from a non-member', async () => {
+		getGroupMock.mockResolvedValue({
+			id: 'g1',
+			name: 'design club',
+			owner: 'owner',
+			members: ['owner'],
+			description: '',
+			created: 1
+		});
+		await expect(POST(event({ group: 'g1', text: 'hi' }))).rejects.toMatchObject({ status: 403 });
 	});
 });
 
@@ -380,27 +154,89 @@ describe('POST /api/send — a failed write is surfaced, not silently 200d', () 
 	});
 });
 
+describe('POST /api/send — response shape', () => {
+	it('returns the stored message to the sender for a 1:1 send', async () => {
+		const body = await (await POST(event({ to: 'bob', text: 'hi' }))).json();
+		expect(body.m).toMatchObject({ id: 'm1', from: 'ada', to: 'bob', text: 'hi' });
+	});
+
+	it('returns the stored message to the sender for a group send', async () => {
+		const body = await (await POST(event({ group: 'g1', text: 'hi all' }))).json();
+		expect(body.m).toMatchObject({ id: 'm2', from: 'ada', group: 'g1', text: 'hi' });
+	});
+});
+
+describe('POST /api/send — the relay call the recipient’s ChatHub receives', () => {
+	it('one relay call, zero scroll-shaped Qdrant work — the fanout collapses into a single hub call', async () => {
+		const fetcher = ws();
+		await POST(event({ group: 'g1', text: 'hi' }, 'ada', fetcher));
+		await settle();
+		expect(fetcher.fetch).toHaveBeenCalledTimes(1);
+	});
+
+	it('1:1: carries conv, mute_key and notification fields for the recipient’s own DO to use', async () => {
+		await POST(event({ to: 'bob', text: 'hi' }));
+		await settle();
+		expect(relay_body).toMatchObject({
+			to: 'bob',
+			from: 'ada',
+			conv: 'ada|bob',
+			mute_key: 'ada',
+			title: 'ada',
+			push_body: 'hi',
+			url: '/app/chat/ada',
+			kind: 'u',
+			reply_to: 'ada'
+		});
+	});
+
+	it('group: carries conv, mute_key (the group id) and notification fields', async () => {
+		await POST(event({ group: 'g1', text: 'hi' }));
+		await settle();
+		expect(relay_body).toMatchObject({
+			group: 'g1',
+			members: ['bob', 'cid'],
+			conv: 'g:g1',
+			mute_key: 'g1',
+			title: 'design club',
+			push_body: 'ada: hi',
+			url: '/app/rooms/g1',
+			kind: 'r',
+			reply_to: 'g1'
+		});
+	});
+
+	it('carries an attached photo in the relay payload', async () => {
+		await POST(event({ to: 'bob', image: 'ada/x.png' }));
+		await settle();
+		expect(relay_body).toMatchObject({ image: '/media/ada/x.png' });
+	});
+
+	it('names the file in the group push body when a file is attached instead of text', async () => {
+		const file = { key: 'x/doc.pdf', name: 'doc.pdf', size: 1234, type: 'application/pdf' };
+		await POST(event({ group: 'g1', file, text: '' }));
+		await settle();
+		expect(relay_body).toMatchObject({ push_body: 'ada: 📎 doc.pdf' });
+	});
+});
+
 describe('POST /api/send — background fan-out behaviour', () => {
-	it('response does not wait on the fan-out', async () => {
-		notifyMock.mockReturnValue(new Promise(() => {}));
-		const res = await POST(
-			event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
-		);
+	it('response does not wait on the relay call', async () => {
+		const slow_ws = { fetch: vi.fn(() => new Promise(() => {})) };
+		const res = await POST(event({ to: 'bob', text: 'hi' }, 'ada', slow_ws));
 		const body = await res.json();
 		expect(body).toMatchObject({ ok: true, m: { id: 'm1' } });
 	});
 
 	it('registers exactly one background task per send', async () => {
-		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await POST(event({ to: 'bob', text: 'hi' }));
 		expect(bg_tasks).toHaveLength(1);
 	});
 
 	it('a throwing relay does not reject the handler', async () => {
-		const res = await POST(
-			event({ to: 'bob', text: 'hi' }, 'ada', ws(new Error('relay down')))
-		);
+		const broken = { fetch: vi.fn().mockRejectedValue(new Error('relay down')) };
+		const res = await POST(event({ to: 'bob', text: 'hi' }, 'ada', broken));
 		expect(res.status).toBe(200);
 		await settle();
-		expect(notifyMock).toHaveBeenCalled();
 	});
 });

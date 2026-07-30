@@ -5,14 +5,14 @@ const {
 	getUserNameMock,
 	ensureMock,
 	listFoldersMock,
-	unreadByConvMock,
+	hubUnreadMock,
 	listMutesMock
 } = vi.hoisted(() => ({
 	listConvsMock: vi.fn(),
 	getUserNameMock: vi.fn(),
 	ensureMock: vi.fn(),
 	listFoldersMock: vi.fn(),
-	unreadByConvMock: vi.fn(),
+	hubUnreadMock: vi.fn(),
 	listMutesMock: vi.fn()
 }));
 
@@ -26,14 +26,14 @@ vi.mock('$lib/server/qdrant', async () => {
 	return { ...actual, ensure: ensureMock };
 });
 vi.mock('$lib/server/folders', () => ({ list_folders: listFoldersMock }));
-vi.mock('$lib/server/unread', () => ({ unread_by_conv: unreadByConvMock }));
+vi.mock('$lib/server/hub_client', () => ({ hub_unread: hubUnreadMock }));
 vi.mock('$lib/server/mute', () => ({ list_mutes: listMutesMock }));
 
 import { load } from '../+page.server';
 
 function event(uid: string | null = 'me') {
 	return {
-		locals: { user: uid ? { id: uid, username: 'me' } : null }
+		locals: { user: uid ? { id: uid, username: 'me' } : null, x2_ws: {} }
 	} as unknown as Parameters<typeof load>[0];
 }
 
@@ -43,7 +43,7 @@ beforeEach(() => {
 	listConvsMock.mockResolvedValue([]);
 	getUserNameMock.mockResolvedValue('Alice');
 	listFoldersMock.mockResolvedValue([]);
-	unreadByConvMock.mockResolvedValue({});
+	hubUnreadMock.mockResolvedValue({ total: 0, by_conv: {} });
 	listMutesMock.mockResolvedValue([]);
 });
 
@@ -60,8 +60,8 @@ describe('GET /app/chats', () => {
 		expect(data.convs[0].name).toBe('Bob');
 	});
 
-	it('returns per-conversation unread counts', async () => {
-		unreadByConvMock.mockResolvedValue({ 'me|bob': 3 });
+	it('returns per-conversation unread counts from the hub', async () => {
+		hubUnreadMock.mockResolvedValue({ total: 3, by_conv: { 'me|bob': 3 } });
 		const data = (await load(event('me'))) as { unread: Record<string, number> };
 		expect(data.unread).toEqual({ 'me|bob': 3 });
 	});

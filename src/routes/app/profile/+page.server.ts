@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	await ensure(env);
 	const ac = await ensure_partner_code(env, locals.user.id);
 	const p = await get_user(env, locals.user.id);
-	const raw = await list_mutes(env, locals.user.id);
+	const raw = await list_mutes(env, locals.x2_ws, locals.user.id);
 	const mutes = await Promise.all(
 		raw.map(async (m: Mute) => {
 			const name =

@@ -57,6 +57,7 @@ export const V = 't';
 export type QEnv = {
 	QDRANT_URL: SecretVal;
 	QDRANT_KEY: SecretVal;
+	SECRET?: SecretVal;
 	VOXELL_KEY?: SecretVal;
 	// local dev only (ws/.dev.vars): the ws worker's Secrets Store is empty there
 	DEV_QDRANT_URL?: SecretVal;

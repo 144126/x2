@@ -1,28 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const {
-	ensureMock,
-	upsertMock,
-	scrollMock,
-	removeMock,
-	getGroupMock,
-	isMemberMock,
-	relayMock,
-	notifyMock,
-	isMutedMock,
-	dropMutedMock
-} = vi.hoisted(() => ({
-	ensureMock: vi.fn(),
-	upsertMock: vi.fn(),
-	scrollMock: vi.fn(),
-	removeMock: vi.fn(),
-	getGroupMock: vi.fn(),
-	isMemberMock: vi.fn(),
-	relayMock: vi.fn(),
-	notifyMock: vi.fn(),
-	isMutedMock: vi.fn(),
-	dropMutedMock: vi.fn()
-}));
+const { ensureMock, upsertMock, scrollMock, removeMock, getGroupMock, isMemberMock } = vi.hoisted(
+	() => ({
+		ensureMock: vi.fn(),
+		upsertMock: vi.fn(),
+		scrollMock: vi.fn(),
+		removeMock: vi.fn(),
+		getGroupMock: vi.fn(),
+		isMemberMock: vi.fn()
+	})
+);
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
@@ -35,8 +22,6 @@ vi.mock('../qdrant', async () => {
 	};
 });
 vi.mock('../group', () => ({ get_group: getGroupMock, is_member: isMemberMock }));
-vi.mock('../notify', () => ({ notify: notifyMock }));
-vi.mock('../mute', () => ({ is_muted: isMutedMock, drop_muted: dropMutedMock }));
 
 import {
 	save_scheduled,
@@ -56,9 +41,6 @@ beforeEach(() => {
 	removeMock.mockResolvedValue(undefined);
 	getGroupMock.mockResolvedValue({ id: 'g1', name: 'Group', members: ['ada', 'bob'] });
 	isMemberMock.mockReturnValue(true);
-	notifyMock.mockResolvedValue({ sent: 0, pruned: 0 });
-	isMutedMock.mockResolvedValue(false);
-	dropMutedMock.mockImplementation((_e, _t, uids) => Promise.resolve(uids));
 });
 
 describe('save_scheduled / list_scheduled / cancel_scheduled', () => {
@@ -121,7 +103,13 @@ describe('due_scheduled', () => {
 });
 
 describe('send_scheduled_batch', () => {
-	const ws = {} as never;
+	let relay_body: unknown;
+	const ws = {
+		fetch: vi.fn(async (_url: string, init: { body: string }) => {
+			relay_body = JSON.parse(init.body);
+			return new Response(JSON.stringify({ delivered: true }));
+		})
+	} as unknown as Fetcher;
 
 	it('sends everything due and marks it sent, with no vector on the sent row', async () => {
 		scrollMock.mockResolvedValue([
@@ -173,21 +161,31 @@ describe('send_scheduled_batch', () => {
 		expect(msgUpsert![1][0].payload).toMatchObject({ gr: 'g1', f: 'ada', x: 'hi' });
 	});
 
-	it('applies mutes when dispatching a scheduled 1:1 message', async () => {
-		isMutedMock.mockResolvedValue(true);
+	it('carries conv and mute_key (the sender) in a 1:1 relay, for the recipient’s own DO', async () => {
 		scrollMock.mockResolvedValue([
 			{ id: '1', payload: { s: 'sm', f: 'ada', to: 'bob', text: 'hi', at: 1, sent: 0 } }
 		]);
 		await send_scheduled_batch(ENV, ws, 1000);
-		expect(notifyMock).not.toHaveBeenCalled();
+		expect(relay_body).toMatchObject({
+			to: 'bob',
+			conv: 'ada|bob',
+			mute_key: 'ada',
+			kind: 'u',
+			reply_to: 'ada'
+		});
 	});
 
-	it('applies mutes when dispatching a scheduled room message', async () => {
-		dropMutedMock.mockResolvedValue([]);
+	it('carries conv and mute_key (the group id) in a room relay', async () => {
 		scrollMock.mockResolvedValue([
 			{ id: '1', payload: { s: 'sm', f: 'ada', group: 'g1', text: 'hi', at: 1, sent: 0 } }
 		]);
 		await send_scheduled_batch(ENV, ws, 1000);
-		expect(notifyMock).not.toHaveBeenCalled();
+		expect(relay_body).toMatchObject({
+			group: 'g1',
+			conv: 'g:g1',
+			mute_key: 'g1',
+			kind: 'r',
+			reply_to: 'g1'
+		});
 	});
 });

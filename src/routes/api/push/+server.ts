@@ -21,6 +21,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		await save_sub(
 			env,
+			locals.x2_ws,
 			locals.user.id,
 			{ endpoint: b.endpoint, keys: { p256dh: b.keys.p256dh, auth: b.keys.auth } },
 			request.headers.get('user-agent') ?? undefined
@@ -35,6 +36,6 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	const b = (await request.json().catch(() => null)) as { endpoint?: string } | null;
 	if (!b?.endpoint) throw error(400, 'endpoint required');
-	await delete_sub(env, b.endpoint);
+	await delete_sub(env, locals.x2_ws, locals.user.id, b.endpoint);
 	return json({ ok: true });
 };

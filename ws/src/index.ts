@@ -44,6 +44,26 @@ const worker: ExportedHandler<Env> = {
 			return Response.json({ online: uids });
 		}
 
+		const hub = url.pathname.match(
+			/^\/hub\/([^/]+)\/(unread|read|mute|unmute|mutes|sub|unsub)$/
+		);
+		if (hub) {
+			const secret = await get_secret(env.SECRET, env.DEV_SECRET);
+			const auth = request.headers.get('authorization');
+			if (!secret || auth !== `Bearer ${secret}`) return new Response('denied', { status: 403 });
+			const [, uid, action] = hub;
+			const id = env.CHAT_HUB.idFromName(uid);
+			const stub = env.CHAT_HUB.get(id);
+			const body = request.method === 'POST' ? await request.text() : undefined;
+			return stub.fetch(
+				new Request(`https://dummy/${action}`, {
+					method: request.method,
+					headers: { 'content-type': 'application/json' },
+					body
+				})
+			);
+		}
+
 		const credits = url.pathname.match(/^\/credits\/([^/]+)\/(balance|deduct|credit)$/);
 		if (credits) {
 			const [, uid, action] = credits;

@@ -1,15 +1,5 @@
-import {
-	ensure,
-	upsert,
-	scroll,
-	remove,
-	uuid_from,
-	f,
-	eq,
-	type QEnv,
-	type Cond
-} from './qdrant';
-import { conv_id, group_conv_id } from './chat';
+import type { QEnv } from './qdrant';
+import { hub_mute, hub_unmute, hub_mutes } from './hub_client';
 
 export interface Mute {
 	s: 'mu';
@@ -20,80 +10,34 @@ export interface Mute {
 	d: number;
 }
 
-const mute_id = (owner: string, target: string) => uuid_from(`mute:${owner}:${target}`);
-
-export const is_active = (m: Mute, now = Date.now()): boolean => m.until === 0 || m.until > now;
-
 export async function mute(
 	env: QEnv,
+	ws: Fetcher,
 	owner: string,
 	target: string,
 	kind: 'u' | 'r',
 	until = 0
 ): Promise<Mute> {
-	await ensure(env);
-	const m: Mute = { s: 'mu', ow: owner, tg: target, k: kind, until, d: Date.now() };
-	await upsert(env, [
-		{
-			id: await mute_id(owner, target),
-			vector: {},
-			payload: m as unknown as Record<string, unknown>
-		}
-	]);
-	return m;
+	await hub_mute(env, ws, owner, target, kind, until);
+	return { s: 'mu', ow: owner, tg: target, k: kind, until, d: Date.now() };
 }
 
-export async function unmute(env: QEnv, owner: string, target: string): Promise<void> {
-	await ensure(env);
-	await remove(env, [await mute_id(owner, target)]);
+export async function unmute(env: QEnv, ws: Fetcher, owner: string, target: string): Promise<void> {
+	await hub_unmute(env, ws, owner, target);
 }
 
-export async function list_mutes(env: QEnv, owner: string, now = Date.now()): Promise<Mute[]> {
-	await ensure(env);
-	const pts = await scroll(env, f(eq('s', 'mu'), eq('ow', owner)), 500);
-	return pts.map((p) => p.payload as unknown as Mute).filter((m) => is_active(m, now));
+/** every currently-active mute the owner has set, from their own ChatHub */
+export async function list_mutes(env: QEnv, ws: Fetcher, owner: string): Promise<Mute[]> {
+	const raw = await hub_mutes(env, ws, owner);
+	return raw.map((m) => ({ s: 'mu', ow: owner, tg: m.tg, k: m.k, until: m.until, d: 0 }));
 }
 
 export async function is_muted(
 	env: QEnv,
+	ws: Fetcher,
 	owner: string,
-	target: string,
-	now = Date.now()
+	target: string
 ): Promise<boolean> {
-	await ensure(env);
-	const pts = await scroll(env, f(eq('s', 'mu'), eq('ow', owner), eq('tg', target)), 1);
-	const m = pts[0]?.payload as unknown as Mute | undefined;
-	return !!m && is_active(m, now);
-}
-
-export async function muters_of(
-	env: QEnv,
-	target: string,
-	uids: string[],
-	now = Date.now()
-): Promise<Set<string>> {
-	if (!uids.length) return new Set();
-	await ensure(env);
-	const pts = await scroll(env, f(eq('s', 'mu'), eq('tg', target)), 1000);
-	const candidates = new Set(uids);
-	return new Set(
-		pts
-			.map((p) => p.payload as unknown as Mute)
-			.filter((m) => is_active(m, now) && candidates.has(m.ow))
-			.map((m) => m.ow)
-	);
-}
-
-export async function drop_muted(
-	env: QEnv,
-	target: string,
-	uids: string[],
-	now = Date.now()
-): Promise<string[]> {
-	const muted = await muters_of(env, target, uids, now);
-	return uids.filter((u) => !muted.has(u));
-}
-
-export function muted_convs(uid: string, mutes: Mute[]): string[] {
-	return mutes.map((m) => (m.k === 'r' ? group_conv_id(m.tg) : conv_id(uid, m.tg)));
+	const mutes = await list_mutes(env, ws, owner);
+	return mutes.some((m) => m.tg === target);
 }

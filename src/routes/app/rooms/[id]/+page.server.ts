@@ -16,6 +16,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const names = Object.fromEntries(
 		await Promise.all(ids.map(async (id) => [id, await get_user_name(env, id)] as const))
 	);
-	const muted = await is_muted(env, locals.user.id, params.id);
+	const muted = await is_muted(env, locals.x2_ws, locals.user.id, params.id);
 	return { g, messages, names, muted };
 };

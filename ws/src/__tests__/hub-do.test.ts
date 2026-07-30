@@ -1,4 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { sendPushMock } = vi.hoisted(() => ({ sendPushMock: vi.fn() }));
+vi.mock('../../../src/lib/server/push', async () => {
+	const actual =
+		await vi.importActual<typeof import('../../../src/lib/server/push')>('../../../src/lib/server/push');
+	return { ...actual, send_push: sendPushMock };
+});
+
 import { ChatHub } from '../hub';
 
 // real workerd provides this globally; vitest's node env does not — every ChatHub
@@ -55,6 +63,14 @@ function makeState() {
 			get: vi.fn(async (k: string) => store.get(k)),
 			put: vi.fn(async (k: string, v: unknown) => {
 				store.set(k, v);
+			}),
+			delete: vi.fn(async (k: string | string[]) => {
+				for (const key of Array.isArray(k) ? k : [k]) store.delete(key);
+			}),
+			list: vi.fn(async (opts?: { prefix?: string }) => {
+				const m = new Map<string, unknown>();
+				for (const [k, v] of store) if (!opts?.prefix || k.startsWith(opts.prefix)) m.set(k, v);
+				return m;
 			})
 		},
 		_socketsByTag: socketsByTag
@@ -76,6 +92,9 @@ describe('ChatHub.fetch', () => {
 			get: (id: string) => { fetch: typeof stubFetch };
 		};
 		SECRET: string;
+		VAPID_PUBLIC?: string;
+		VAPID_PRIVATE?: string;
+		VAPID_SUBJECT?: string;
 	};
 
 	beforeEach(() => {
@@ -83,11 +102,15 @@ describe('ChatHub.fetch', () => {
 		stubFetch = vi.fn().mockResolvedValue(new Response('ok'));
 		env = {
 			SECRET,
+			VAPID_PUBLIC: 'vapid-pub',
+			VAPID_PRIVATE: 'vapid-priv',
+			VAPID_SUBJECT: 'mailto:a@b',
 			CHAT_HUB: {
 				idFromName: (n: string) => n,
 				get: () => ({ fetch: stubFetch })
 			}
 		};
+		sendPushMock.mockReset().mockResolvedValue({ ok: true, status: 201, gone: false });
 	});
 
 	it('registers a ping/pong auto-response so pings never wake the DO', () => {
@@ -430,5 +453,231 @@ describe('ChatHub.webSocketClose', () => {
 		await hub.webSocketClose(closing as unknown as WebSocket);
 		const presenceOffline = JSON.stringify({ type: 'presence', uid: 'alice', online: false });
 		expect(watcher.sent).toContain(presenceOffline);
+	});
+});
+
+// hub_owns_delivery: ChatHub now owns unread counts, read markers, mutes and push
+// subscriptions for its own uid, and pushes for itself on /relay instead of the caller
+// computing all of this via Qdrant scrolls and a separate notify() fan-out.
+describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
+	let state: ReturnType<typeof makeState>;
+	let env: {
+		CHAT_HUB: { idFromName: (n: string) => string; get: (id: string) => { fetch: ReturnType<typeof vi.fn> } };
+		SECRET: string;
+		VAPID_PUBLIC?: string;
+		VAPID_PRIVATE?: string;
+		VAPID_SUBJECT?: string;
+	};
+
+	beforeEach(() => {
+		state = makeState();
+		env = {
+			SECRET,
+			VAPID_PUBLIC: 'vapid-pub',
+			VAPID_PRIVATE: 'vapid-priv',
+			VAPID_SUBJECT: 'mailto:a@b',
+			CHAT_HUB: { idFromName: (n: string) => n, get: () => ({ fetch: vi.fn() }) }
+		};
+		sendPushMock.mockReset().mockResolvedValue({ ok: true, status: 201, gone: false });
+	});
+
+	function hub() {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return new ChatHub(state as any, env as any);
+	}
+
+	const relay = (h: ChatHub, body: Record<string, unknown>) =>
+		h.fetch(req('https://dummy/relay', { method: 'POST', body: JSON.stringify(body) }));
+
+	it('bumps unread:<conv> when a message is relayed', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me' });
+		const res = await h.fetch(req('https://dummy/unread'));
+		expect(await res.json()).toEqual({ total: 1, by_conv: { 'bob|me': 1 } });
+	});
+
+	it('accumulates unread across repeated messages in the same conversation', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me' });
+		await relay(h, { to: 'me', from: 'bob', text: 'again', ts: 2, conv: 'bob|me' });
+		const res = await h.fetch(req('https://dummy/unread'));
+		expect(await res.json()).toEqual({ total: 2, by_conv: { 'bob|me': 2 } });
+	});
+
+	it('POST /read clears the counter for that conversation and returns the new total', async () => {
+		const h = hub();
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me' });
+		await relay(h, { to: 'me', from: 'carol', text: 'hey', ts: 1, conv: 'carol|me' });
+		const res = await h.fetch(
+			req('https://dummy/read', { method: 'POST', body: JSON.stringify({ conv: 'bob|me', ts: 1 }) })
+		);
+		expect(await res.json()).toEqual({ total: 1 });
+		const after = await h.fetch(req('https://dummy/unread'));
+		expect(await after.json()).toEqual({ total: 1, by_conv: { 'carol|me': 1 } });
+	});
+
+	it('excludes a muted conversation from both by_conv and the total', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/mute', {
+				method: 'POST',
+				body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 })
+			})
+		);
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		const res = await h.fetch(req('https://dummy/unread'));
+		expect(await res.json()).toEqual({ total: 0, by_conv: {} });
+	});
+
+	it('an undelivered message pushes to every stored subscription', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/b', k: 'PUB2', au: 'AUTH2' })
+			})
+		);
+		await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hi',
+			ts: 1,
+			conv: 'bob|me',
+			mute_key: 'bob',
+			title: 'bob',
+			push_body: 'hi',
+			url: '/app/chat/bob'
+		});
+		expect(sendPushMock).toHaveBeenCalledTimes(2);
+	});
+
+	it('a muted target is not pushed, even though nobody is connected', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		await h.fetch(
+			req('https://dummy/mute', {
+				method: 'POST',
+				body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 })
+			})
+		);
+		await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hi',
+			ts: 1,
+			conv: 'bob|me',
+			mute_key: 'bob',
+			title: 'bob',
+			push_body: 'hi'
+		});
+		expect(sendPushMock).not.toHaveBeenCalled();
+	});
+
+	it('does not push when a socket already delivered the message', async () => {
+		const recipient = new FakeSocket();
+		state.acceptWebSocket(recipient, ['me']);
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).not.toHaveBeenCalled();
+	});
+
+	it('prunes a subscription the push service reports gone', async () => {
+		sendPushMock.mockResolvedValueOnce({ ok: false, status: 410, gone: true });
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).toHaveBeenCalledTimes(1);
+		sendPushMock.mockClear();
+		await relay(h, { to: 'me', from: 'bob', text: 'hi again', ts: 2, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).not.toHaveBeenCalled();
+	});
+
+	it('never pushes when VAPID is not configured', async () => {
+		env.VAPID_PUBLIC = undefined;
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).not.toHaveBeenCalled();
+	});
+
+	it('POST /mute then GET /mutes lists it as active', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/mute', {
+				method: 'POST',
+				body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 })
+			})
+		);
+		const res = await h.fetch(req('https://dummy/mutes'));
+		expect(await res.json()).toEqual({ mutes: [{ tg: 'bob', k: 'u', until: 0 }] });
+	});
+
+	it('excludes an expired mute from GET /mutes', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/mute', {
+				method: 'POST',
+				body: JSON.stringify({ target: 'bob', kind: 'u', until: Date.now() - 1000 })
+			})
+		);
+		const res = await h.fetch(req('https://dummy/mutes'));
+		expect(await res.json()).toEqual({ mutes: [] });
+	});
+
+	it('POST /unmute removes it from GET /mutes', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/mute', {
+				method: 'POST',
+				body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 })
+			})
+		);
+		await h.fetch(
+			req('https://dummy/unmute', { method: 'POST', body: JSON.stringify({ target: 'bob' }) })
+		);
+		const res = await h.fetch(req('https://dummy/mutes'));
+		expect(await res.json()).toEqual({ mutes: [] });
+	});
+
+	it('POST /sub then POST /unsub removes it — verified via no further push', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		await h.fetch(
+			req('https://dummy/unsub', { method: 'POST', body: JSON.stringify({ ep: 'https://push/a' }) })
+		);
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).not.toHaveBeenCalled();
 	});
 });

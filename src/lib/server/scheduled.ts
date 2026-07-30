@@ -2,8 +2,6 @@ import type { ScheduledMessage, Message } from '../types';
 import { ensure, upsert, scroll, remove, new_id, f, eq, range, type QEnv } from './qdrant';
 import { send_msg, send_group_msg, backfill_vector, conv_id, group_conv_id } from './chat';
 import { get_group, is_member } from './group';
-import { notify } from './notify';
-import { is_muted, drop_muted } from './mute';
 
 export const MIN_LEAD_MS = 60_000; // schedule at least 1 minute out, otherwise just send now
 
@@ -72,15 +70,9 @@ async function mark_sent(env: QEnv, sm: ScheduledMessage): Promise<void> {
 	]);
 }
 
-async function push(env: unknown, uids: string[], payload: Record<string, unknown>): Promise<void> {
-	if (!uids.length) return;
-	try {
-		await notify(env as never, uids, payload);
-	} catch {
-		/* push must never break sending */
-	}
-}
-
+// Best-effort: the message is already durably stored by the time this runs. The recipient's
+// own ChatHub Durable Object decides delivery, unread count and push from here — see
+// plan/scale.plan.json -> hub_owns_delivery.
 async function relay(ws: Fetcher, payload: Record<string, unknown>): Promise<void> {
 	try {
 		await ws.fetch('https://x2-ws/relay', {
@@ -105,26 +97,21 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 					const m = await send_group_msg(env, sm.f, sm.group, sm.text, sm.image, sm.file);
 					await backfill_vector(env, m.id, sm.text);
 					await relay(ws, {
+						id: m.id,
 						members: g.members.filter((u) => u !== sm.f),
 						group: sm.group,
 						from: sm.f,
 						text: sm.text,
 						image: sm.image,
 						file: sm.file,
-						ts: m.d
-					});
-					const targets = await drop_muted(
-						env,
-						sm.group,
-						g.members.filter((u) => u !== sm.f)
-					);
-					await push(env, targets, {
-						title: g.name,
-						body: sm.file ? `📎 ${sm.file.name}` : sm.text,
-						url: `/app/rooms/${sm.group}`,
+						ts: m.d,
 						conv: group_conv_id(sm.group),
-						id: m.id,
-						ts: m.d
+						mute_key: sm.group,
+						title: g.name,
+						push_body: sm.file ? `📎 ${sm.file.name}` : sm.text,
+						url: `/app/rooms/${sm.group}`,
+						kind: 'r',
+						reply_to: sm.group
 					});
 				}
 			} else if (sm.to) {
@@ -137,18 +124,15 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 					text: sm.text,
 					image: sm.image,
 					file: sm.file,
-					ts: m.d
+					ts: m.d,
+					conv: conv_id(sm.f, sm.to),
+					mute_key: sm.f,
+					title: sm.f,
+					push_body: sm.file ? `📎 ${sm.file.name}` : sm.text,
+					url: `/app/chat/${sm.f}`,
+					kind: 'u',
+					reply_to: sm.f
 				});
-				if (!(await is_muted(env, sm.to, sm.f))) {
-					await push(env, [sm.to], {
-						title: sm.f,
-						body: sm.file ? `📎 ${sm.file.name}` : sm.text,
-						url: `/app/chat/${sm.f}`,
-						conv: conv_id(sm.f, sm.to),
-						id: m.id,
-						ts: m.d
-					});
-				}
 			}
 		} finally {
 			await mark_sent(env, sm);

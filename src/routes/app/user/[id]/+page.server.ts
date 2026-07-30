@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			: undefined;
 	const shared =
 		params.id === locals.user.id ? [] : await shared_groups(env, params.id, locals.user.id);
-	const muted = await is_muted(env, locals.user.id, params.id);
+	const muted = await is_muted(env, locals.x2_ws, locals.user.id, params.id);
 	const tz = await resolve_tz({ tz: u.tz, co: u.co });
 	return { id: params.id, u, wu, shared, muted, tz };
 };
