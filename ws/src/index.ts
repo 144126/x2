@@ -6,16 +6,15 @@ interface Env {
 	CHAT_HUB: DurableObjectNamespace;
 	CREDIT_ACCOUNT: DurableObjectNamespace;
 	SECRET: SecretVal;
-	DEV_SECRET?: SecretVal; // local dev only (ws/.dev.vars); see get_secret
+	DEV_SECRET?: SecretVal;
 	QDRANT_URL: string | { get?: () => Promise<string> };
 	QDRANT_KEY: string | { get?: () => Promise<string> };
-	X2_ORIGIN: SecretVal; // deployed main worker's origin, e.g. "https://x2.apexlinks.org"
+	X2_ORIGIN: SecretVal;
 }
 
 const worker: ExportedHandler<Env> = {
 	async fetch(request, env): Promise<Response> {
 		const url = new URL(request.url);
-		console.log(`[WS-WORKER] ${request.method} ${url.pathname}`);
 
 		if (url.pathname === '/ws') {
 			const uid = url.searchParams.get('uid') ?? '';
@@ -23,31 +22,19 @@ const worker: ExportedHandler<Env> = {
 				console.warn('[WS-WORKER] /ws request with no uid, rejecting');
 				return new Response('no uid', { status: 400 });
 			}
-			console.log(
-				`[WS-WORKER] routing /ws to ChatHub DO for uid=${uid}, upgrade header=${request.headers.get('upgrade')}`
-			);
 			const id = env.CHAT_HUB.idFromName(uid);
 			const stub = env.CHAT_HUB.get(id);
-			const res = await stub.fetch(request);
-			console.log(`[WS-WORKER] ChatHub DO responded status=${res.status} for uid=${uid}`);
-			return res;
+			return stub.fetch(request);
 		}
 
 		if (url.pathname === '/relay') {
 			const body = await request.json().catch(() => null);
-			console.log('[WS-WORKER] /relay body:', body);
 			const result = await relay(body, env.CHAT_HUB);
-			console.log('[WS-WORKER] /relay result:', result);
 			if (!result) return new Response('no target', { status: 400 });
 			return Response.json(result, { status: result.ok ? 200 : 502 });
 		}
 
 		if (url.pathname === '/online' && request.method === 'POST') {
-			// unlike /ws (per-uid token) and /relay (called only from the trusted
-			// service binding), this is a bare presence oracle — 100 uids in, who's
-			// online out — and this worker is also reachable at its public
-			// workers.dev URL, so it needs its own gate: the same shared SECRET the
-			// two workers already use to sign ws tokens.
 			const secret = await get_secret(env.SECRET, env.DEV_SECRET);
 			const auth = request.headers.get('authorization');
 			if (!secret || auth !== `Bearer ${secret}`) return new Response('denied', { status: 403 });
@@ -57,7 +44,6 @@ const worker: ExportedHandler<Env> = {
 			return Response.json({ online: uids });
 		}
 
-		// /credits/<uid>/balance|deduct|credit — one CreditAccount DO instance per uid
 		const credits = url.pathname.match(/^\/credits\/([^/]+)\/(balance|deduct|credit)$/);
 		if (credits) {
 			const [, uid, action] = credits;
@@ -76,9 +62,6 @@ const worker: ExportedHandler<Env> = {
 		return new Response('x2-ws relay+presence worker', { status: 200 });
 	},
 
-	// adapter-cloudflare's generated SvelteKit worker doesn't expose a `scheduled` hook, so the
-	// cron trigger lives here instead and calls back into the main worker's internal endpoint,
-	// which has the push-notify + socket-relay code that scheduled sends need.
 	async scheduled(_event, env): Promise<void> {
 		const origin = await get_secret(env.X2_ORIGIN);
 		if (!origin) return;

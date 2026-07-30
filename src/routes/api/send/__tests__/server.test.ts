@@ -121,6 +121,26 @@ describe('POST /api/send — existing behaviour still holds', () => {
 		const body = await (await POST(event({ to: 'bob', text: 'hi' }))).json();
 		expect(body.m).toMatchObject({ id: 'm1', from: 'ada', to: 'bob', text: 'hi' });
 	});
+
+	it('relay body carries file for a 1:1 send with attachment', async () => {
+		const file = { key: 'x/doc.pdf', name: 'doc.pdf', size: 1234, type: 'application/pdf' };
+		const ws = { fetch: vi.fn(async (_url: string, init: { body: string }) => {
+			relay_body = JSON.parse(init.body);
+			return new Response(JSON.stringify({ ok: true, undelivered: [] }), { status: 200 });
+		}) } as never;
+		await POST(event({ to: 'bob', text: 'see attached', file }, 'ada', ws));
+		expect(relay_body).toMatchObject({ file: { key: 'x/doc.pdf', name: 'doc.pdf' }, text: 'see attached' });
+	});
+
+	it('relay body carries id for a group send', async () => {
+		sendGroupMsgMock.mockResolvedValue({ id: 'm42', f: 'ada', x: 'hi all', d: 1_700_000_000_000 });
+		const ws = { fetch: vi.fn(async (_url: string, init: { body: string }) => {
+			relay_body = JSON.parse(init.body);
+			return new Response(JSON.stringify({ ok: true, undelivered: [] }), { status: 200 });
+		}) } as never;
+		await POST(event({ group: 'g1', text: 'hi all' }, 'ada', ws));
+		expect(relay_body).toMatchObject({ id: 'm42', group: 'g1' });
+	});
 });
 
 describe('POST /api/send — push for whoever the socket relay could not reach', () => {
