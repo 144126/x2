@@ -27,18 +27,7 @@
 	} from '@lucide/svelte';
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
-	let { data } = $props();
-	let muted = $state(data.muted as boolean);
-	let messages = $state(
-		data.messages as { id: string; f: string; x: string; im?: string; fl?: FileAttach; d: number }[]
-	);
-	let threadEl: HTMLDivElement | undefined = $state();
-	const AT_BOTTOM_SLACK = 80; // px of slop still counted as "at the bottom"
-	function isAtBottom(): boolean {
-		if (!threadEl) return true;
-		return threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight < AT_BOTTOM_SLACK;
-	}
-	function add_msg(m: {
+	type Msg = {
 		id: string;
 		f: string;
 		x: string;
@@ -46,8 +35,19 @@
 		fl?: FileAttach;
 		d: number;
 		cid?: string;
-	}) {
-		if (messages.some((e) => (e.cid ?? e.id) === (m.cid ?? m.id))) return;
+		err?: boolean;
+	};
+	let { data } = $props();
+	let muted = $state(data.muted as boolean);
+	let messages = $state(data.messages as Msg[]);
+	let threadEl: HTMLDivElement | undefined = $state();
+	const AT_BOTTOM_SLACK = 80;
+	function isAtBottom(): boolean {
+		if (!threadEl) return true;
+		return threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight < AT_BOTTOM_SLACK;
+	}
+	function add_msg(m: Msg) {
+		if (m.id && messages.some((e) => e.id === m.id)) return;
 		const wasAtBottom = isAtBottom();
 		messages = [...messages, m];
 		if (wasAtBottom) tick().then(() => threadEl?.scrollTo({ top: threadEl.scrollHeight }));
@@ -97,15 +97,10 @@
 	function makeMesh(): CallMesh {
 		return new CallMesh({
 			me: me!,
-			// `ctx` scopes this signal to the DM call — without it, a room call's `join`
-			// broadcast (sent to every room member, including this peer) would be handled
-			// here too and could renegotiate this connection out from under itself
 			send: (to, signal) => ws_send({ type: 'signal', to, signal, ctx: 'dm' }),
 			onremote: (uid, stream) => {
 				if (uid !== data.peer) return;
 				if (!stream) {
-					// peer hung up or dropped — mesh already removed them internally;
-					// hangup(true) just releases our own mic/camera, no bye to send
 					mesh?.hangup(true);
 					return resetCall();
 				}
@@ -116,97 +111,69 @@
 		});
 	}
 
-	async function send() {
-		const body = text.trim();
-		console.log('[CHAT-CLIENT] send() called', {
-			peer: data.peer,
-			bodyLen: body.length,
-			hasPendingFile: !!pendingFile
-		});
-		if ((!body && !pendingFile) || busy) return;
-		busy = true;
+	async function send(retry?: Msg) {
+		const body = retry ? retry.x : text.trim();
+		if ((!body && !pendingFile && !retry) || busy) return;
+
 		let image: string | undefined;
 		let file: FileAttach | undefined;
-		if (pendingFile) {
+		if (!retry && pendingFile) {
+			busy = true;
 			const r = await upload_file(pendingFile);
-			if (r.error || !r.key) {
-				busy = false;
-				return;
-			}
-			// images stay inline-rendered (m.im); everything else renders as a download chip
+			busy = false;
+			if (r.error || !r.key) return;
 			if (pendingFile.type.startsWith('image/')) image = r.key;
 			else file = { key: r.key, name: r.name!, size: r.size!, type: r.type! };
 			pendingFile = null;
 		}
-		const cid = crypto.randomUUID();
-		const optimisticMsg = {
-			cid,
-			id: cid, // temporary id until server responds
-			f: me!,
-			x: body,
-			im: image,
-			fl: file,
-			d: Date.now()
-		};
-		add_msg(optimisticMsg);
-		text = '';
-		const at = scheduleAt ? new Date(scheduleAt).getTime() : undefined;
-		scheduleAt = '';
-		showSchedule = false;
-		console.log('[CHAT-CLIENT] POSTing /api/send', {
-			to: data.peer,
-			textLen: body.length,
-			hasImage: !!image,
-			hasFile: !!file,
-			at
-		});
+
+		const at = retry ? undefined : scheduleAt ? new Date(scheduleAt).getTime() : undefined;
+		if (!retry) {
+			text = '';
+			scheduleAt = '';
+			showSchedule = false;
+		}
+
+		let row: Msg | undefined;
+		if (!at) {
+			if (retry) {
+				retry.err = false;
+				row = retry;
+			} else {
+				row = { id: '', cid: crypto.randomUUID(), f: me!, x: body, im: image, fl: file, d: Date.now() };
+				add_msg(row);
+			}
+		}
+
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ to: data.peer, text: body, image, file, at })
-		});
-		console.log('[CHAT-CLIENT] /api/send responded', { status: res.status, ok: res.ok });
-		busy = false;
-		if (res.ok) {
-			mark_first_send();
-			const body_r = await res.json();
-			console.log('[CHAT-CLIENT] /api/send body', body_r);
-			if (!body_r.scheduled) {
-				// Replace optimistic message with server-confirmed one
-				messages = messages.map((m) =>
-					m.cid === cid
-						? {
-								...m,
-								id: body_r.m.id,
-								cid: undefined
-							}
-						: m
-				);
-			}
-		} else {
-			console.error('[CHAT-CLIENT] /api/send FAILED', await res.text().catch(() => '<unreadable>'));
-			// Remove optimistic message on failure
-			messages = messages.filter((m) => m.cid !== cid);
+		}).catch(() => null);
+
+		if (!res?.ok) {
+			if (row) row.err = true;
+			return;
+		}
+		mark_first_send();
+		const { m } = await res.json();
+		if (row && m) {
+			row.id = m.id;
+			row.d = m.ts;
 		}
 	}
 
-	// `watch` is kept across reconnects; `check` re-runs on each connect via the same queue
 	const watch = { type: 'watch', peer: data.peer };
 	const check = { type: 'check', peer: data.peer };
 
 	function connect() {
-		console.log('[CHAT-CLIENT] connect() — subscribing to ws_on for peer=', data.peer);
 		unsub = ws_on((m) => {
-			console.log('[CHAT-CLIENT] ws message received in chat page', m);
 			if (m.type === 'ws_down') {
-				console.warn('[CHAT-CLIENT] ws_down — marking peer offline');
 				online = false;
-				endCall(true); // socket is gone; a bye would never arrive
+				endCall(true);
 			} else if (m.type === 'presence' && m.uid === data.peer) {
-				console.log('[CHAT-CLIENT] presence update for peer', m.online);
 				online = m.online as boolean;
 			} else if (m.type === 'msg' && m.from === data.peer) {
-				console.log('[CHAT-CLIENT] incoming msg from current peer, appending to thread', m);
 				add_msg({
 					id: m.id as string,
 					f: m.from as string,
@@ -215,13 +182,7 @@
 					fl: m.file as FileAttach | undefined,
 					d: m.ts as number
 				});
-			} else if (m.type === 'msg') {
-				console.log('[CHAT-CLIENT] incoming msg but NOT from current peer, ignoring here', {
-					from: m.from,
-					expectedPeer: data.peer
-				});
 			} else if (m.type === 'signal' && m.from === data.peer && m.ctx === 'dm') {
-				// lazily create the mesh so an inbound offer can ring before we've called
 				mesh ??= makeMesh();
 				mesh.handle(m.from as string, m.signal as CallSignal);
 			}
@@ -270,7 +231,6 @@
 		mesh?.setMic(micOn);
 	}
 
-	/** hangs up locally AND tells the peer, so their UI leaves the call too */
 	function endCall(silent = false) {
 		mesh?.hangup(silent);
 		resetCall();
@@ -433,6 +393,7 @@
 						class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
 							? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
 							: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+						class:opacity-60={m.id === '' && !m.err}
 					>
 						{#if m.im}
 							<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
@@ -457,6 +418,11 @@
 						{/if}
 						{#if m.x}{m.x}{/if}
 					</div>
+					{#if m.err}
+						<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
+							not sent — retry
+						</button>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -527,11 +493,7 @@
 			aria-label="send message"
 			title="send"
 		>
-			{#if busy}
-				<LoaderCircle size={18} class="animate-spin" />
-			{:else}
-				<SendIcon size={18} />
-			{/if}
+			<SendIcon size={18} />
 		</button>
 	</form>
 </section>

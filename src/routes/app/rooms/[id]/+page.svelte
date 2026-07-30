@@ -24,9 +24,12 @@
 		VideoOff
 	} from '@lucide/svelte';
 
+	type FileAttach = { key: string; name: string; size: number; type: string };
+	type Row = Message & { cid?: string; err?: boolean; fl?: FileAttach };
+
 	let { data } = $props();
 	let g = $state(data.g);
-	let messages = $state(data.messages as Message[]);
+	let messages = $state(data.messages as Row[]);
 	let names = $state<Record<string, string>>(data.names);
 	let muted = $state(data.muted as boolean);
 	let text = $state('');
@@ -38,7 +41,6 @@
 	let mine = $derived(!!me && g.members.includes(me));
 	let owner = $derived(!!me && g.owner === me);
 
-	// owner-only edit panel
 	let aboutOpen = $state(false);
 	let editing = $state(false);
 	let ename = $state(g.name);
@@ -47,8 +49,6 @@
 	let eregion = $state(g.state ?? '');
 	let ecity = $state(g.city ?? '');
 
-	// ponytail: full mesh — every participant connects to every other. Comfortable to ~4-6
-	// people; an SFU is the upgrade path if rooms need to be bigger.
 	let mesh: CallMesh | null = null;
 	let inCall = $state(false);
 	let localStream = $state<MediaStream | null>(null);
@@ -60,17 +60,12 @@
 	function makeMesh(): CallMesh {
 		return new CallMesh({
 			me: me!,
-			// `ctx` scopes signals to this room — without it a DM call's offer/ice to
-			// this uid would be handled here too (and vice versa), and this mesh
-			// auto-answers, so a signal meant for a different context would silently
-			// join a stranger's call to this room
 			send: (to, signal) => ws_send({ type: 'signal', to, signal, ctx: `room:${g.id}` }),
 			onremote: (uid, stream) => {
 				remotes = stream
 					? [...remotes.filter((r) => r.uid !== uid), { uid, stream }]
 					: remotes.filter((r) => r.uid !== uid);
 			}
-			// no onincoming: room calls auto-answer once you've joined
 		});
 	}
 
@@ -113,35 +108,50 @@
 		requestAnimationFrame(() => thread?.scrollTo({ top: thread.scrollHeight }));
 	}
 
-	async function send() {
-		const body = text.trim();
-		if ((!body && !pending) || busy) return;
-		busy = true;
+	async function send(retry?: Row) {
+		const body = retry ? retry.x : text.trim();
+		if ((!body && !pending && !retry) || busy) return;
+
 		let image: string | undefined;
-		if (pending) {
+		if (!retry && pending) {
+			busy = true;
 			const r = await upload_image(pending);
-			if (r.error) {
-				busy = false;
-				return;
-			}
+			busy = false;
+			if (r.error) return;
 			image = r.key;
 			pending = null;
 		}
-		text = '';
+
+		if (!retry) text = '';
+
+		let row: Row | undefined;
+		if (retry) {
+			retry.err = false;
+			row = retry;
+		} else {
+			row = {
+				s: 'm', id: '', cid: crypto.randomUUID(), c: '', f: me!, t: '', gr: g.id,
+				x: body, im: image, d: Date.now()
+			};
+			messages = [...messages, row];
+			scroll_down();
+		}
+
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ group: g.id, text: body, image })
-		});
-		busy = false;
-		if (res.ok) {
-			mark_first_send();
-			const { m } = await res.json();
-			messages = [
-				...messages,
-				{ s: 'm', id: m.id, c: '', f: m.from, t: '', gr: g.id, x: m.text, im: m.image, d: m.ts }
-			];
-			scroll_down();
+		}).catch(() => null);
+
+		if (!res?.ok) {
+			if (row) row.err = true;
+			return;
+		}
+		mark_first_send();
+		const { m } = await res.json();
+		if (row && m) {
+			row.id = m.id;
+			row.d = m.ts;
 		}
 	}
 
@@ -182,38 +192,35 @@
 		if (f) pending = f;
 	}
 
+	function add_msg(m: Row) {
+		if (m.id && messages.some((e) => e.id === m.id)) return;
+		messages = [...messages, m];
+		scroll_down();
+	}
+
 	onMount(() => {
 		unsub = ws_on((m) => {
 			if (m.type === 'ws_down') return leaveCall(true);
 			if (m.type === 'signal') {
-				// room calls auto-answer, so without these checks any authenticated user
-				// could address a signal at a room member and get auto-connected into a
-				// call they were never invited to — both checks are load-bearing, not
-				// belt-and-suspenders
 				if (m.ctx !== `room:${g.id}`) return;
 				if (!g.members.includes(m.from as string)) return;
-				// a `join` from someone else is ignored by the mesh until we've joined too
 				mesh ??= makeMesh();
 				mesh.handle(m.from as string, m.signal as CallSignal);
 				return;
 			}
 			if (m.type !== 'msg' || m.group !== g.id) return;
 			names = { ...names, [m.from as string]: (m.from_name as string) ?? (m.from as string) };
-			messages = [
-				...messages,
-				{
-					s: 'm',
-					id: (m.id as string) ?? String(m.ts),
-					c: '',
-					f: m.from as string,
-					t: '',
-					gr: g.id,
-					x: (m.text as string) ?? '',
-					im: m.image as string | undefined,
-					d: m.ts as number
-				}
-			];
-			scroll_down();
+			add_msg({
+				s: 'm',
+				id: m.id as string,
+				c: '',
+				f: m.from as string,
+				t: '',
+				gr: g.id,
+				x: (m.text as string) ?? '',
+				im: m.image as string | undefined,
+				d: m.ts as number
+			});
 		});
 		scroll_down();
 	});
@@ -369,7 +376,7 @@
 	</Modal>
 
 	<div bind:this={thread} class="flex flex-1 flex-col gap-3 overflow-y-auto py-6">
-		{#each messages as m (m.id)}
+		{#each messages as m (m.cid ?? m.id)}
 			<div
 				class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
 					? 'self-end items-end'
@@ -386,6 +393,7 @@
 					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
 						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
 						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+					class:opacity-60={m.id === '' && !m.err}
 				>
 					{#if m.im}
 						<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
@@ -398,6 +406,11 @@
 					{/if}
 					{#if m.x}{m.x}{/if}
 				</div>
+				{#if m.err}
+					<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
+						not sent — retry
+					</button>
+				{/if}
 			</div>
 		{/each}
 		{#if !messages.length}
