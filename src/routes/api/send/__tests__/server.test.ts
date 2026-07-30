@@ -39,6 +39,7 @@ vi.mock('$lib/server/mute', () => ({ is_muted: isMutedMock, drop_muted: dropMute
 
 import { POST } from '../+server';
 
+let bg_tasks: Promise<unknown>[] = [];
 let relay_body: unknown;
 function ws(response: unknown = { ok: true, undelivered: [] }) {
 	return {
@@ -59,15 +60,18 @@ function event(body: unknown, uid: string | null = 'ada', fetcher = ws()) {
 		}),
 		locals: {
 			user: uid ? { id: uid, username: 'ada' } : null,
-			x2_ws: fetcher
+			x2_ws: fetcher,
+			bg: (p: Promise<unknown>) => { bg_tasks.push(p); }
 		}
 	} as unknown as Parameters<typeof POST>[0];
 }
 
+const settle = () => Promise.all(bg_tasks);
 const note = () => notifyMock.mock.calls[0];
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	bg_tasks = [];
 	relay_body = undefined;
 	sendMsgMock.mockResolvedValue({ id: 'm1', f: 'ada', t: 'bob', x: 'hi', d: 1_700_000_000_000 });
 	sendGroupMsgMock.mockResolvedValue({ id: 'm2', f: 'ada', x: 'hi', d: 1_700_000_000_000 });
@@ -122,22 +126,26 @@ describe('POST /api/send — existing behaviour still holds', () => {
 describe('POST /api/send — push for whoever the socket relay could not reach', () => {
 	it('pushes to exactly the recipients the relay reports as undelivered', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[1]).toEqual(['bob']);
 	});
 
 	it('does not push when the message was delivered over the socket', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: [] })));
+		await settle();
 		expect(notifyMock).not.toHaveBeenCalled();
 	});
 
 	it('pushes everyone when the relay itself is unreachable', async () => {
 		const broken = ws(new Error('ws down'));
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', broken));
+		await settle();
 		expect(note()[1]).toEqual(['bob']);
 	});
 
 	it('pushes only the group members the relay missed', async () => {
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['cid'] })));
+		await settle();
 		expect(note()[1]).toEqual(['cid']);
 	});
 
@@ -145,6 +153,7 @@ describe('POST /api/send — push for whoever the socket relay could not reach',
 		await POST(
 			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['ada', 'cid'] }))
 		);
+		await settle();
 		expect(note()[1]).not.toContain('ada');
 	});
 });
@@ -152,26 +161,31 @@ describe('POST /api/send — push for whoever the socket relay could not reach',
 describe('POST /api/send — what the notification says', () => {
 	it('titles a direct message with the sender’s username', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[2]).toMatchObject({ title: 'ada', body: 'hi' });
 	});
 
 	it('opens the conversation with the sender when tapped', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[2].url).toBe('/app/chat/ada');
 	});
 
 	it('tags a direct message with its conversation id, so a thread collapses', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[2].conv).toBe('ada|bob');
 	});
 
 	it('titles a group message with the room and names the speaker in the body', async () => {
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[2]).toMatchObject({ title: 'design club', body: 'ada: hi' });
 	});
 
 	it('opens the room when a group notification is tapped', async () => {
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[2]).toMatchObject({ url: '/app/rooms/g1', conv: 'g:g1' });
 	});
 
@@ -179,22 +193,26 @@ describe('POST /api/send — what the notification says', () => {
 		await POST(
 			event({ to: 'bob', image: 'ada/x.png' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
 		);
+		await settle();
 		expect(note()[2].image).toBe('/media/ada/x.png');
 	});
 
 	it('carries the message timestamp and id', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[2]).toMatchObject({ id: 'm1', ts: 1_700_000_000_000 });
 	});
 
 	it('carries the recipient’s unread total for a direct message, to set the app badge', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob');
 		expect(note()[2].unread).toBe(3);
 	});
 
 	it("includes the recipient's unread total in a room push", async () => {
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob', ['g:g1']);
 		expect(note()[2].unread).toBe(3);
 	});
@@ -204,6 +222,7 @@ describe('POST /api/send — what the notification says', () => {
 		await POST(
 			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
 		);
+		await settle();
 		expect(totalUnreadMock).toHaveBeenCalledTimes(2);
 		expect(notifyMock).toHaveBeenCalledTimes(2);
 		const calls = notifyMock.mock.calls;
@@ -213,15 +232,18 @@ describe('POST /api/send — what the notification says', () => {
 
 	it('still includes unread in a 1:1 push', async () => {
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(totalUnreadMock).toHaveBeenCalledWith(expect.anything(), 'bob');
 		expect(note()[2].unread).toBe(3);
 	});
 
 	it('includes kind and reply_to in both push payloads', async () => {
 		await POST(event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(note()[2]).toMatchObject({ kind: 'r', reply_to: 'g1' });
 
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(notifyMock.mock.calls[1][2]).toMatchObject({ kind: 'u', reply_to: 'ada' });
 	});
 });
@@ -251,12 +273,14 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 	it('does not push to a recipient who muted the sender', async () => {
 		isMutedMock.mockResolvedValue(true);
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(notifyMock).not.toHaveBeenCalled();
 	});
 
 	it('still pushes when the recipient muted someone else', async () => {
 		isMutedMock.mockResolvedValue(false);
 		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		await settle();
 		expect(notifyMock).toHaveBeenCalledTimes(1);
 	});
 
@@ -273,6 +297,7 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 		await POST(
 			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
 		);
+		await settle();
 		expect(notifyMock.mock.calls[0][1]).toEqual(['cid']);
 	});
 
@@ -283,6 +308,7 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 		await POST(
 			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
 		);
+		await settle();
 		expect(notifyMock).toHaveBeenCalledTimes(1);
 	});
 
@@ -291,6 +317,32 @@ describe('POST /api/send — mutes suppress push at every send path', () => {
 		await POST(
 			event({ group: 'g1', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob', 'cid'] }))
 		);
+		await settle();
 		expect(notifyMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('POST /api/send — background fan-out behaviour', () => {
+	it('response does not wait on the fan-out', async () => {
+		notifyMock.mockReturnValue(new Promise(() => {}));
+		const res = await POST(
+			event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] }))
+		);
+		const body = await res.json();
+		expect(body).toMatchObject({ ok: true, m: { id: 'm1' } });
+	});
+
+	it('registers exactly one background task per send', async () => {
+		await POST(event({ to: 'bob', text: 'hi' }, 'ada', ws({ ok: true, undelivered: ['bob'] })));
+		expect(bg_tasks).toHaveLength(1);
+	});
+
+	it('a throwing relay does not reject the handler', async () => {
+		const res = await POST(
+			event({ to: 'bob', text: 'hi' }, 'ada', ws(new Error('relay down')))
+		);
+		expect(res.status).toBe(200);
+		await settle();
+		expect(notifyMock).toHaveBeenCalled();
 	});
 });
