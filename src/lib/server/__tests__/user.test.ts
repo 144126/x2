@@ -19,7 +19,7 @@ vi.mock('../qdrant', async () => {
 });
 
 import { save_user, get_user, create_pw_user, verify_user_pw, patch_user } from '../user';
-import { uuid_from, ZV } from '../qdrant';
+import { uuid_from, ZV, V } from '../qdrant';
 import { hash_pw } from '../pw';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
@@ -39,7 +39,7 @@ describe('save_user', () => {
 		expect(ensureMock).toHaveBeenCalledWith(ENV);
 		const [, points] = upsertMock.mock.calls[0];
 		expect(points[0].id).toBe(id);
-		expect(points[0].vector).toBe(ZV);
+		expect(points[0].vector).toEqual({ [V]: ZV });
 		expect(points[0].payload).toMatchObject({
 			s: 'u',
 			g: 'google-sub-1',
@@ -98,6 +98,11 @@ describe('create_pw_user', () => {
 		expect(payload.h).not.toBe('hunter22');
 		expect(payload.h.split('.')).toHaveLength(2);
 	});
+
+	it('writes a named placeholder vector too — a fresh account has no content yet', async () => {
+		await create_pw_user(ENV, 'e@x.com', 'hunter22');
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: ZV });
+	});
 });
 
 describe('verify_user_pw', () => {
@@ -132,7 +137,7 @@ describe('patch_user', () => {
 	it('merges the patch onto the existing record', async () => {
 		retrieveOneMock.mockResolvedValue({
 			id: 'x',
-			vector: [1, 2, 3],
+			vector: { [V]: [1, 2, 3] },
 			payload: { s: 'u', u: 'ada', d: 1 }
 		});
 		const merged = await patch_user(ENV, 'x', { ac: 'CODE1' });
@@ -142,11 +147,21 @@ describe('patch_user', () => {
 	it('preserves the existing search embedding rather than resetting it', async () => {
 		retrieveOneMock.mockResolvedValue({
 			id: 'x',
-			vector: [1, 2, 3],
+			vector: { [V]: [1, 2, 3] },
 			payload: { s: 'u', u: 'ada', d: 1 }
 		});
 		await patch_user(ENV, 'x', { ac: 'CODE1' });
-		expect(upsertMock.mock.calls[0][1][0].vector).toEqual([1, 2, 3]);
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: [1, 2, 3] });
+	});
+
+	it('falls back to a named placeholder vector when the point had none', async () => {
+		retrieveOneMock.mockResolvedValue({
+			id: 'x',
+			vector: undefined,
+			payload: { s: 'u', u: 'ada', d: 1 }
+		});
+		await patch_user(ENV, 'x', { ac: 'CODE1' });
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: ZV });
 	});
 
 	it('returns null for a user that does not exist', async () => {

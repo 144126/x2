@@ -1,5 +1,5 @@
 import type { User } from '../types';
-import { ensure, upsert, retrieve_one, uuid_from, ZV, type QEnv } from './qdrant';
+import { ensure, upsert, retrieve_one, uuid_from, ZV, V, type QEnv } from './qdrant';
 import { validate_username, available_username } from './username';
 import { hash_pw, verify_pw } from './pw';
 
@@ -36,7 +36,7 @@ export async function save_user(
 		o: existing?.o ?? provider,
 		h: existing?.h
 	};
-	await upsert(env, [{ id, vector: ZV, payload: u as unknown as Record<string, unknown> }]);
+	await upsert(env, [{ id, vector: { [V]: ZV }, payload: u as unknown as Record<string, unknown> }]);
 	return id;
 }
 
@@ -59,7 +59,7 @@ export async function patch_user(
 	await upsert(env, [
 		{
 			id: uid,
-			vector: (pt!.vector as number[]) ?? ZV,
+			vector: pt!.vector ?? { [V]: ZV },
 			payload: merged as unknown as Record<string, unknown>
 		}
 	]);
@@ -80,7 +80,7 @@ export async function create_pw_user(env: QEnv, email: string, password: string)
 		o: 'local',
 		h: await hash_pw(password)
 	};
-	await upsert(env, [{ id, vector: ZV, payload: u as unknown as Record<string, unknown> }]);
+	await upsert(env, [{ id, vector: { [V]: ZV }, payload: u as unknown as Record<string, unknown> }]);
 	return id;
 }
 

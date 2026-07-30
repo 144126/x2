@@ -1,5 +1,5 @@
 import type { ScheduledMessage, Message } from '../types';
-import { ensure, upsert, scroll, remove, new_id, f, eq, range, ZV, type QEnv } from './qdrant';
+import { ensure, upsert, scroll, remove, new_id, f, eq, range, type QEnv } from './qdrant';
 import { send_msg, send_group_msg, backfill_vector, conv_id, group_conv_id } from './chat';
 import { get_group, is_member } from './group';
 import { notify } from './notify';
@@ -35,7 +35,7 @@ export async function save_scheduled(
 	await upsert(env, [
 		{
 			id: sm.id,
-			vector: new Array(4096).fill(0),
+			vector: {},
 			payload: sm as unknown as Record<string, unknown>
 		}
 	]);
@@ -66,7 +66,7 @@ async function mark_sent(env: QEnv, sm: ScheduledMessage): Promise<void> {
 	await upsert(env, [
 		{
 			id: sm.id,
-			vector: new Array(4096).fill(0),
+			vector: {},
 			payload: { ...sm, sent: 1 } as unknown as Record<string, unknown>
 		}
 	]);

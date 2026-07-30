@@ -1,4 +1,4 @@
-import { ensure, upsert, scroll, remove, new_id, f, eq, ZV, type QEnv } from './qdrant';
+import { ensure, upsert, scroll, remove, new_id, f, eq, type QEnv } from './qdrant';
 
 export interface Folder {
 	s: 'fo';
@@ -18,7 +18,7 @@ export async function save_folder(
 ): Promise<Folder> {
 	await ensure(env);
 	const fo: Folder = { s: 'fo', id: new_id(), ow: owner, k: kind, name, convs: [], d: Date.now() };
-	await upsert(env, [{ id: fo.id, vector: ZV, payload: fo as unknown as Record<string, unknown> }]);
+	await upsert(env, [{ id: fo.id, vector: {}, payload: fo as unknown as Record<string, unknown> }]);
 	return fo;
 }
 
@@ -38,7 +38,7 @@ async function owned_folder(env: QEnv, uid: string, folder_id: string): Promise<
 }
 
 async function save(env: QEnv, fo: Folder): Promise<void> {
-	await upsert(env, [{ id: fo.id, vector: ZV, payload: fo as unknown as Record<string, unknown> }]);
+	await upsert(env, [{ id: fo.id, vector: {}, payload: fo as unknown as Record<string, unknown> }]);
 }
 
 export async function assign_conv(

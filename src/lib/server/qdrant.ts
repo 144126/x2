@@ -46,7 +46,13 @@ export function __reset_qdrant(): void {
 }
 
 export const ZV: number[] = new Array(4096).fill(0);
-export const C = 'x2';
+// alias -> the physical named-vector collection `x2v2` (see named_vector_migration and
+// scripts/migrate-named-vectors.mjs). The old unnamed-vector collection `x2` still exists,
+// untouched, until a verified deploy against this alias — do not drop it before then.
+export const C = 'x2live';
+// the collection's single named dense vector — a point may omit it (`vector: {}`) at zero
+// storage/index cost, which is why it exists: see named_vector_migration.
+export const V = 't';
 
 export type QEnv = {
 	QDRANT_URL: SecretVal;
@@ -83,7 +89,7 @@ export const f_or = (musts: Cond[], any_of: Cond[]) => ({ must: musts, should: a
 
 type Pt = {
 	id: string | number;
-	vector?: number[];
+	vector?: number[] | Record<string, number[]>;
 	payload: Record<string, unknown> | null;
 	score?: number;
 };
@@ -109,7 +115,7 @@ async function provision(env: QEnv): Promise<void> {
 	} catch {
 		/* collection missing — fall through and create it */
 	}
-	await c.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } }).catch(() => {});
+	await c.createCollection(C, { vectors: { [V]: { size: 4096, distance: 'Cosine' } } }).catch(() => {});
 	await Promise.all([
 		...KEYWORD_KEYS.map((k) =>
 			c.createPayloadIndex(C, { field_name: k, field_schema: 'keyword' }).catch(() => {})
@@ -161,7 +167,7 @@ export async function search(
 	const r = await (
 		await qc(env)
 	)
-		.search(C, { vector, filter, limit, offset, with_payload: true })
+		.search(C, { vector: { name: V, vector }, filter, limit, offset, with_payload: true })
 		.catch(() => []);
 	return r as unknown as Pt[];
 }
@@ -176,7 +182,7 @@ export async function upsert(env: QEnv, points: Pt[]): Promise<void> {
 	await (await qc(env)).upsert(C, {
 		points: points as unknown as {
 			id: string | number;
-			vector: number[];
+			vector: number[] | Record<string, number[]>;
 			payload: Record<string, unknown>;
 		}[]
 	});
@@ -184,7 +190,7 @@ export async function upsert(env: QEnv, points: Pt[]): Promise<void> {
 
 export async function update_vectors(env: QEnv, id: string, vector: number[]): Promise<void> {
 	await (await qc(env)).updateVectors(C, {
-		points: [{ id, vector }]
+		points: [{ id, vector: { [V]: vector } }]
 	});
 }
 

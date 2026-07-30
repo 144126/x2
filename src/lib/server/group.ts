@@ -1,5 +1,6 @@
 import {
 	ZV,
+	V,
 	ensure,
 	upsert,
 	retrieve_one,
@@ -58,7 +59,9 @@ const group_text = (name: string, description: string) =>
 
 async function put(env: QEnv, g: Group): Promise<void> {
 	const vec = await embed(env, group_text(g.nm, g.ds));
-	await upsert(env, [{ id: g.id, vector: vec, payload: g as unknown as Record<string, unknown> }]);
+	await upsert(env, [
+		{ id: g.id, vector: { [V]: vec }, payload: g as unknown as Record<string, unknown> }
+	]);
 }
 
 async function put_payload(env: QEnv, g: Group): Promise<void> {

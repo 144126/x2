@@ -15,7 +15,7 @@ vi.mock('../qdrant', async () => {
 vi.mock('../mute', () => ({ list_mutes: listMutesMock, muted_convs: () => [] }));
 
 import type { QEnv } from '../qdrant';
-import { ZV, uuid_from } from '../qdrant';
+import { uuid_from } from '../qdrant';
 import { mark_read, read_id, total_unread, unread_by_conv } from '../unread';
 
 const env = {} as QEnv;
@@ -80,10 +80,10 @@ describe('mark_read', () => {
 		expect(point.payload).toMatchObject({ s: 'rd', f: 'me', c: 'a|b', d: 500 });
 	});
 
-	it('writes the read marker with a zero vector from the shared ZV constant', async () => {
+	it('writes the read marker with no vector — it is never searched', async () => {
 		await mark_read(env, 'me', 'a|b', 500);
 		const point = upsertMock.mock.calls[0][1][0];
-		expect(point.vector).toBe(ZV);
+		expect(point.vector).toEqual({});
 	});
 
 	it('defaults the marker to now', async () => {

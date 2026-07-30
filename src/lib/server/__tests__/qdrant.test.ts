@@ -53,6 +53,17 @@ describe('ensure', () => {
 		);
 	});
 
+	it('creates the collection with a single named vector, not an unnamed one', async () => {
+		mockClient.getCollection.mockRejectedValue(new Error('not found'));
+
+		const { ensure, V } = await import('../qdrant');
+		await ensure(ENV);
+
+		expect(mockClient.createCollection).toHaveBeenCalledWith('x2live', {
+			vectors: { [V]: { size: 4096, distance: 'Cosine' } }
+		});
+	});
+
 	it('skips all creation when every index already exists', async () => {
 		mockClient.getCollection.mockResolvedValue({
 			payload_schema: {
@@ -164,13 +175,32 @@ describe('search', () => {
 		const opts = mockClient.search.mock.calls[0][1];
 		expect(opts.offset).toBeUndefined();
 	});
+
+	it('names the vector, so vectorless points are never matched', async () => {
+		const { search: searchFn, f, eq, V } = await import('../qdrant');
+		await searchFn(ENV, [1, 2, 3], f(eq('s', 'm') as Cond), 12);
+
+		const opts = mockClient.search.mock.calls[0][1];
+		expect(opts.vector).toEqual({ name: V, vector: [1, 2, 3] });
+	});
+});
+
+describe('update_vectors names the target vector', () => {
+	it('wraps the vector under the named-vector key', async () => {
+		const { update_vectors, V } = await import('../qdrant');
+		await update_vectors(ENV, 'pt1', [4, 5, 6]);
+
+		expect(mockClient.updateVectors).toHaveBeenCalledWith('x2live', {
+			points: [{ id: 'pt1', vector: { [V]: [4, 5, 6] } }]
+		});
+	});
 });
 
 describe('set_payload', () => {
 	it('writes payload only, for exactly the given point id', async () => {
 		const { set_payload } = await import('../qdrant');
 		await set_payload(ENV, 'g1', { nm: 'renamed' });
-		expect(mockClient.setPayload).toHaveBeenCalledWith('x2', {
+		expect(mockClient.setPayload).toHaveBeenCalledWith('x2live', {
 			payload: { nm: 'renamed' },
 			points: ['g1']
 		});

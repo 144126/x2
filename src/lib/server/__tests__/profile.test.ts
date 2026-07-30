@@ -16,7 +16,7 @@ vi.mock('../user', () => ({ get_user: getUserMock }));
 vi.mock('../or', () => ({ embed: embedMock }));
 
 import { save_profile } from '../profile';
-import { ZV } from '../qdrant';
+import { ZV, V } from '../qdrant';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
 const BASE_USER = { s: 'u' as const, g: 'sub', n: 'Ada', d: 1000, o: 'google' as const };
@@ -54,6 +54,18 @@ describe('save_profile', () => {
 		expect(payload.a).toBe('test');
 		expect(payload.n).toBe('Ada');
 		// Profile should display username, not full name
+	});
+
+	it('writes the real embedding under the named-vector key when there is content', async () => {
+		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada' });
+		await save_profile(ENV, 'uid', { about: 'potter and jazz fan' });
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: [0.5, 0.6] });
+	});
+
+	it('writes a named placeholder vector when about+interests are both empty', async () => {
+		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada' });
+		await save_profile(ENV, 'uid', {});
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: ZV });
 	});
 });
 

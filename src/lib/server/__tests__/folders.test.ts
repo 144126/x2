@@ -42,6 +42,11 @@ describe('save_folder', () => {
 		const fo = await save_folder(ENV, 'ada', 'close friends');
 		expect(fo).toMatchObject({ s: 'fo', ow: 'ada', name: 'close friends', convs: [] });
 	});
+
+	it('writes no vector — a folder is never searched', async () => {
+		await save_folder(ENV, 'ada', 'close friends');
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
+	});
 });
 
 describe('payload/filter coherence', () => {

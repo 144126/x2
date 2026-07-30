@@ -29,6 +29,8 @@ import {
 	conv_id,
 	group_conv_id,
 	send_msg,
+	send_group_msg,
+	edit_msg,
 	get_messages,
 	get_group_messages,
 	list_conversations,
@@ -60,7 +62,7 @@ describe('conv_id', () => {
 });
 
 describe('send_msg', () => {
-	it('stores the message with ZV (embedding deferred to backfill)', async () => {
+	it('stores the message with no vector at all (embedding deferred to backfill)', async () => {
 		const m = await send_msg(ENV, 'alice', 'bob', 'hi there');
 		expect(ensureMock).toHaveBeenCalledWith(ENV);
 		expect(embedMock).not.toHaveBeenCalled();
@@ -73,13 +75,42 @@ describe('send_msg', () => {
 			x: 'hi there',
 			d: expect.any(Number)
 		});
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: 'id-1', vector: ZV, payload: m }]);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: 'id-1', vector: {}, payload: m }]);
 	});
 
-	it('stores short messages with ZV (no embed at send time)', async () => {
+	it('stores short messages with no vector (no embed at send time)', async () => {
 		const m = await send_msg(ENV, 'alice', 'bob', 'ok');
 		expect(embedMock).not.toHaveBeenCalled();
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: m.id, vector: ZV, payload: m }]);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: m.id, vector: {}, payload: m }]);
+	});
+});
+
+describe('send_group_msg', () => {
+	it('stores the group message with no vector either', async () => {
+		const m = await send_group_msg(ENV, 'alice', 'g1', 'hi room');
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: m.id, vector: {}, payload: m }]);
+	});
+});
+
+describe('edit_msg', () => {
+	it('preserves a point with no vector rather than reintroducing one', async () => {
+		retrieveOneMock.mockResolvedValue({
+			id: 'm1',
+			vector: {},
+			payload: { s: 'm', id: 'm1', f: 'alice', c: 'alice|bob', t: 'bob', x: 'old', d: 1 }
+		});
+		await edit_msg(ENV, 'alice', 'm1', 'new text');
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
+	});
+
+	it('preserves an existing named vector on edit', async () => {
+		retrieveOneMock.mockResolvedValue({
+			id: 'm1',
+			vector: { t: [1, 2, 3] },
+			payload: { s: 'm', id: 'm1', f: 'alice', c: 'alice|bob', t: 'bob', x: 'old', d: 1 }
+		});
+		await edit_msg(ENV, 'alice', 'm1', 'new text');
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ t: [1, 2, 3] });
 	});
 });
 

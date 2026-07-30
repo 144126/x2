@@ -88,6 +88,11 @@ describe('save_sub', () => {
 		expect(upsertMock.mock.calls[0][1][0].payload.ua).toBe('Firefox/1');
 	});
 
+	it('writes no vector — a push subscription is never searched', async () => {
+		await save_sub(env, 'me', web('https://push.example.net/a'));
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
+	});
+
 	it('rejects a subscription missing its endpoint or keys', async () => {
 		await expect(
 			save_sub(env, 'me', { endpoint: '', keys: { p256dh: 'a', auth: 'b' } })

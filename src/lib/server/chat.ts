@@ -11,7 +11,8 @@ export function conv_id(a: string, b: string): string {
 }
 
 // The embedding call is ~900ms (measured 660-1195ms against api.voxell.ai), so messages are
-// inserted with ZV and get their real vector patched in afterwards. Callers hand this to
+// inserted with no vector at all (vector: {} — see named_vector_migration) and get one patched
+// in afterwards, only if the text is long enough to be worth searching. Callers hand this to
 // locals.bg so it runs after the response.
 //
 // updateVectors, not upsert: it writes the vector only. An upsert here would restore the
@@ -47,7 +48,7 @@ export async function send_msg(
 	await upsert(env, [
 		{
 			id: m.id,
-			vector: ZV,
+			vector: {},
 			payload: m as unknown as Record<string, unknown>
 		}
 	]);
@@ -81,7 +82,7 @@ export async function send_group_msg(
 	await upsert(env, [
 		{
 			id: m.id,
-			vector: ZV,
+			vector: {},
 			payload: m as unknown as Record<string, unknown>
 		}
 	]);
@@ -149,7 +150,7 @@ export async function edit_msg(
 	await upsert(env, [
 		{
 			id: msg_id,
-			vector: (pt.vector as number[] | undefined) ?? ZV,
+			vector: pt.vector ?? {},
 			payload: next as unknown as Record<string, unknown>
 		}
 	]);

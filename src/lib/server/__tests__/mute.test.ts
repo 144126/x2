@@ -69,6 +69,11 @@ describe('mute()', () => {
 		const payload = upsertMock.mock.calls[0][1][0].payload;
 		expect(payload.until).toBe(5_000);
 	});
+
+	it('writes no vector — a mute is never searched', async () => {
+		await mute(ENV, 'ada', 'bob', 'u');
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
+	});
 });
 
 describe('unmute()', () => {

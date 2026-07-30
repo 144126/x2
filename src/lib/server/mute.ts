@@ -6,7 +6,6 @@ import {
 	uuid_from,
 	f,
 	eq,
-	ZV,
 	type QEnv,
 	type Cond
 } from './qdrant';
@@ -37,7 +36,7 @@ export async function mute(
 	await upsert(env, [
 		{
 			id: await mute_id(owner, target),
-			vector: ZV,
+			vector: {},
 			payload: m as unknown as Record<string, unknown>
 		}
 	]);

@@ -37,6 +37,7 @@ import {
 	is_member,
 	shared_groups
 } from '../group';
+import { V } from '../qdrant';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
 const VEC = new Array(4096).fill(0.1);
@@ -82,7 +83,7 @@ describe('save_group', () => {
 			ENV,
 			'group_name: Ceramics | group_about: wheel-thrown pots'
 		);
-		expect(stored().vector).toBe(VEC);
+		expect(stored().vector).toEqual({ [V]: VEC });
 	});
 
 	it('rejects a blank name', async () => {

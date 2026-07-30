@@ -74,6 +74,11 @@ describe('save_scheduled / list_scheduled / cancel_scheduled', () => {
 		});
 	});
 
+	it('writes no vector — a scheduled message row is never searched', async () => {
+		await save_scheduled(ENV, 'ada', { to: 'bob', text: 'hi', at: 99999 });
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
+	});
+
 	it("lists a user's own pending scheduled messages", async () => {
 		scrollMock.mockResolvedValue([
 			{ id: '1', payload: { s: 'sm', f: 'ada', to: 'bob', text: 'hi', at: 1, sent: 0 } }
@@ -118,13 +123,14 @@ describe('due_scheduled', () => {
 describe('send_scheduled_batch', () => {
 	const ws = {} as never;
 
-	it('sends everything due and marks it sent', async () => {
+	it('sends everything due and marks it sent, with no vector on the sent row', async () => {
 		scrollMock.mockResolvedValue([
 			{ id: '1', payload: { s: 'sm', f: 'ada', to: 'bob', text: 'hi', at: 1, sent: 0 } }
 		]);
 		await send_scheduled_batch(ENV, ws, 1000);
 		const sentUpsert = upsertMock.mock.calls.find((c) => c[1][0].payload.s === 'sm');
 		expect(sentUpsert![1][0].payload.sent).toBe(1);
+		expect(sentUpsert![1][0].vector).toEqual({});
 	});
 
 	it('skips messages scheduled in the future', async () => {

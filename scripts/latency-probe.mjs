@@ -1,18 +1,21 @@
 const url = process.env.QDRANT_URL.replace(/\/$/, '');
 const key = process.env.QDRANT_KEY;
 const H = { 'api-key': key, 'content-type': 'application/json' };
+// defaults to the live alias post named_vector_migration; pass the old collection name
+// explicitly (`node latency-probe.mjs x2`) only while it still exists pre-cutover.
+const collection = process.argv[2] ?? 'x2live';
 const t = async (label, fn) => {
 	const s = Date.now();
 	const r = await fn();
 	console.log(label.padEnd(34), `${Date.now() - s}ms`, r);
 };
 
-const info = await (await fetch(`${url}/collections/x2`, { headers: H })).json();
+const info = await (await fetch(`${url}/collections/${collection}`, { headers: H })).json();
 console.log('indexed keys:', Object.keys(info.result.payload_schema).sort().join(','));
 console.log('points:', info.result.points_count);
 
 await t('PUT index (no-op) x1', async () => {
-	const r = await fetch(`${url}/collections/x2/index`, {
+	const r = await fetch(`${url}/collections/${collection}/index`, {
 		method: 'PUT',
 		headers: H,
 		body: JSON.stringify({ field_name: 's', field_schema: 'keyword' })
@@ -21,7 +24,7 @@ await t('PUT index (no-op) x1', async () => {
 });
 
 await t('scroll s=m limit1000', async () => {
-	const r = await fetch(`${url}/collections/x2/points/scroll`, {
+	const r = await fetch(`${url}/collections/${collection}/points/scroll`, {
 		method: 'POST',
 		headers: H,
 		body: JSON.stringify({
@@ -36,16 +39,17 @@ await t('scroll s=m limit1000', async () => {
 
 const ID = '00000000-0000-4000-8000-0000000000ff';
 const ZV = new Array(4096).fill(0);
-const P = { id: ID, vector: ZV, payload: { s: 'zzz_latency_probe', d: Date.now() } };
+const P = { id: ID, vector: {}, payload: { s: 'zzz_latency_probe', d: Date.now() } };
 const pts = (qs, body, method = 'PUT') =>
-	fetch(`${url}/collections/x2/points${qs}`, { method, headers: H, body: JSON.stringify(body) });
+	fetch(`${url}/collections/${collection}/points${qs}`, { method, headers: H, body: JSON.stringify(body) });
 
 await t('upsert wait=false', async () => (await pts('?wait=false', { points: [P] })).status);
 await t('upsert wait=true', async () => (await pts('?wait=true', { points: [P] })).status);
 await t(
 	'update_vectors wait=false',
 	async () =>
-		(await pts('/vectors?wait=false', { points: [{ id: ID, vector: ZV.map(() => 0.01) }] })).status
+		(await pts('/vectors?wait=false', { points: [{ id: ID, vector: { t: ZV.map(() => 0.01) } }] }))
+			.status
 );
 await t(
 	'delete probe',

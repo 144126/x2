@@ -1,4 +1,4 @@
-import { ensure, upsert, scroll, f, eq, uuid_from, ZV, type QEnv } from './qdrant';
+import { ensure, upsert, scroll, f, eq, uuid_from, type QEnv } from './qdrant';
 import type { Message } from '../types';
 import { conv_id, group_conv_id } from './chat';
 import { list_mutes } from './mute';
@@ -25,7 +25,7 @@ export async function mark_read(
 	const d = Math.max(prev, ts);
 	const r: Read = { s: 'rd', f: uid, c: conv, d };
 	await upsert(env, [
-		{ id: await read_id(uid, conv), vector: ZV, payload: r as unknown as Record<string, unknown> }
+		{ id: await read_id(uid, conv), vector: {}, payload: r as unknown as Record<string, unknown> }
 	]);
 }
 
