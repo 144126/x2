@@ -37,12 +37,24 @@ describe('ensure', () => {
 		expect(mockClient.createPayloadIndex).toHaveBeenCalled();
 	});
 
+	it('creates an integer index for d, the message timestamp ordered scroll needs', async () => {
+		mockClient.getCollection.mockRejectedValue(new Error('not found'));
+
+		const { ensure } = await import('../qdrant');
+		await ensure(ENV);
+
+		expect(mockClient.createPayloadIndex).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ field_name: 'd', field_schema: 'integer' })
+		);
+	});
+
 	it('skips all creation when every index already exists', async () => {
 		mockClient.getCollection.mockResolvedValue({
 			payload_schema: {
 				s: {}, t: {}, r: {}, c: {}, f: {}, co: {}, st: {}, ci: {}, u: {},
 				ow: {}, mb: {}, gr: {}, uid: {}, ac: {}, tg: {}, k: {},
-				ag: {}, at: {}, sent: {}
+				ag: {}, at: {}, sent: {}, d: {}
 			}
 		});
 
@@ -89,6 +101,46 @@ describe('scroll', () => {
 
 		const opts = mockClient.scroll.mock.calls[0][1];
 		expect(opts.offset).toBeUndefined();
+	});
+
+	it('forwards order_by when given', async () => {
+		const { scroll: scrollFn, f, eq } = await import('../qdrant');
+		const order_by = { key: 'd', direction: 'desc' as const };
+		await scrollFn(ENV, f(eq('s', 'm') as Cond), 50, undefined, order_by);
+
+		const opts = mockClient.scroll.mock.calls[0][1];
+		expect(opts.order_by).toEqual(order_by);
+	});
+
+	it('carries start_from through for cursor paging', async () => {
+		const { scroll: scrollFn, f, eq } = await import('../qdrant');
+		const order_by = { key: 'd', direction: 'desc' as const, start_from: 1999 };
+		await scrollFn(ENV, f(eq('s', 'm') as Cond), 50, undefined, order_by);
+
+		const opts = mockClient.scroll.mock.calls[0][1];
+		expect(opts.order_by).toEqual(order_by);
+	});
+
+	// Qdrant 400s when offset and order_by arrive together, and scroll() swallows errors
+	// into [] — so the key must be absent, not merely undefined.
+	it('omits the offset key entirely when order_by is given', async () => {
+		const { scroll: scrollFn, f, eq } = await import('../qdrant');
+		await scrollFn(ENV, f(eq('s', 'm') as Cond), 50, 5, {
+			key: 'd',
+			direction: 'desc'
+		});
+
+		const opts = mockClient.scroll.mock.calls[0][1];
+		expect('offset' in opts).toBe(false);
+	});
+
+	it('omits the order_by key entirely when it is not given', async () => {
+		const { scroll: scrollFn, f, eq } = await import('../qdrant');
+		await scrollFn(ENV, f(eq('s', 'm') as Cond), 10, 5);
+
+		const opts = mockClient.scroll.mock.calls[0][1];
+		expect('order_by' in opts).toBe(false);
+		expect(opts.offset).toBe(5);
 	});
 });
 

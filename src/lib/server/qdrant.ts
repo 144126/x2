@@ -91,7 +91,7 @@ type Pt = {
 const KEYWORD_KEYS = [
 	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k'
 ] as const;
-const INT_KEYS = ['ag', 'at', 'sent'] as const;
+const INT_KEYS = ['ag', 'at', 'sent', 'd'] as const;
 
 export function ensure(env: QEnv): Promise<void> {
 	return (ensuring ??= provision(env).catch(() => {
@@ -120,16 +120,28 @@ async function provision(env: QEnv): Promise<void> {
 	]);
 }
 
+// `start_from` is inclusive, and Qdrant 400s when `offset` and `order_by` arrive together —
+// ordered scroll pages by the ordered value, not by point id. Since scroll() swallows errors
+// into [], sending both would read as "nothing matched", so the key must be absent entirely.
+export type OrderBy = { key: string; direction: 'asc' | 'desc'; start_from?: number };
+
 export async function scroll(
 	env: QEnv,
 	filter: ReturnType<typeof f>,
 	limit = 1000,
-	offset?: number
+	offset?: number,
+	order_by?: OrderBy
 ): Promise<Pt[]> {
 	const r = await (
 		await qc(env)
 	)
-		.scroll(C, { filter, limit, offset, with_payload: true, with_vector: false })
+		.scroll(C, {
+			filter,
+			limit,
+			...(order_by ? { order_by } : { offset }),
+			with_payload: true,
+			with_vector: false
+		})
 		.catch(() => ({ points: [] as Pt[] }));
 	return r.points as Pt[];
 }
