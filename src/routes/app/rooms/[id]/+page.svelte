@@ -108,6 +108,22 @@
 		requestAnimationFrame(() => thread?.scrollTo({ top: thread.scrollHeight }));
 	}
 
+	let loading_older = $state(false);
+	let no_more = $state(false);
+
+	async function load_older() {
+		if (loading_older || no_more || !messages.length) return;
+		loading_older = true;
+		const before = messages[0].d;
+		const res = await fetch(`/api/messages?g=${g.id}&before=${before}`).catch(() => null);
+		if (res?.ok) {
+			const older = (await res.json()).r as Row[];
+			if (!older.length) no_more = true;
+			else messages = [...older, ...messages];
+		}
+		loading_older = false;
+	}
+
 	async function send(retry?: Row) {
 		const body = retry ? retry.x : text.trim();
 		if ((!body && !pending && !retry) || busy) return;
@@ -379,6 +395,15 @@
 	</Modal>
 
 	<div bind:this={thread} class="flex flex-1 flex-col gap-3 overflow-y-auto py-6">
+		{#if !no_more && messages.length}
+			<button
+				class="btn btn-ghost mx-auto text-[12px]"
+				onclick={load_older}
+				disabled={loading_older}
+			>
+				{loading_older ? 'loading…' : 'load older messages'}
+			</button>
+		{/if}
 		{#each messages as m (m.cid ?? m.id)}
 			<div
 				class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me

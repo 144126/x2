@@ -27,8 +27,10 @@ vi.mock('../or', () => ({ embed: embedMock }));
 
 import {
 	conv_id,
+	group_conv_id,
 	send_msg,
 	get_messages,
+	get_group_messages,
 	list_conversations,
 	get_user_name,
 	search_messages
@@ -103,14 +105,57 @@ describe('search_messages', () => {
 });
 
 describe('get_messages', () => {
-	it('filters by conversation id and sorts ascending by time', async () => {
+	it('fetches the newest 50 ordered desc by `d`, then re-sorts ascending', async () => {
 		scrollMock.mockResolvedValue([
 			{ id: '2', payload: { s: 'm', c: 'a|b', f: 'b', t: 'a', x: 'second', d: 200 } },
 			{ id: '1', payload: { s: 'm', c: 'a|b', f: 'a', t: 'b', x: 'first', d: 100 } }
 		]);
 		const msgs = await get_messages(ENV, 'a', 'b');
-		expect(scrollMock).toHaveBeenCalledWith(ENV, f(eq('s', 'm'), eq('c', 'a|b')), 500);
+		expect(scrollMock).toHaveBeenCalledWith(ENV, f(eq('s', 'm'), eq('c', 'a|b')), 50, undefined, {
+			key: 'd',
+			direction: 'desc'
+		});
 		expect(msgs.map((m) => m.x)).toEqual(['first', 'second']);
+	});
+
+	it('pages older messages via start_from = before - 1', async () => {
+		scrollMock.mockResolvedValue([]);
+		await get_messages(ENV, 'a', 'b', 100);
+		expect(scrollMock).toHaveBeenCalledWith(ENV, f(eq('s', 'm'), eq('c', 'a|b')), 50, undefined, {
+			key: 'd',
+			direction: 'desc',
+			start_from: 99
+		});
+	});
+});
+
+describe('get_group_messages', () => {
+	it('fetches the newest 50 ordered desc by `d`, then re-sorts ascending', async () => {
+		scrollMock.mockResolvedValue([
+			{ id: '2', payload: { s: 'm', c: group_conv_id('g1'), gr: 'g1', f: 'b', x: 'second', d: 200 } },
+			{ id: '1', payload: { s: 'm', c: group_conv_id('g1'), gr: 'g1', f: 'a', x: 'first', d: 100 } }
+		]);
+		const msgs = await get_group_messages(ENV, 'g1');
+		expect(scrollMock).toHaveBeenCalledWith(
+			ENV,
+			f(eq('s', 'm'), eq('c', group_conv_id('g1'))),
+			50,
+			undefined,
+			{ key: 'd', direction: 'desc' }
+		);
+		expect(msgs.map((m) => m.x)).toEqual(['first', 'second']);
+	});
+
+	it('pages older messages via start_from = before - 1', async () => {
+		scrollMock.mockResolvedValue([]);
+		await get_group_messages(ENV, 'g1', 100);
+		expect(scrollMock).toHaveBeenCalledWith(
+			ENV,
+			f(eq('s', 'm'), eq('c', group_conv_id('g1'))),
+			50,
+			undefined,
+			{ key: 'd', direction: 'desc', start_from: 99 }
+		);
 	});
 });
 

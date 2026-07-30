@@ -104,16 +104,34 @@ export async function search_messages(
 	return pts.map((p) => p.payload as unknown as Message);
 }
 
-export async function get_group_messages(env: QEnv, group: string): Promise<Message[]> {
-	await ensure(env);
-	const pts = await scroll(env, f(eq('s', 'm'), eq('c', group_conv_id(group))), 500);
+export const PAGE = 50;
+
+async function page_msgs(env: QEnv, conv: string, before?: number): Promise<Message[]> {
+	const pts = await scroll(env, f(eq('s', 'm'), eq('c', conv)), PAGE, undefined, {
+		key: 'd',
+		direction: 'desc',
+		...(before === undefined ? {} : { start_from: before - 1 })
+	});
 	return pts.map((p) => p.payload as unknown as Message).sort((x, y) => x.d - y.d);
 }
 
-export async function get_messages(env: QEnv, a: string, b: string): Promise<Message[]> {
+export async function get_messages(
+	env: QEnv,
+	a: string,
+	b: string,
+	before?: number
+): Promise<Message[]> {
 	await ensure(env);
-	const pts = await scroll(env, f(eq('s', 'm'), eq('c', conv_id(a, b))), 500);
-	return pts.map((p) => p.payload as unknown as Message).sort((x, y) => x.d - y.d);
+	return page_msgs(env, conv_id(a, b), before);
+}
+
+export async function get_group_messages(
+	env: QEnv,
+	group: string,
+	before?: number
+): Promise<Message[]> {
+	await ensure(env);
+	return page_msgs(env, group_conv_id(group), before);
 }
 
 export async function edit_msg(

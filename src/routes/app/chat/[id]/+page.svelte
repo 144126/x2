@@ -52,6 +52,24 @@
 		messages = [...messages, m];
 		if (wasAtBottom) tick().then(() => threadEl?.scrollTo({ top: threadEl.scrollHeight }));
 	}
+	let loading_older = $state(false);
+	let no_more = $state(false);
+
+	async function load_older() {
+		if (loading_older || no_more || !messages.length) return;
+		loading_older = true;
+		const before = messages[0].d;
+		const res = await fetch(
+			`/api/messages?u=${encodeURIComponent(data.peer)}&before=${before}`
+		).catch(() => null);
+		if (res?.ok) {
+			const older = (await res.json()).r as Msg[];
+			if (!older.length) no_more = true;
+			else messages = [...older, ...messages];
+		}
+		loading_older = false;
+	}
+
 	let pendingFile: File | null = $state(null);
 	let searchQ = $state('');
 	let searchResults = $state<{ id: string; x: string; d: number }[] | null>(null);
@@ -386,6 +404,15 @@
 		</div>
 	{:else}
 		<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7" bind:this={threadEl}>
+			{#if !no_more && messages.length}
+				<button
+					class="btn btn-ghost mx-auto text-[12px]"
+					onclick={load_older}
+					disabled={loading_older}
+				>
+					{loading_older ? 'loading…' : 'load older messages'}
+				</button>
+			{/if}
 			{#each messages as m (m.cid ?? m.id)}
 				<div
 					class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
