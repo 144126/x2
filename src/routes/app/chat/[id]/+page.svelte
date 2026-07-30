@@ -158,8 +158,11 @@
 		mark_first_send();
 		const { m } = await res.json();
 		if (row && m) {
-			row.id = m.id;
-			row.d = m.ts;
+			const found = messages.find((e) => e.cid === row.cid);
+			if (found) {
+				found.id = m.id;
+				found.d = m.ts;
+			}
 		}
 	}
 
