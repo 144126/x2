@@ -79,4 +79,9 @@ describe('GET /app/chats', () => {
 		const data = (await load(event('me'))) as { convs: { peer: string; muted: boolean }[] };
 		expect(data.convs[0].muted).toBe(false);
 	});
+
+	it('asks for chat folders only', async () => {
+		await load(event('me'));
+		expect(listFoldersMock).toHaveBeenCalledWith(expect.anything(), 'me', 'c');
+	});
 });

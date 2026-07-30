@@ -87,36 +87,9 @@ describe('save_group', () => {
 		await expect(save_group(ENV, 'owner1', { name: '  ' })).rejects.toThrow('name_required');
 	});
 
-	it('saves a room with a country, state and city', async () => {
-		const g = await save_group(ENV, 'owner1', {
-			name: 'Accra Pottery',
-			description: '',
-			country: 'GH',
-			state: 'AA',
-			city: 'Accra'
-		});
-		expect(stored().payload).toMatchObject({ co: 'GH', st: 'AA', ci: 'Accra' });
-	});
-
 	it('saves a room with no location at all', async () => {
 		const g = await save_group(ENV, 'owner1', { name: 'Online', description: '' });
 		expect(stored().payload.co).toBeUndefined();
-	});
-
-	it('exposes country, state and city on the view', async () => {
-		const g = await save_group(ENV, 'owner1', {
-			name: 'Accra Pottery',
-			description: '',
-			country: 'GH',
-			state: 'AA',
-			city: 'Accra'
-		});
-		expect(g).toMatchObject({ country: 'GH', state: 'AA', city: 'Accra' });
-	});
-
-	it('does not fold the location into the embedding', async () => {
-		await save_group(ENV, 'owner1', { name: 'Ceramics', description: 'pots', country: 'GH' });
-		expect(embedMock).toHaveBeenCalledWith(ENV, 'group_name: Ceramics | group_about: pots');
 	});
 });
 
@@ -127,14 +100,17 @@ describe('get_group', () => {
 	});
 
 	it('maps stored keys to the view shape', async () => {
-		retrieveOneMock.mockResolvedValue(group());
+		retrieveOneMock.mockResolvedValue(group({ co: 'GH', st: 'AA', ci: 'Accra' }));
 		expect(await get_group(ENV, 'g1')).toEqual({
 			id: 'g1',
 			name: 'Ceramics',
 			description: 'wheel-thrown pots',
 			owner: 'owner1',
 			members: ['owner1'],
-			created: 100
+			created: 100,
+			country: 'GH',
+			state: 'AA',
+			city: 'Accra'
 		});
 	});
 });

@@ -6,6 +6,8 @@
 	import PhoneInput from '$lib/PhoneInput.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import { push_state, enable_push, disable_push } from '$lib/push-client';
+	import { phone_length_error } from '$lib/phone';
+	import { detect_location } from '$lib/geo-client';
 	let { data } = $props();
 	let p = $state(data.p as User);
 
@@ -59,6 +61,43 @@
 	let city = $state(p.ci ?? '');
 	let whatsapp = $state(p.w ?? '');
 	let saved = $state(false);
+	let locating = $state(false);
+	let locationWarning = $state<string | null>(null);
+
+	$effect(() => {
+		if (data.geo) {
+			if (!country && data.geo.country) country = data.geo.country;
+			if (!region && data.geo.region) region = data.geo.region;
+			if (!city && data.geo.city) city = data.geo.city;
+		}
+	});
+
+	$effect(() => {
+		if (!data.geo) { locationWarning = null; return; }
+		const ipCountry = data.geo.country;
+		const ipRegion = data.geo.region;
+		const ipCity = data.geo.city;
+		if (!ipCountry) { locationWarning = null; return; }
+		const filled = country || region || city;
+		if (!filled) { locationWarning = null; return; }
+		const mismatch =
+			(country && ipCountry && country !== ipCountry) ||
+			(region && ipRegion && region !== ipRegion) ||
+			(city && ipCity && city !== ipCity);
+		if (!mismatch) { locationWarning = null; return; }
+		locationWarning = `IP shows ${[ipCity, ipRegion, ipCountry].filter(Boolean).join(', ')} — use it?`;
+	});
+
+	async function useLocation() {
+		locating = true;
+		const loc = await detect_location();
+		locating = false;
+		if (!loc) return;
+		if (loc.country) country = loc.country;
+		if (loc.region) region = loc.region;
+		if (loc.city) city = loc.city;
+		locationWarning = null;
+	}
 
 	function addInterest() {
 		const t = interestInput.trim();
@@ -70,8 +109,12 @@
 		interests = interests.filter((i) => i !== t);
 	}
 
+	let phone_error = $state<string | null>(null);
+
 	async function save() {
 		saved = false;
+		phone_error = whatsapp ? phone_length_error(whatsapp, country || null) : null;
+		if (phone_error) return;
 		const res = await fetch('/api/profile', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
@@ -98,7 +141,7 @@
 		{username || p.m?.split('@')[0] || 'profile'}
 	</h1>
 
-	<a href="/app/user/{p.id}" class="btn text-[13px] -mt-8 mb-10 block w-fit">view profile</a>
+	<a href="/app/user/{data.id}" class="text-[13px] -mt-8 mb-10 block w-fit text-accent underline underline-offset-4 decoration-accent/40 hover:decoration-accent transition-all">view profile</a>
 
 	<form onsubmit={(e) => (e.preventDefault(), save())} class="flex flex-col gap-2">
 		<label class="eyebrow mt-6" for="p-username">username</label>
@@ -168,9 +211,22 @@
 		<div id="p-country">
 			<LocationPicker bind:country bind:region bind:city anyLabel="country" />
 		</div>
+		<div class="flex items-center gap-3 mt-2">
+			<button class="btn text-[12px]" onclick={useLocation} disabled={locating}>
+				{locating ? 'detecting…' : 'use my location'}
+			</button>
+			{#if locationWarning}
+				<button class="text-[12px] text-accent underline cursor-pointer" onclick={useLocation}>
+					{locationWarning}
+				</button>
+			{/if}
+		</div>
 
 		<label class="eyebrow mt-6" for="p-whatsapp">whatsapp number (optional)</label>
 		<PhoneInput value={whatsapp} defaultCountry={country} onChange={(v) => (whatsapp = v)} />
+		{#if phone_error}
+			<p class="mt-1 text-[12pxpx] text-accent">{phone_error}</p>
+		{/if}
 
 		<div class="mt-8 flex items-center gap-4">
 			<button class="btn btn-amber" type="submit">save card</button>

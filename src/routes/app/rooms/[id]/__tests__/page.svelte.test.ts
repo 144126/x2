@@ -140,11 +140,29 @@ describe('room description modal', () => {
 		expect(screen.queryByLabelText(/mute/)).toBeNull();
 	});
 
-	it('sizes the thread against the --chrome custom property', () => {
+	it('lists every member in the modal, linked to their member page', async () => {
 		render(Page, { props: { data: data() } });
-		const section = document.querySelector('section');
-		const cls = section?.className ?? '';
-		expect(cls).toMatch(/h-\[calc\(100dvh-var\(--chrome\)\)\]/);
-		expect(cls).not.toMatch(/140px/);
+		await openModal();
+		const bob = screen.getByRole('link', { name: 'Bob' });
+		expect(bob).toHaveAttribute('href', '/app/user/bob');
+		const carol = screen.getByRole('link', { name: 'Carol' });
+		expect(carol).toHaveAttribute('href', '/app/user/carol');
+		const me = screen.getByRole('link', { name: 'Me' });
+		expect(me).toHaveAttribute('href', '/app/user/me');
+	});
+
+	it('falls back to a placeholder for a member with no known name', async () => {
+		render(Page, {
+			props: {
+				data: {
+					g: { ...g },
+					messages: [],
+					names: { me: 'Me', bob: 'Bob' },
+					muted: false
+				}
+			}
+		});
+		await openModal();
+		expect(screen.getByText('someone')).toBeInTheDocument();
 	});
 });

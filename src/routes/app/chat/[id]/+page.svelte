@@ -8,6 +8,7 @@
 	import { CallMesh, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
+	import AiThread from '$lib/components/AiThread.svelte';
 	import {
 		ArrowLeft,
 		Phone,
@@ -44,8 +45,9 @@
 		im?: string;
 		fl?: FileAttach;
 		d: number;
+		cid?: string;
 	}) {
-		if (messages.some((e) => e.id === m.id)) return;
+		if (messages.some((e) => (e.cid ?? e.id) === (m.cid ?? m.id))) return;
 		const wasAtBottom = isAtBottom();
 		messages = [...messages, m];
 		if (wasAtBottom) tick().then(() => threadEl?.scrollTo({ top: threadEl.scrollHeight }));
@@ -136,6 +138,17 @@
 			else file = { key: r.key, name: r.name!, size: r.size!, type: r.type! };
 			pendingFile = null;
 		}
+		const cid = crypto.randomUUID();
+		const optimisticMsg = {
+			cid,
+			id: cid, // temporary id until server responds
+			f: me!,
+			x: body,
+			im: image,
+			fl: file,
+			d: Date.now()
+		};
+		add_msg(optimisticMsg);
 		text = '';
 		const at = scheduleAt ? new Date(scheduleAt).getTime() : undefined;
 		scheduleAt = '';
@@ -158,17 +171,22 @@
 			mark_first_send();
 			const body_r = await res.json();
 			console.log('[CHAT-CLIENT] /api/send body', body_r);
-			if (!body_r.scheduled)
-				add_msg({
-					id: body_r.m.id,
-					f: body_r.m.from,
-					x: body_r.m.text,
-					im: body_r.m.image,
-					fl: body_r.m.file,
-					d: body_r.m.ts
-				});
+			if (!body_r.scheduled) {
+				// Replace optimistic message with server-confirmed one
+				messages = messages.map((m) =>
+					m.cid === cid
+						? {
+								...m,
+								id: body_r.m.id,
+								cid: undefined
+							}
+						: m
+				);
+			}
 		} else {
 			console.error('[CHAT-CLIENT] /api/send FAILED', await res.text().catch(() => '<unreadable>'));
+			// Remove optimistic message on failure
+			messages = messages.filter((m) => m.cid !== cid);
 		}
 	}
 
@@ -297,6 +315,7 @@
 			</div>
 		</div>
 		<div class="ml-auto flex items-center gap-2">
+			<AiThread conv={data.conv} peerName={data.peer_name} />
 			<MuteButton target={data.peer} kind="u" bind:muted label="notifications from this person" />
 			{#if callState === 'idle' && online}
 				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={startCall}>
@@ -404,7 +423,7 @@
 		</div>
 	{:else}
 		<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7" bind:this={threadEl}>
-			{#each messages as m (m.id)}
+			{#each messages as m (m.cid ?? m.id)}
 				<div
 					class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
 						? 'self-end items-end'

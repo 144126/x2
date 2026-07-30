@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import ModalHost from './ModalHost.test.svelte';
+import Modal from '../Modal.svelte';
+import ModalWideHost from './ModalWideHost.test.svelte';
 
 // jsdom implements <dialog>, but guard so the suite fails loudly rather than mysteriously
 beforeAll(() => {
@@ -21,17 +23,18 @@ describe('Modal', () => {
 		expect(screen.getByText('modal body')).toBeInTheDocument();
 	});
 
-	it('renders the dialog with explicit centering margin', () => {
-		render(ModalHost, { props: { open: true } });
-		const dialog = screen.getByRole('dialog') as HTMLDialogElement;
-		expect(dialog.classList.contains('m-auto')).toBe(true);
-	});
-
 	it('closes when the close button is pressed', async () => {
 		render(ModalHost, { props: { open: true } });
 		const dialog = screen.getByRole('dialog') as HTMLDialogElement;
 		screen.getByRole('button', { name: 'close' }).click();
 		await new Promise((r) => setTimeout(r, 0));
 		expect(dialog.open).toBe(false);
+	});
+
+	it('opens at near-fullscreen when wide', () => {
+		const { container } = render(ModalWideHost, { props: { open: true } });
+		const html = container.innerHTML;
+		expect(html).toContain('h-[92dvh]');
+		expect(html).toContain('w-[min(920px,96vw)]');
 	});
 });

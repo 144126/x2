@@ -54,8 +54,8 @@
 {#if data.user}
 	<header class="sticky top-0 z-10 border-b border-line bg-base/80 backdrop-blur-md">
 		<nav class="wrap flex items-baseline justify-between gap-4 py-5">
-			<a href="/app" class="shrink-0 font-display text-[21px] font-medium tracking-[-0.02em]">
-				x<span class="text-accent">2</span>
+			<a href="/app" class="shrink-0">
+				<img src="/logo.svg" alt="x2" class="h-[24px] w-[24px]" />
 			</a>
 			<!-- links live in the bottom bar on phones; only the sign-out stays up here -->
 			<div class="flex items-baseline justify-end gap-6">

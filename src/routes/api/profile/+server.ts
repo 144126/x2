@@ -4,6 +4,7 @@ import { env } from '$env/dynamic/private';
 import { save_profile } from '$lib/server/profile';
 import { get_user } from '$lib/server/user';
 import { ensure } from '$lib/server/qdrant';
+import { phone_length_error } from '$lib/phone';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'auth');
@@ -26,6 +27,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		whatsapp?: string;
 		show_interests?: boolean;
 	};
+	const phoneErr = b.whatsapp ? phone_length_error(b.whatsapp, b.country ?? null) : null;
+	if (phoneErr) throw error(400, phoneErr);
+
 	await save_profile(env, locals.user.id, {
 		username: b.username,
 		about: b.about,

@@ -20,5 +20,5 @@ export const load: PageServerLoad = async ({ locals }) => {
 			return { target: m.tg, kind: m.k, until: m.until, name };
 		})
 	);
-	return { p: p ?? { id: locals.user.id, u: locals.user.username, ac }, partner_code: ac, mutes };
+	return { id: locals.user.id, p: p ?? { id: locals.user.id, u: locals.user.username, ac }, partner_code: ac, mutes, geo: locals.geo };
 };

@@ -22,12 +22,16 @@ export { b64u, unb64u } from '../b64';
 
 let q: QdrantClient | null = null;
 let q_key = '';
+let q_url = '';
 
 export async function qc(env: QEnv): Promise<QdrantClient> {
 	const url = await get_secret(env.QDRANT_URL, env.DEV_QDRANT_URL);
 	const key = await get_secret(env.QDRANT_KEY, env.DEV_QDRANT_KEY);
-	if (!q || q_key !== key) q = new QdrantClient({ url, apiKey: key, checkCompatibility: false });
-	q_key = key;
+	if (!q || q_key !== key || q_url !== url) {
+		q = new QdrantClient({ url, apiKey: key, checkCompatibility: false });
+		q_key = key;
+		q_url = url;
+	}
 	return q;
 }
 
@@ -78,33 +82,16 @@ type Pt = {
 // Qdrant strict_mode on this collection rejects filtering on any unindexed field, so every
 // key ever used in a filter (eq/range) below MUST be indexed here.
 let ensured = false;
+let ensuring: Promise<void> | null = null;
 export async function ensure(env: QEnv): Promise<void> {
 	if (ensured) return;
-	const c = await qc(env);
-	await c.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } }).catch(() => {});
-	for (const key of [
-		's',
-		't',
-		'r',
-		'c',
-		'f',
-		'co',
-		'st',
-		'ci',
-		'u',
-		'ow',
-		'mb',
-		'gr',
-		'uid',
-		'ac',
-		'tg',
-		'k'
-	])
-		await c.createPayloadIndex(C, { field_name: key, field_schema: 'keyword' }).catch(() => {});
-	await c.createPayloadIndex(C, { field_name: 'ag', field_schema: 'integer' }).catch(() => {});
-	for (const key of ['at', 'sent'])
-		await c.createPayloadIndex(C, { field_name: key, field_schema: 'integer' }).catch(() => {});
-	ensured = true;
+	if (ensuring) return ensuring;
+	ensuring = (async () => {
+		const c = await qc(env);
+		await c.createCollection(C, { vectors: { size: 4096, distance: 'Cosine' } }).catch(() => {});
+		ensured = true;
+	})();
+	return ensuring;
 }
 
 export async function scroll(
@@ -157,6 +144,16 @@ export async function upsert(env: QEnv, points: Pt[]): Promise<void> {
 				vector: number[];
 				payload: Record<string, unknown>;
 			}[]
+		})
+		.catch(() => {});
+}
+
+export async function update_vectors(env: QEnv, id: string, vector: number[]): Promise<void> {
+	await (
+		await qc(env)
+	)
+		.updateVectors(C, {
+			points: [{ id, vector }]
 		})
 		.catch(() => {});
 }

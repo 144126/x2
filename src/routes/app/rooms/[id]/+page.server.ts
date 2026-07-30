@@ -11,8 +11,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	if (!g) throw error(404, 'no group');
 	const messages = await get_group_messages(env, params.id);
 
-	// one lookup per distinct sender, so bubbles show usernames rather than uuids
-	const ids = [...new Set(messages.map((m) => m.f))];
+	// one lookup per distinct sender + every member (lurkers who never posted)
+	const ids = [...new Set([...messages.map((m) => m.f), ...g.members])];
 	const names = Object.fromEntries(
 		await Promise.all(ids.map(async (id) => [id, await get_user_name(env, id)] as const))
 	);

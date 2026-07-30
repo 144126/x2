@@ -3,12 +3,43 @@
 	import { page } from '$app/stores';
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import type { User } from '$lib/types';
+	import { local_time } from '$lib/tz';
 	let { data } = $props();
 	let u = $state(data.u as User);
 	let muted = $state(data.muted as boolean);
 	let username = $derived(u.u || u.m?.split('@')[0] || 'user');
 	let shared = $derived((data.shared ?? []) as { id: string; name: string }[]);
 	let showAllShared = $state(false);
+
+	let viewerTz = $derived(
+		typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined
+	);
+
+	let localTime = $derived.by(() => {
+		if (!data.tz) return null;
+		const now = Date.now();
+		const t = local_time(data.tz, now);
+		if (!viewerTz || viewerTz === data.tz) return t;
+		const here = offset(viewerTz, now);
+		const there = offset(data.tz, now);
+		const diff = (there - here) / 60;
+		if (diff === 0) return t;
+		const dir = diff > 0 ? 'behind' : 'ahead';
+		return `${t} · ${Math.abs(diff)}h ${dir} you`;
+	});
+
+	function offset(tz: string, ts: number): number {
+		try {
+			const parts = new Intl.DateTimeFormat('en', {
+				timeZone: tz, timeZoneName: 'longOffset', hour12: false
+			}).formatToParts(new Date(ts));
+			const off = parts.find((p) => p.type === 'timeZoneName')?.value;
+			if (!off) return 0;
+			const m = off.match(/UTC([+-])(\d+):?(\d+)?/);
+			if (!m) return 0;
+			return (parseInt(m[2]) * 60 + (parseInt(m[3]) || 0)) * (m[1] === '+' ? 1 : -1);
+		} catch { return 0; }
+	}
 
 	let commonText = $state<string | null>(null);
 	let commonLoading = $state(false);
@@ -64,6 +95,12 @@
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">phone</span>
 				<span class="text-[14px] text-ink">{u.w}</span>
+			</div>
+		{/if}
+		{#if localTime}
+			<div class="flex items-baseline gap-3">
+				<span class="eyebrow w-[100px] shrink-0">local time</span>
+				<span class="text-[14px] text-ink">{localTime}</span>
 			</div>
 		{/if}
 	</div>

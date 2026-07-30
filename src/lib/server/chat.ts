@@ -1,6 +1,7 @@
 import type { Message, Match } from '../types';
-import { ensure, upsert, new_id, type QEnv, f, f_or, eq, scroll, search, ZV } from './qdrant';
+import { ensure, upsert, retrieve_one, remove, new_id, type QEnv, f, f_or, eq, scroll, search, ZV, update_vectors } from './qdrant';
 import { embed } from './or';
+import { get_group } from './group';
 export { get_user_name } from './user';
 
 export { ensure };
@@ -38,10 +39,14 @@ export async function send_msg(
 	await upsert(env, [
 		{
 			id: m.id,
-			vector: await msg_vector(env, text),
+			vector: ZV,
 			payload: m as unknown as Record<string, unknown>
 		}
 	]);
+	// backfill real vector in background; non-blocking, swallows all errors
+	embed(env, text).then((vec) => {
+		if (vec !== ZV) update_vectors(env, m.id, vec).catch(() => {});
+	});
 	return m;
 }
 
@@ -72,10 +77,14 @@ export async function send_group_msg(
 	await upsert(env, [
 		{
 			id: m.id,
-			vector: await msg_vector(env, text),
+			vector: ZV,
 			payload: m as unknown as Record<string, unknown>
 		}
 	]);
+	// backfill real vector in background; non-blocking, swallows all errors
+	embed(env, text).then((vec) => {
+		if (vec !== ZV) update_vectors(env, m.id, vec).catch(() => {});
+	});
 	return m;
 }
 
@@ -105,6 +114,46 @@ export async function get_messages(env: QEnv, a: string, b: string): Promise<Mes
 	await ensure(env);
 	const pts = await scroll(env, f(eq('s', 'm'), eq('c', conv_id(a, b))), 500);
 	return pts.map((p) => p.payload as unknown as Message).sort((x, y) => x.d - y.d);
+}
+
+export async function edit_msg(
+	env: QEnv,
+	uid: string,
+	msg_id: string,
+	new_text: string
+): Promise<Message> {
+	await ensure(env);
+	const pt = await retrieve_one(env, msg_id, true);
+	if (!pt || pt.payload?.s !== 'm') throw new Error('not found');
+	const m = pt.payload as unknown as Message;
+	if (m.f !== uid) throw new Error('not author');
+	const vec = await embed(env, new_text);
+	await upsert(env, [
+		{
+			id: msg_id,
+			vector: vec ?? pt.vector,
+			payload: { ...m, x: new_text, e: Date.now() } as unknown as Record<string, unknown>
+		}
+	]);
+	return { ...m, x: new_text, e: Date.now() };
+}
+
+export async function delete_msg(
+	env: QEnv,
+	uid: string,
+	msg_id: string
+): Promise<{ media_key?: string; c?: string; gr?: string; f: string; t: string }> {
+	await ensure(env);
+	const pt = await retrieve_one(env, msg_id);
+	if (!pt || pt.payload?.s !== 'm') throw new Error('not found');
+	const m = pt.payload as unknown as Message;
+	if (m.f !== uid) {
+		if (!m.gr) throw new Error('not author');
+		const g = await get_group(env, m.gr);
+		if (!g || g.owner !== uid) throw new Error('not author');
+	}
+	await remove(env, [msg_id]);
+	return { media_key: m.im, c: m.c, gr: m.gr, f: m.f, t: m.t };
 }
 
 // the `/random` discover flow (and record_match, which wrote these) is gone, but existing

@@ -18,6 +18,7 @@ export interface User {
 	st?: string; // state iso code
 	ci?: string; // city (free text)
 	w?: string; // whatsapp number (subscriber number, stripped of country code / leading 0)
+	tz?: string; // IANA timezone
 	// partner program
 	ac?: string; // this user's own referral code, as a partner
 	invited_by?: string; // uid of the partner whose code this user signed up under
@@ -34,6 +35,7 @@ export interface Message {
 	fl?: { key: string; name: string; size: number; type: string }; // non-image file attachment
 	x: string; // text (may be empty when im or fl is set)
 	d: number; // ts
+	e?: number; // edited ts
 }
 
 // records that two users were paired by random match, so the thread shows up

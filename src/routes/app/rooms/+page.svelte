@@ -113,15 +113,16 @@
 			/>
 		</div>
 		<button
-			class="btn btn-amber flex items-center justify-center gap-2 whitespace-nowrap"
+			class="btn btn-amber flex items-center justify-center py-2"
 			onclick={search}
 			disabled={searching}
+			aria-label="search rooms"
+			title="search rooms"
 		>
-			{#if !searching}<Search size={15} />{/if}
-			{searching ? 'searching' : 'find rooms'}
+			<Search size={15} />
 		</button>
 		<button
-			class="btn relative shrink-0 !px-4"
+			class="btn relative shrink-0 !px-4 py-2"
 			onclick={() => (filtersOpen = true)}
 			aria-label="room filters"
 			title="location filters"

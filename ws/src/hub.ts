@@ -43,28 +43,29 @@ export class ChatHub implements DurableObject {
 			return new Response(null, { status: 101, webSocket: client });
 		}
 		if (url.pathname === '/relay' && request.method === 'POST') {
-			const m = (await request.json()) as {
-				id: string;
-				to: string;
-				from: string;
-				text: string;
-				ts: number;
-				from_name?: string;
-				group?: string;
-				image?: string;
-			};
-			console.log(`[HUB-RELAY] incoming relay for to=${m.to} from=${m.from} id=${m.id}`);
-			const delivered = this.deliver(m.to, {
-				type: 'msg',
-				id: m.id,
-				from: m.from,
-				from_name: m.from_name,
-				text: m.text,
-				image: m.image,
-				group: m.group,
-				ts: m.ts
-			});
-			console.log(`[HUB-RELAY] delivered=${delivered} to=${m.to}`);
+			const body = (await request.json()) as Record<string, unknown>;
+			const to = body.to as string;
+			const type = (body.type as string) ?? 'msg';
+			console.log(`[HUB-RELAY] type=${type} to=${to}`, body);
+			let payload: Record<string, unknown>;
+			if (type === 'edit') {
+				payload = { type: 'edit', id: body.id, from: body.from, text: body.text, e: body.e, ts: body.ts };
+			} else if (type === 'delete') {
+				payload = { type: 'delete', id: body.id };
+			} else {
+				payload = {
+					type: 'msg',
+					id: body.id,
+					from: body.from,
+					from_name: body.from_name,
+					text: body.text,
+					image: body.image,
+					group: body.group,
+					ts: body.ts
+				};
+			}
+			const delivered = this.deliver(to, payload);
+			console.log(`[HUB-RELAY] delivered=${delivered} to=${to}`);
 			return Response.json({ delivered });
 		}
 		if (url.pathname === '/signal') {

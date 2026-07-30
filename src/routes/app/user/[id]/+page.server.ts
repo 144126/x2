@@ -4,6 +4,7 @@ import { env } from '$env/dynamic/private';
 import { ensure, retrieve_one } from '$lib/server/qdrant';
 import { shared_groups } from '$lib/server/group';
 import { is_muted } from '$lib/server/mute';
+import { resolve_tz } from '$lib/tz';
 import type { User } from '$lib/types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -19,5 +20,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const shared =
 		params.id === locals.user.id ? [] : await shared_groups(env, params.id, locals.user.id);
 	const muted = await is_muted(env, locals.user.id, params.id);
-	return { id: params.id, u, wu, shared, muted };
+	const tz = await resolve_tz({ tz: u.tz, co: u.co });
+	return { id: params.id, u, wu, shared, muted, tz };
 };

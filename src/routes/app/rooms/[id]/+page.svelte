@@ -9,6 +9,7 @@
 	import { CallMesh, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import AiThread from '$lib/components/AiThread.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import LocationPicker from '$lib/LocationPicker.svelte';
 	import {
@@ -251,6 +252,7 @@
 				</button>
 			{/if}
 			{#if mine}
+				<AiThread conv="g:{g.id}" peerName={g.name} />
 				<MuteButton target={g.id} kind="r" bind:muted label="notifications for this room" />
 			{/if}
 			{#if inCall}
@@ -354,6 +356,15 @@
 				<span class="eyebrow w-[100px] shrink-0">members</span>
 				<span class="text-[14px] text-ink">{g.members.length}</span>
 			</div>
+			<ul class="flex flex-col gap-1">
+				{#each g.members as uid}
+					<li>
+						<a href="/app/user/{uid}" class="text-[14px] text-accent hover:underline"
+							>{names[uid] ?? 'someone'}</a
+						>
+					</li>
+				{/each}
+			</ul>
 		</div>
 	</Modal>
 

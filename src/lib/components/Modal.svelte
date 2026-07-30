@@ -5,8 +5,9 @@
 	let {
 		open = $bindable(false),
 		title = '',
+		wide = false,
 		children
-	}: { open?: boolean; title?: string; children: Snippet } = $props();
+	}: { open?: boolean; title?: string; wide?: boolean; children: Snippet } = $props();
 
 	// must be $state: bind:this on a plain `let` never re-runs the effect that opens the dialog
 	let el: HTMLDialogElement | undefined = $state();
@@ -20,7 +21,7 @@
 
 <dialog
 	bind:this={el}
-	class="modal-dialog m-auto max-h-[85dvh] w-[min(560px,92vw)] rounded-[20px] border border-line bg-panel-solid p-0 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-md"
+	class="modal-dialog m-auto max-h-[85dvh] {wide ? 'h-[92dvh] w-[min(920px,96vw)]' : 'w-[min(560px,92vw)]'} rounded-[20px] border border-line bg-panel-solid p-0 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-md"
 	onclose={() => (open = false)}
 	onclick={(e) => {
 		// a click landing on the dialog itself (not its content box) is a backdrop click

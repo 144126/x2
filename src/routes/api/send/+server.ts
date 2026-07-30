@@ -56,6 +56,10 @@ async function push(env: unknown, uids: string[], payload: Record<string, unknow
 	}
 }
 
+function bg_task(locals: App.Locals, p: Promise<unknown>): void {
+	locals.bg?.(p);
+}
+
 export const POST: RequestHandler = async ({ request, locals }) => {
 	console.log('[SEND] request received', { uid: locals.user?.id });
 	if (!locals.user) throw error(401, 'auth');
@@ -98,41 +102,41 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const m = await send_group_msg(env, me.id, group, text, image, file);
 		console.log('[SEND] group message stored', { id: m.id, group, members: g.members });
 		// fan out to every member but the sender, whose UI already appended it
-		const { undelivered } = await relay(
-			{
-				members: g.members.filter((u) => u !== me.id),
-				group,
-				from: me.id,
-				from_name: me.username,
-				text,
-				image,
-				file,
-				ts: m.d
-			},
-			locals.x2_ws
-		);
-		const targets = await drop_muted(
-			env,
+		const relay_payload = {
+			members: g.members.filter((u) => u !== me.id),
 			group,
-			undelivered.filter((u) => u !== me.id)
-		);
-		await Promise.all(
-			targets.map(async (uid) => {
-				const unread = await total_unread(env, uid, [group_conv_id(group)]);
-				return push(env, [uid], {
-					title: g.name,
-					body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
-					url: `/app/rooms/${group}`,
-					conv: group_conv_id(group),
-					id: m.id,
-					ts: m.d,
-					kind: 'r',
-					reply_to: group,
-					unread,
-					...(image ? { image: `/media/${image}` } : {})
-				});
-			})
-		);
+			from: me.id,
+			from_name: me.username,
+			text,
+			image,
+			file,
+			ts: m.d,
+			id: m.id
+		};
+		const { undelivered } = await relay(relay_payload, locals.x2_ws);
+		const targets = await drop_muted(env, group, undelivered.filter((u) => u !== me.id));
+
+		// respond immediately; push notifications run in background
+		bg_task(locals, (async () => {
+			await Promise.all(
+				targets.map(async (uid) => {
+					const unread = await total_unread(env, uid, [group_conv_id(group)]);
+					await push(env, [uid], {
+						title: g.name,
+						body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
+						url: `/app/rooms/${group}`,
+						conv: group_conv_id(group),
+						id: m.id,
+						ts: m.d,
+						kind: 'r',
+						reply_to: group,
+						unread,
+						...(image ? { image: `/media/${image}` } : {})
+					});
+				})
+			);
+		})());
+
 		return json({
 			ok: true,
 			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d }
@@ -149,19 +153,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	console.log('[SEND] relay result', { to, undelivered });
 	if (undelivered.includes(to) && !(await is_muted(env, to, me.id))) {
 		console.log('[SEND] recipient was undelivered live, falling back to push notification');
-		const unread = await total_unread(env, to);
-		await push(env, [to], {
-			title: me.username,
-			body: file ? `📎 ${file.name}` : text,
-			url: `/app/chat/${me.id}`,
-			conv: conv_id(me.id, to),
-			id: m.id,
-			ts: m.d,
-			kind: 'u',
-			reply_to: me.id,
-			unread,
-			...(image ? { image: `/media/${image}` } : {})
-		});
+		// respond immediately; push runs in background
+		bg_task(locals, (async () => {
+			const unread = await total_unread(env, to);
+			await push(env, [to], {
+				title: me.username,
+				body: file ? `📎 ${file.name}` : text,
+				url: `/app/chat/${me.id}`,
+				conv: conv_id(me.id, to),
+				id: m.id,
+				ts: m.d,
+				kind: 'u',
+				reply_to: me.id,
+				unread,
+				...(image ? { image: `/media/${image}` } : {})
+			});
+		})());
 	}
 	return json({
 		ok: true,

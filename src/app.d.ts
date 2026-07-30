@@ -10,10 +10,25 @@ declare global {
 			cf?: IncomingRequestCfProperties;
 		}
 
-		interface Locals {
-			user?: { id: string; username: string; picture?: string; email?: string } | null;
-			x2_ws: Fetcher;
+		interface Geo {
+			country: string | null;
+			region: string | null;
+			region_name: string | null;
+			city: string | null;
+			tz: string | null;
 		}
+
+interface Locals {
+		user?: { id: string; username: string; picture?: string; email?: string } | null;
+		x2_ws: Fetcher;
+		geo: Geo | null;
+		/**
+		 * Keep a promise alive past the response. Backed by ExecutionContext.waitUntil in
+		 * production; falls back to a floating promise (dev/test/prerender) where the isolate
+		 * is not torn down at response time.
+		 */
+		bg: (p: Promise<unknown>) => void;
+	}
 	}
 }
 

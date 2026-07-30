@@ -57,7 +57,7 @@ beforeEach(() => {
 
 describe('profile view profile button', () => {
 	it('links to the public profile view for the signed-in user id', async () => {
-		render(Page, { props: { data: data({ p: { ...baseData.p, id: 'u1' } }) } });
+		render(Page, { props: { data: data({ id: 'u1', p: { ...baseData.p, id: 'u1' } }) } });
 		const link = screen.getByText('view profile');
 		expect(link).toBeInTheDocument();
 		expect(link).toHaveAttribute('href', '/app/user/u1');

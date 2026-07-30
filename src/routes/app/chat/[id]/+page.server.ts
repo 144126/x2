@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { get_messages, get_user_name } from '$lib/server/chat';
+import { get_messages, get_user_name, conv_id } from '$lib/server/chat';
 import { ensure } from '$lib/server/qdrant';
 import { is_muted } from '$lib/server/mute';
 
@@ -14,5 +14,5 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		get_user_name(env, peer),
 		is_muted(env, locals.user.id, peer)
 	]);
-	return { peer, peer_name: name, messages: msgs, muted };
+	return { peer, peer_name: name, messages: msgs, muted, conv: conv_id(locals.user.id, peer) };
 };

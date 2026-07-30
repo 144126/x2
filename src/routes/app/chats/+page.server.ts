@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const uid = locals.user.id;
 	const [convs, folders, unread, mutes] = await Promise.all([
 		list_conversations(env, uid),
-		list_folders(env, uid),
+		list_folders(env, uid, 'c'),
 		unread_by_conv(env, uid),
 		list_mutes(env, uid)
 	]);
