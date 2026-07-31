@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { ws_on, ws_send } from '$lib/ws';
+	import { confirm_sent, mark_failed } from '$lib/chat_optimistic';
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
@@ -166,18 +167,12 @@
 		}).catch(() => null);
 
 		if (!res?.ok) {
-			if (row) row.err = true;
+			if (row?.cid) messages = mark_failed(messages, row.cid);
 			return;
 		}
 		mark_first_send();
 		const { m } = await res.json();
-		if (row && m) {
-			const found = messages.find((e) => e.cid === row.cid);
-			if (found) {
-				found.id = m.id;
-				found.d = m.ts;
-			}
-		}
+		if (row?.cid && m) messages = confirm_sent(messages, row.cid, { id: m.id, d: m.ts });
 	}
 
 	async function membership(action: 'join' | 'leave') {
