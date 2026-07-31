@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { ws_on, ws_send } from '$lib/ws';
@@ -43,12 +43,22 @@
 	let owner = $derived(!!me && g.owner === me);
 
 	let aboutOpen = $state(false);
-	let editing = $state(false);
 	let ename = $state(g.name);
 	let edesc = $state(g.description);
 	let ecountry = $state(g.country ?? '');
 	let eregion = $state(g.state ?? '');
 	let ecity = $state(g.city ?? '');
+	let etags = $state(g.tags ?? []);
+	let etagInput = $state('');
+	let eroom_state = $state(g.roomState ?? 'a');
+	function eaddTag() {
+		const t = etagInput.trim();
+		if (t && !etags.includes(t)) etags = [...etags, t];
+		etagInput = '';
+	}
+	function eremoveTag(t: string) {
+		etags = etags.filter((x) => x !== t);
+	}
 
 	let mesh: CallMesh | null = null;
 	let inCall = $state(false);
@@ -193,12 +203,14 @@
 				description: edesc,
 				country: ecountry || undefined,
 				state: eregion || undefined,
-				city: ecity || undefined
+				city: ecity || undefined,
+				tags: etags,
+				room_state: eroom_state
 			})
 		});
 		if (res.ok) {
 			g = (await res.json()).g;
-			editing = false;
+			history.back();
 		}
 	}
 
@@ -303,8 +315,10 @@
 				</button>
 			{/if}
 			{#if owner}
-				<button class="btn px-4 py-2 text-[12px]" onclick={() => (editing = !editing)}
-					>{editing ? 'close' : 'edit'}</button
+				<button
+					class="btn px-4 py-2 text-[12px]"
+					onclick={() => pushState('', { modal: 'edit-room' })}
+					>edit</button
 				>
 			{:else if mine}
 				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}
@@ -346,14 +360,48 @@
 		</div>
 	{/if}
 
-	{#if editing}
+	<Modal
+		open={$page.state.modal === 'edit-room'}
+		onclose={() => history.back()}
+		title="edit room"
+	>
 		<form
-			class="flex flex-col gap-2 border-b border-line py-4"
+			class="flex flex-col gap-3"
 			onsubmit={(e) => (e.preventDefault(), save_edits())}
 		>
 			<input bind:value={ename} placeholder="room name" maxlength="60" />
 			<textarea bind:value={edesc} rows="2" placeholder="what this room is about (used for search)"
 			></textarea>
+			<select bind:value={eroom_state} aria-label="room state">
+				<option value="a">active</option>
+				<option value="p">paused</option>
+				<option value="c">closed</option>
+			</select>
+			<div
+				class="flex min-h-[48px] flex-wrap items-center gap-2 rounded-[12px] border border-line bg-panel-solid px-3 py-2 transition-colors duration-300 focus-within:border-accent"
+			>
+				{#each etags as t}
+					<span
+						class="flex items-center gap-1 rounded-full border border-line bg-panel px-3 py-1 text-[13px] text-ink"
+					>
+						{t}
+						<button
+							type="button"
+							onclick={() => eremoveTag(t)}
+							class="text-[15px] leading-none text-faint transition-colors hover:text-accent"
+							aria-label="remove {t}">&times;</button
+						>
+					</span>
+				{/each}
+				<input
+					class="min-w-[100px] flex-1 border-none bg-transparent px-1 py-1 text-[14px] text-ink outline-none placeholder:text-mute"
+					bind:value={etagInput}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') (e.preventDefault(), eaddTag());
+					}}
+					placeholder={etags.length ? '' : 'add a tag…'}
+				/>
+			</div>
 			<LocationPicker bind:country={ecountry} bind:region={eregion} bind:city={ecity} anyLabel="country" />
 			<div class="flex gap-2">
 				<button class="btn btn-amber px-4 py-2 text-[12px]" type="submit">save</button>
@@ -362,7 +410,7 @@
 				>
 			</div>
 		</form>
-	{/if}
+	</Modal>
 
 	<Modal bind:open={aboutOpen} title={g.name}>
 		<div class="flex flex-col gap-4">

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
+	import { page } from '$app/stores';
 	import type { GroupView } from '$lib/server/group';
 	import Modal from '$lib/components/Modal.svelte';
 	import FolderBar from '$lib/components/FolderBar.svelte';
@@ -38,7 +39,6 @@
 	}
 	let creating = $state(false);
 	let err = $state('');
-	let creatingOpen = $state(false);
 
 	let country = $state('');
 	let region = $state('');
@@ -86,7 +86,6 @@
 			return;
 		}
 		const { g } = await res.json();
-		creatingOpen = false;
 		goto(`/app/rooms/${g.id}`);
 	}
 
@@ -200,12 +199,19 @@
 </section>
 
 <section class="mb-[64px]">
-	<button class="btn btn-amber flex items-center gap-1.5" onclick={() => (creatingOpen = true)}>
+	<button
+		class="btn btn-amber flex items-center gap-1.5"
+		onclick={() => pushState('', { modal: 'create-room' })}
+	>
 		<Plus size={15} /> start a room
 	</button>
 </section>
 
-<Modal bind:open={creatingOpen} title="start a room">
+<Modal
+	open={$page.state.modal === 'create-room'}
+	onclose={() => history.back()}
+	title="start a room"
+>
 	<form class="flex flex-col gap-3" onsubmit={(e) => (e.preventDefault(), create())}>
 		<input bind:value={name} placeholder="room name" maxlength="60" />
 		<textarea

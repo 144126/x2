@@ -18,6 +18,10 @@ declare global {
 			tz: string | null;
 		}
 
+		interface PageState {
+			modal?: 'create-room' | 'edit-room';
+		}
+
 interface Locals {
 		user?: { id: string; username: string; picture?: string; email?: string } | null;
 		x2_ws: Fetcher;

@@ -2,7 +2,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+const { goto, pushState } = vi.hoisted(() => ({ goto: vi.fn(), pushState: vi.fn() }));
+const { pageStore } = vi.hoisted(() => {
+	let value = { state: {} };
+	const subs = new Set<(v: unknown) => void>();
+	return {
+		pageStore: {
+			subscribe(fn: (v: unknown) => void) {
+				fn(value);
+				subs.add(fn);
+				return () => subs.delete(fn);
+			},
+			set(v: unknown) {
+				value = v as never;
+				subs.forEach((f) => f(value));
+			}
+		}
+	};
+});
+vi.mock('$app/navigation', () => ({ goto, pushState }));
+vi.mock('$app/stores', () => ({ page: pageStore }));
 vi.mock('$lib/components/FolderBar.svelte', () => ({ default: () => {} }));
 vi.mock('$lib/LocationPicker.svelte', () => ({ default: () => {} }));
 vi.mock('@lucide/svelte', () => ({
@@ -33,6 +52,7 @@ function data(over: Record<string, unknown> = {}) {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	pageStore.set({ state: {} });
 	globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ r: [] }) });
 });
 
@@ -103,5 +123,24 @@ describe('/app/rooms page', () => {
 				body: expect.stringContaining('"tags":["chess"]')
 			})
 		);
+	});
+
+	it('opens the create-room modal via pushState, not a local flag', async () => {
+		const { fireEvent } = await import('@testing-library/svelte');
+		render(Page, { props: { data: data() } });
+		await fireEvent.click(screen.getByRole('button', { name: /start a room/ }));
+		expect(pushState).toHaveBeenCalledWith('', { modal: 'create-room' });
+	});
+
+	it('closing the create-room modal calls history.back()', async () => {
+		const { fireEvent, within } = await import('@testing-library/svelte');
+		const backSpy = vi.spyOn(history, 'back').mockImplementation(() => {});
+		pageStore.set({ state: { modal: 'create-room' } });
+		render(Page, { props: { data: data() } });
+		const dialog = screen
+			.getAllByRole('dialog', { hidden: true })
+			.find((d) => d.textContent?.includes('start a room'))!;
+		await fireEvent.click(within(dialog).getByLabelText('close'));
+		expect(backSpy).toHaveBeenCalled();
 	});
 });
