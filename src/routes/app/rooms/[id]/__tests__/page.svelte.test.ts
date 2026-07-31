@@ -29,6 +29,7 @@ const g = {
 	name: 'Ceramics Crew',
 	description: 'wheel-thrown pots and glaze chat. everyone welcome.',
 	owner: 'me',
+	roomState: 'a',
 	members: ['me', 'bob', 'carol'],
 	created: 100,
 	country: 'GH',

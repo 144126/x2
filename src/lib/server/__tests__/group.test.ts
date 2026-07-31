@@ -134,6 +134,7 @@ describe('get_group', () => {
 			name: 'Ceramics',
 			description: 'wheel-thrown pots',
 			owner: 'owner1',
+			roomState: 'a',
 			members: ['owner1'],
 			created: 100,
 			country: 'GH',
@@ -260,6 +261,33 @@ describe('list_groups / search_groups', () => {
 		expect((await list_groups(ENV, 'owner1')).map((g) => g.created)).toEqual([900, 100]);
 	});
 
+	it('list_groups(uid) includes paused/closed rooms the user is a member of', async () => {
+		scrollMock.mockResolvedValue([group({ rs: 'p' }), group({ id: 'g2', rs: 'c' }), group({ id: 'g3', rs: 'a' })]);
+		const r = await list_groups(ENV, 'owner1');
+		expect(r.map((g) => g.id)).toEqual(['g1', 'g2', 'g3']);
+		const filter = scrollMock.mock.calls[0][1];
+		expect(filter).not.toHaveProperty('must_not');
+		expect(filter.must).toContainEqual({ key: 'mb', match: { value: 'owner1' } });
+	});
+
+	it('list_groups() without uid excludes paused and closed rooms', async () => {
+		scrollMock.mockResolvedValue([group({ rs: 'p' }), group({ id: 'g2', rs: 'c' }), group({ id: 'g3', rs: 'a' })]);
+		const r = await list_groups(ENV);
+		expect(r.map((g) => g.id)).toEqual(['g1', 'g2', 'g3']);
+		const filter = scrollMock.mock.calls[0][1];
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'p' } });
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'c' } });
+	});
+
+	it('list_groups() without uid still includes legacy rooms with no rs field', async () => {
+		scrollMock.mockResolvedValue([group(), group({ id: 'g2', rs: 'a' })]);
+		const r = await list_groups(ENV);
+		expect(r.map((g) => g.id)).toEqual(['g1', 'g2']);
+		const filter = scrollMock.mock.calls[0][1];
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'p' } });
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'c' } });
+	});
+
 	it('ranks by score when an embedding is available', async () => {
 		searchMock.mockResolvedValue([{ ...group(), score: 0.8 }]);
 		const r = await search_groups(ENV, 'pots');
@@ -275,11 +303,21 @@ describe('list_groups / search_groups', () => {
 		expect(searchMock).not.toHaveBeenCalled();
 	});
 
+	it('search_groups excludes paused/closed rooms via the search filter', async () => {
+		searchMock.mockResolvedValue([{ ...group(), score: 0.8 }]);
+		await search_groups(ENV, 'pots');
+		const filter = searchMock.mock.calls[0][2];
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'p' } });
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'c' } });
+	});
+
 	it('filters by country', async () => {
 		scrollMock.mockResolvedValue([group()]);
 		await search_groups(ENV, '', { country: 'GH' });
 		const filter = scrollMock.mock.calls[0][1];
 		expect(filter.must).toContainEqual({ key: 'co', match: { value: 'GH' } });
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'p' } });
+		expect(filter.must_not).toContainEqual({ key: 'rs', match: { value: 'c' } });
 	});
 
 	it('filters by country and state together', async () => {

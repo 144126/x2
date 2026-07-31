@@ -9,6 +9,7 @@ import {
 	scroll,
 	set_payload,
 	f,
+	f_not,
 	eq,
 	type QEnv
 } from './qdrant';
@@ -23,6 +24,7 @@ export interface Group {
 	tgs?: string[]; // tags (tokens), folds into the room's embedding like a user's interests
 	ow: string; // owner uid
 	mb: string[]; // member uids (owner included)
+	rs: 'a' | 'p' | 'c'; // room state — a:active p:paused c:closed, default a
 	d: number; // created ts
 	co?: string; // country
 	st?: string; // state / province
@@ -35,6 +37,7 @@ export type GroupView = {
 	description: string;
 	tags?: string[];
 	owner: string;
+	roomState: 'a' | 'p' | 'c';
 	members: string[];
 	created: number;
 	country?: string;
@@ -49,6 +52,7 @@ const view = (g: Group, score?: number): GroupView => ({
 	description: g.ds,
 	...(g.tgs?.length ? { tags: g.tgs } : {}),
 	owner: g.ow,
+	roomState: g.rs ?? 'a',
 	members: g.mb ?? [],
 	created: g.d,
 	...(g.co ? { country: g.co } : {}),
@@ -82,6 +86,7 @@ export async function save_group(
 		name: string;
 		description?: string;
 		tags?: string[];
+		room_state?: 'a' | 'p' | 'c';
 		country?: string;
 		state?: string;
 		city?: string;
@@ -98,6 +103,7 @@ export async function save_group(
 		...(data.tags?.length ? { tgs: data.tags } : {}),
 		ow: ownerId,
 		mb: [ownerId],
+		rs: data.room_state ?? 'a',
 		d: Date.now(),
 		...(data.country ? { co: data.country } : {}),
 		...(data.state ? { st: data.state } : {}),
@@ -139,6 +145,7 @@ export async function update_group(
 		name?: string;
 		description?: string;
 		tags?: string[];
+		room_state?: 'a' | 'p' | 'c';
 		country?: string;
 		state?: string;
 		city?: string;
@@ -152,6 +159,7 @@ export async function update_group(
 		nm: updates.name?.trim() || cur.nm,
 		ds: updates.description === undefined ? cur.ds : updates.description.trim(),
 		...(updates.tags !== undefined ? { tgs: updates.tags } : {}),
+		...(updates.room_state !== undefined ? { rs: updates.room_state } : {}),
 		...apply_location(cur, updates)
 	};
 	const changed = group_text(next.nm, next.ds, next.tgs) !== group_text(cur.nm, cur.ds, cur.tgs);
@@ -192,7 +200,8 @@ export async function leave_group(env: QEnv, ws: Fetcher, id: string, uid: strin
 /** groups `uid` belongs to (all groups when uid is omitted) */
 export async function list_groups(env: QEnv, uid?: string, limit = 50): Promise<GroupView[]> {
 	await ensure(env);
-	const pts = await scroll(env, uid ? f(eq('s', 'g'), eq('mb', uid)) : f(eq('s', 'g')), limit);
+	const clauses = uid ? [eq('s', 'g'), eq('mb', uid)] : [eq('s', 'g')];
+	const pts = await scroll(env, uid ? f(...clauses) : f_not(clauses, [eq('rs', 'p'), eq('rs', 'c')]), limit);
 	return pts.map((p) => view(p.payload as unknown as Group)).sort((a, b) => b.created - a.created);
 }
 
@@ -201,7 +210,7 @@ function loc_filter(loc: { country?: string; state?: string; city?: string }) {
 	if (loc.country) clauses.push(eq('co', loc.country));
 	if (loc.state) clauses.push(eq('st', loc.state));
 	if (loc.city) clauses.push(eq('ci', loc.city));
-	return f(...clauses);
+	return f_not(clauses, [eq('rs', 'p'), eq('rs', 'c')]);
 }
 
 export async function search_groups(
@@ -212,7 +221,7 @@ export async function search_groups(
 ): Promise<GroupView[]> {
 	await ensure(env);
 	const has_loc = loc && (loc.country || loc.state || loc.city);
-	const filter = has_loc ? loc_filter(loc!) : f(eq('s', 'g'));
+	const filter = has_loc ? loc_filter(loc!) : f_not([eq('s', 'g')], [eq('rs', 'p'), eq('rs', 'c')]);
 	if (!q) {
 		const pts = await scroll(env, filter, limit);
 		return pts

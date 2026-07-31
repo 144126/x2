@@ -103,6 +103,10 @@ export const range = (key: string, gte?: number, lte?: number): Cond => ({
 export const f = (...conds: Cond[]) => ({ must: conds });
 // AND every `musts`, but require at least one of `any_of` too (Qdrant's must+should combo)
 export const f_or = (musts: Cond[], any_of: Cond[]) => ({ must: musts, should: any_of });
+// AND every `musts` while excluding any `nots` (Qdrant's must+must_not combo)
+export const f_not = (musts: Cond[], nots: Cond[]) => ({ must: musts, must_not: nots });
+
+export type Filter = ReturnType<typeof f> | ReturnType<typeof f_or> | ReturnType<typeof f_not>;
 
 type Pt = {
 	id: string | number;
@@ -112,7 +116,7 @@ type Pt = {
 };
 
 const KEYWORD_KEYS = [
-	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k'
+	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k', 'rs'
 ] as const;
 const INT_KEYS = ['ag', 'at', 'sent', 'd'] as const;
 
@@ -150,7 +154,7 @@ export type OrderBy = { key: string; direction: 'asc' | 'desc'; start_from?: num
 
 export async function scroll(
 	env: QEnv,
-	filter: ReturnType<typeof f>,
+	filter: Filter,
 	limit = 1000,
 	offset?: number,
 	order_by?: OrderBy
@@ -183,7 +187,7 @@ export async function retrieve_many(env: QEnv, ids: string[]): Promise<Pt[]> {
 export async function search(
 	env: QEnv,
 	vector: number[],
-	filter: ReturnType<typeof f>,
+	filter: Filter,
 	limit = 12,
 	offset?: number
 ): Promise<Pt[]> {

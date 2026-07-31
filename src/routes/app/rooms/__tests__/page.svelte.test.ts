@@ -16,7 +16,15 @@ vi.mock('@lucide/svelte', () => ({
 import Page from '../+page.svelte';
 
 const baseMine = [
-	{ id: 'g1', name: 'Room 1', description: 'desc', owner: 'me', members: ['me'], created: 1 }
+	{
+		id: 'g1',
+		name: 'Room 1',
+		description: 'desc',
+		owner: 'me',
+		roomState: 'a' as const,
+		members: ['me'],
+		created: 1
+	}
 ];
 
 function data(over: Record<string, unknown> = {}) {
