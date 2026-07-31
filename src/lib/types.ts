@@ -31,6 +31,7 @@ export interface Message {
 	f: string; // from uid
 	t: string; // to uid ('' for group messages)
 	gr?: string; // group id, when this is a group message
+	rp?: string; // id of the message this one quotes
 	im?: string; // media key in R2, when an image is attached
 	fl?: { key: string; name: string; size: number; type: string }; // non-image file attachment
 	x: string; // text (may be empty when im or fl is set)

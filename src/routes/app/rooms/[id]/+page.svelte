@@ -128,6 +128,31 @@
 	let loading_older = $state(false);
 	let no_more = $state(false);
 
+	let replyTo = $state<Row | null>(null);
+
+	function startReply(m: Row) {
+		replyTo = m;
+	}
+
+	function cancelReply() {
+		replyTo = null;
+	}
+
+	let quoted = $state<Record<string, Row | null>>({});
+	async function resolveQuote(id: string) {
+		if (id in quoted) return;
+		const local = messages.find((e) => e.id === id);
+		if (local) {
+			quoted[id] = local;
+			return;
+		}
+		const res = await fetch(`/api/messages/${id}`).catch(() => null);
+		quoted[id] = res?.ok ? (await res.json()).m : null;
+	}
+	$effect(() => {
+		for (const m of messages) if (m.rp && !(m.rp in quoted)) resolveQuote(m.rp);
+	});
+
 	async function load_older() {
 		if (loading_older || no_more || !messages.length) return;
 		loading_older = true;
@@ -173,7 +198,7 @@
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ group: g.id, text: body, image })
+			body: JSON.stringify({ group: g.id, text: body, image, reply_to: replyTo?.id })
 		}).catch(() => null);
 
 		if (!res?.ok) {
@@ -181,6 +206,7 @@
 			return;
 		}
 		mark_first_send();
+		replyTo = null;
 		const { m } = await res.json();
 		if (row?.cid && m) messages = confirm_sent(messages, row.cid, { id: m.id, d: m.ts });
 	}
@@ -455,7 +481,7 @@
 		{/if}
 		{#each messages as m (m.cid ?? m.id)}
 			<div
-				class="flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
+				class="group flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
 					? 'self-end items-end'
 					: 'self-start'}"
 			>
@@ -472,6 +498,11 @@
 						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
 					class:opacity-60={m.id === '' && !m.err}
 				>
+					{#if m.rp}
+						<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
+							{quoted[m.rp]?.x || 'original message'}
+						</div>
+					{/if}
 					{#if m.im}
 						<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
 							<img
@@ -488,6 +519,16 @@
 						not sent — retry
 					</button>
 				{/if}
+				<div
+					class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+				>
+					<button
+						type="button"
+						class="text-[11px] text-faint hover:text-accent"
+						onclick={() => startReply(m)}
+						>reply</button
+					>
+				</div>
 			</div>
 		{/each}
 		{#if !messages.length}
@@ -496,6 +537,20 @@
 	</div>
 
 	{#if mine}
+		{#if replyTo}
+			<div
+				class="flex items-center gap-2 border-t border-line px-1 py-2 text-[12.5px] text-ink-soft"
+			>
+				<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">{replyTo.x || '(attachment)'}</div>
+				<button
+					type="button"
+					class="text-faint hover:text-accent"
+					onclick={cancelReply}
+					aria-label="cancel reply"
+					>&times;</button
+				>
+			</div>
+		{/if}
 		<form
 			class="flex flex-wrap items-center gap-2 border-t border-line py-4"
 			onsubmit={(e) => (e.preventDefault(), send())}

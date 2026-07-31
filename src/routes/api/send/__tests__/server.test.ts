@@ -167,6 +167,37 @@ describe('POST /api/send — response shape', () => {
 		const body = await (await POST(event({ group: 'g1', text: 'hi all' }))).json();
 		expect(body.m).toMatchObject({ id: 'm2', from: 'ada', group: 'g1', text: 'hi' });
 	});
+
+	it('threads reply_to into send_msg and returns rp on a 1:1 send', async () => {
+		sendMsgMock.mockResolvedValue({
+			id: 'm1', f: 'ada', t: 'bob', x: 'hi', rp: 'orig-1', d: 1_700_000_000_000
+		});
+		const body = await (
+			await POST(event({ to: 'bob', text: 'hi', reply_to: 'orig-1' }))
+		).json();
+		expect(sendMsgMock).toHaveBeenCalledWith(
+			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, 'orig-1'
+		);
+		expect(body.m).toMatchObject({ rp: 'orig-1' });
+	});
+
+	it('threads reply_to into send_group_msg and returns rp on a group send', async () => {
+		sendGroupMsgMock.mockResolvedValue({
+			id: 'm2', f: 'ada', x: 'hi', rp: 'orig-2', d: 1_700_000_000_000
+		});
+		const body = await (
+			await POST(event({ group: 'g1', text: 'hi', reply_to: 'orig-2' }))
+		).json();
+		expect(sendGroupMsgMock).toHaveBeenCalledWith(
+			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, 'orig-2'
+		);
+		expect(body.m).toMatchObject({ rp: 'orig-2' });
+	});
+
+	it('omits rp from the response when the stored message has none', async () => {
+		const body = await (await POST(event({ to: 'bob', text: 'hi' }))).json();
+		expect(body.m).not.toHaveProperty('rp');
+	});
 });
 
 describe('POST /api/send — the relay call the recipient’s ChatHub receives', () => {
@@ -221,6 +252,24 @@ describe('POST /api/send — the relay call the recipient’s ChatHub receives',
 		await POST(event({ group: 'g1', file, text: '' }));
 		await settle();
 		expect(call_bodies[0]).toMatchObject({ push_body: 'ada: 📎 doc.pdf' });
+	});
+
+	it('carries reply_msg in the 1:1 relay payload when replying', async () => {
+		await POST(event({ to: 'bob', text: 'hi', reply_to: 'orig-1' }));
+		await settle();
+		expect(call_bodies[0]).toMatchObject({ reply_msg: 'orig-1' });
+	});
+
+	it('carries reply_msg in the group relay payload when replying, distinct from the routing reply_to key', async () => {
+		await POST(event({ group: 'g1', text: 'hi', reply_to: 'orig-2' }));
+		await settle();
+		expect(call_bodies[0]).toMatchObject({ reply_to: 'g1', reply_msg: 'orig-2' });
+	});
+
+	it('omits reply_msg from the relay payload when not replying', async () => {
+		await POST(event({ to: 'bob', text: 'hi' }));
+		await settle();
+		expect(call_bodies[0]).not.toHaveProperty('reply_msg');
 	});
 });
 

@@ -32,6 +32,7 @@ vi.mock('$lib/attach', () => ({
 vi.mock('$lib/notify-trigger', () => ({ mark_first_send: vi.fn() }));
 
 import type { GroupView } from '$lib/server/group';
+import type { Message } from '$lib/types';
 import Page from '../+page.svelte';
 
 const g = {
@@ -58,6 +59,7 @@ const data = (over: Record<string, unknown> = {}) => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	pageStore.set({ data: { user: { id: 'me' } }, state: {} });
+	Element.prototype.scrollTo = vi.fn();
 });
 
 describe('room description modal', () => {
@@ -194,5 +196,80 @@ describe('room description modal', () => {
 		});
 		await openModal();
 		expect(screen.getByText('someone')).toBeInTheDocument();
+	});
+});
+
+describe('replying', () => {
+	function renderWith(messages: Message[]) {
+		render(Page, {
+			props: {
+				data: {
+					user: { id: 'me', username: 'me' },
+					g: { ...g, members: ['me'] } as GroupView,
+					messages,
+					names: { me: 'Me', bob: 'Bob' },
+					muted: false
+				}
+			}
+		});
+	}
+
+	it('clicking reply on a message shows the quote-preview strip', async () => {
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
+		]);
+		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		const strip = screen.getByLabelText('cancel reply').parentElement!;
+		expect(strip).toHaveTextContent('original text');
+	});
+
+	it('sending while replying includes reply_to in the POST body, then clears the reply state', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
+		globalThis.fetch = mockFetch;
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
+		]);
+		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		const input = screen.getByPlaceholderText('say something to the room…');
+		await fireEvent.input(input, { target: { value: 'my reply' } });
+		await fireEvent.submit(input.closest('form')!);
+		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ group: 'g1', text: 'my reply', image: undefined, reply_to: 'm1' })
+		});
+		expect(screen.queryByLabelText('cancel reply')).toBeNull();
+	});
+
+	it('cancel button clears the reply-preview strip without sending', async () => {
+		const mockFetch = vi.fn();
+		globalThis.fetch = mockFetch;
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
+		]);
+		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await fireEvent.click(screen.getByLabelText('cancel reply'));
+		expect(screen.queryByLabelText('cancel reply')).toBeNull();
+		expect(mockFetch).not.toHaveBeenCalled();
+	});
+
+	it('a message with rp set to an id not in the loaded window fetches it via /api/messages/[id]', async () => {
+		const mockFetch = vi.fn((url: string) => {
+			if (url === '/api/messages/orig-1') {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ m: { id: 'orig-1', x: 'quoted old text' } })
+				});
+			}
+			return Promise.resolve({ ok: true, json: () => Promise.resolve({ m: null }) });
+		});
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'replying', d: 100, rp: 'orig-1' }
+		]);
+		await vi.waitFor(() =>
+			expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1')
+		);
+		await vi.waitFor(() => expect(screen.getByText('quoted old text')).toBeInTheDocument());
 	});
 });

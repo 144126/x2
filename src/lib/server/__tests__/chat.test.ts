@@ -92,6 +92,19 @@ describe('send_msg', () => {
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:ok' } }
 		]);
 	});
+
+	it('stores a reply_to reference as rp on the message', async () => {
+		const m = await send_msg(ENV, 'alice', 'bob', 'thanks', undefined, undefined, 'orig-1');
+		expect(m.rp).toBe('orig-1');
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:thanks' } }
+		]);
+	});
+
+	it('omits rp when no reply_to is given', async () => {
+		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
+		expect(m).not.toHaveProperty('rp');
+	});
 });
 
 describe('send_group_msg', () => {
@@ -99,6 +112,14 @@ describe('send_group_msg', () => {
 		const m = await send_group_msg(ENV, 'alice', 'g1', 'hi room');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi room' } }
+		]);
+	});
+
+	it('stores a reply_to reference as rp on a group message too', async () => {
+		const m = await send_group_msg(ENV, 'alice', 'g1', 'me too', undefined, undefined, 'orig-2');
+		expect(m.rp).toBe('orig-2');
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:me too' } }
 		]);
 	});
 });

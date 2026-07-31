@@ -32,12 +32,14 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		image?: string;
 		file?: { key: string; name: string; size: number; type: string };
 		at?: number;
+		reply_to?: string;
 	};
 	const to = b?.to?.trim();
 	const group = b?.group?.trim();
 	const text = (b?.text ?? '').trim();
 	const image = b?.image?.trim() || undefined;
 	const file = b?.file;
+	const reply_to = b?.reply_to?.trim() || undefined;
 	if (!text && !image && !file) throw error(400, 'text, image or file required');
 	if (!to && !group) throw error(400, 'to or group required');
 
@@ -52,7 +54,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		const g = await get_group(env, group);
 		if (!g) throw error(404, 'no group');
 		if (!(await is_member(env, locals.x2_ws, g.id, me.id))) throw error(403, 'not a member');
-		const m = await send_group_msg(env, me.id, group, text, image, file).catch(() => {
+		const m = await send_group_msg(env, me.id, group, text, image, file, reply_to).catch(() => {
 			throw error(503, 'not_stored');
 		});
 
@@ -76,6 +78,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 						url: `/app/rooms/${group}`,
 						kind: 'r',
 						reply_to: group,
+						reply_msg: reply_to,
 						...(image ? { image: `/media/${image}` } : {})
 					},
 					locals.x2_ws
@@ -87,12 +90,12 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 		return json({
 			ok: true,
-			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d }
+			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp }
 		});
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image, file).catch(() => {
+	const m = await send_msg(env, me.id, to, text, image, file, reply_to).catch(() => {
 		throw error(503, 'not_stored');
 	});
 
@@ -115,6 +118,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 					url: `/app/chat/${me.id}`,
 					kind: 'u',
 					reply_to: me.id,
+					reply_msg: reply_to,
 					...(image ? { image: `/media/${image}` } : {})
 				},
 				locals.x2_ws
@@ -126,6 +130,6 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 	return json({
 		ok: true,
-		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d }
+		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp }
 	});
 };

@@ -203,6 +203,24 @@ describe('ChatHub.fetch', () => {
 		]);
 	});
 
+	it('forwards reply_msg through the relay to the recipient socket', async () => {
+		const recipient = new FakeSocket();
+		state.acceptWebSocket(recipient, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.fetch(
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({
+					to: 'bob', from: 'alice', from_name: 'Alice', text: 'got it', reply_msg: 'orig-1', ts: 123
+				})
+			})
+		);
+		expect(recipient.sent).toEqual([
+			JSON.stringify({ type: 'msg', from: 'alice', from_name: 'Alice', text: 'got it', reply_msg: 'orig-1', ts: 123 })
+		]);
+	});
+
 	it('reports the relay as delivered when a socket was there to take it', async () => {
 		state.acceptWebSocket(new FakeSocket(), ['bob']);
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
