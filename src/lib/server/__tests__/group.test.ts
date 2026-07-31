@@ -106,6 +106,19 @@ describe('save_group', () => {
 		const g = await save_group(ENV, WS, 'owner1', { name: 'Online', description: '' });
 		expect(stored().payload.co).toBeUndefined();
 	});
+
+	it('folds tags into the embedding text alongside name and description', async () => {
+		await save_group(ENV, WS, 'owner1', {
+			name: 'Ceramics',
+			description: 'pots',
+			tags: ['coffee', 'chess']
+		});
+		expect(embedMock).toHaveBeenCalledWith(
+			ENV,
+			'group_name: Ceramics | group_about: pots | room_tags: coffee, chess'
+		);
+		expect(stored().payload.tgs).toEqual(['coffee', 'chess']);
+	});
 });
 
 describe('get_group', () => {
@@ -128,6 +141,17 @@ describe('get_group', () => {
 			city: 'Accra'
 		});
 	});
+
+	it('maps stored tags to the view shape', async () => {
+		retrieveOneMock.mockResolvedValue(group({ tgs: ['coffee', 'chess'] }));
+		expect((await get_group(ENV, 'g1'))?.tags).toEqual(['coffee', 'chess']);
+	});
+
+	it('omits tags from the view when there are none', async () => {
+		retrieveOneMock.mockResolvedValue(group());
+		const g = await get_group(ENV, 'g1');
+		expect(g).not.toHaveProperty('tags');
+	});
 });
 
 describe('update_group', () => {
@@ -139,6 +163,17 @@ describe('update_group', () => {
 			ENV,
 			'group_name: Pottery | group_about: wheel-thrown pots'
 		);
+	});
+
+	it('re-embeds when only tags change, since tags are part of the search text', async () => {
+		retrieveOneMock.mockResolvedValue(group());
+		const g = await update_group(ENV, 'g1', 'owner1', { tags: ['coffee'] });
+		expect(g?.tags).toEqual(['coffee']);
+		expect(embedMock).toHaveBeenCalledWith(
+			ENV,
+			'group_name: Ceramics | group_about: wheel-thrown pots | room_tags: coffee'
+		);
+		expect(stored().payload.tgs).toEqual(['coffee']);
 	});
 
 	it('refuses a non-owner and writes nothing', async () => {

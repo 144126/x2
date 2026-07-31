@@ -3,14 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/components/Modal.svelte', () => ({ default: () => {} }));
 vi.mock('$lib/components/FolderBar.svelte', () => ({ default: () => {} }));
 vi.mock('$lib/LocationPicker.svelte', () => ({ default: () => {} }));
 vi.mock('@lucide/svelte', () => ({
 	Search: () => {},
 	Plus: () => {},
 	Users: () => {},
-	SlidersHorizontal: () => {}
+	SlidersHorizontal: () => {},
+	X: () => {}
 }));
 
 import Page from '../+page.svelte';
@@ -61,5 +61,39 @@ describe('/app/rooms page', () => {
 
 		expect(screen.getByText('Mine')).toBeInTheDocument();
 		expect(screen.queryByText('Theirs')).toBeNull();
+	});
+
+	it('adds and removes tags as tokens and sends them on create', async () => {
+		const { fireEvent } = await import('@testing-library/svelte');
+		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ g: { id: 'g1' } }) });
+		globalThis.fetch = mockFetch;
+
+		render(Page, { props: { data: data() } });
+
+		await fireEvent.input(screen.getByPlaceholderText('room name'), {
+			target: { value: 'Chess Club' }
+		});
+
+		const tagInput = screen.getByPlaceholderText('add a tag…');
+		await fireEvent.input(tagInput, { target: { value: 'coffee' } });
+		await fireEvent.keyDown(tagInput, { key: 'Enter' });
+		expect(screen.getByText('coffee')).toBeInTheDocument();
+
+		await fireEvent.input(tagInput, { target: { value: 'chess' } });
+		await fireEvent.keyDown(tagInput, { key: 'Enter' });
+		expect(screen.getByText('chess')).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByLabelText('remove coffee'));
+		expect(screen.queryByText('coffee')).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'create room', hidden: true }));
+
+		expect(mockFetch).toHaveBeenCalledWith(
+			'/api/groups',
+			expect.objectContaining({
+				method: 'POST',
+				body: expect.stringContaining('"tags":["chess"]')
+			})
+		);
 	});
 });

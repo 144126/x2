@@ -16,6 +16,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	const b = (await request.json().catch(() => null)) as {
 		name?: string;
 		description?: string;
+		tags?: string[];
 		country?: string;
 		state?: string;
 		city?: string;
@@ -23,6 +24,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	const g = await update_group(env, params.id, locals.user.id, {
 		name: b?.name,
 		description: b?.description,
+		tags: b?.tags,
 		country: b?.country,
 		state: b?.state,
 		city: b?.city

@@ -26,6 +26,16 @@
 
 	let name = $state('');
 	let description = $state('');
+	let tags = $state<string[]>([]);
+	let tagInput = $state('');
+	function addTag() {
+		const t = tagInput.trim();
+		if (t && !tags.includes(t)) tags = [...tags, t];
+		tagInput = '';
+	}
+	function removeTag(t: string) {
+		tags = tags.filter((x) => x !== t);
+	}
 	let creating = $state(false);
 	let err = $state('');
 	let creatingOpen = $state(false);
@@ -68,7 +78,7 @@
 		const res = await fetch('/api/groups', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ name, description, country: country || undefined, state: region || undefined, city: city || undefined })
+			body: JSON.stringify({ name, description, tags, country: country || undefined, state: region || undefined, city: city || undefined })
 		});
 		creating = false;
 		if (!res.ok) {
@@ -202,6 +212,31 @@
 			bind:value={description}
 			rows="3"
 			placeholder="what is this room about? this is what people search against."></textarea>
+		<div
+			class="flex min-h-[48px] flex-wrap items-center gap-2 rounded-[12px] border border-line bg-panel-solid px-3 py-2 transition-colors duration-300 focus-within:border-accent"
+		>
+			{#each tags as t}
+				<span
+					class="flex items-center gap-1 rounded-full border border-line bg-panel px-3 py-1 text-[13px] text-ink"
+				>
+					{t}
+					<button
+						type="button"
+						onclick={() => removeTag(t)}
+						class="text-[15px] leading-none text-faint transition-colors hover:text-accent"
+						aria-label="remove {t}">&times;</button
+					>
+				</span>
+			{/each}
+			<input
+				class="min-w-[100px] flex-1 border-none bg-transparent px-1 py-1 text-[14px] text-ink outline-none placeholder:text-mute"
+				bind:value={tagInput}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') (e.preventDefault(), addTag());
+				}}
+				placeholder={tags.length ? '' : 'add a tag…'}
+			/>
+		</div>
 		<LocationPicker bind:country bind:region bind:city anyLabel="country" />
 		<button
 			class="btn btn-amber flex items-center gap-1.5 self-start"

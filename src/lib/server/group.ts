@@ -20,6 +20,7 @@ export interface Group {
 	id: string;
 	nm: string; // name
 	ds: string; // description
+	tgs?: string[]; // tags (tokens), folds into the room's embedding like a user's interests
 	ow: string; // owner uid
 	mb: string[]; // member uids (owner included)
 	d: number; // created ts
@@ -32,6 +33,7 @@ export type GroupView = {
 	id: string;
 	name: string;
 	description: string;
+	tags?: string[];
 	owner: string;
 	members: string[];
 	created: number;
@@ -45,6 +47,7 @@ const view = (g: Group, score?: number): GroupView => ({
 	id: g.id,
 	name: g.nm,
 	description: g.ds,
+	...(g.tgs?.length ? { tags: g.tgs } : {}),
 	owner: g.ow,
 	members: g.mb ?? [],
 	created: g.d,
@@ -54,12 +57,14 @@ const view = (g: Group, score?: number): GroupView => ({
 	...(score === undefined ? {} : { score })
 });
 
-// name + description are the whole semantic signal for a group, per spec
-const group_text = (name: string, description: string) =>
-	`group_name: ${name}${description.trim() ? ` | group_about: ${description}` : ''}`;
+// name + description + tags are the whole semantic signal for a group, per spec
+const group_text = (name: string, description: string, tags?: string[]) =>
+	`group_name: ${name}${description.trim() ? ` | group_about: ${description}` : ''}${
+		tags?.length ? ` | room_tags: ${tags.join(', ')}` : ''
+	}`;
 
 async function put(env: QEnv, g: Group): Promise<void> {
-	const vec = await embed(env, group_text(g.nm, g.ds));
+	const vec = await embed(env, group_text(g.nm, g.ds, g.tgs));
 	await upsert(env, [
 		{ id: g.id, vector: { [V]: vec }, payload: g as unknown as Record<string, unknown> }
 	]);
@@ -73,7 +78,14 @@ export async function save_group(
 	env: QEnv,
 	ws: Fetcher,
 	ownerId: string,
-	data: { name: string; description?: string; country?: string; state?: string; city?: string }
+	data: {
+		name: string;
+		description?: string;
+		tags?: string[];
+		country?: string;
+		state?: string;
+		city?: string;
+	}
 ): Promise<GroupView> {
 	await ensure(env);
 	const name = data.name.trim();
@@ -83,6 +95,7 @@ export async function save_group(
 		id: await new_group_id(env, async (id) => (await retrieve_one(env, id)) !== null),
 		nm: name,
 		ds: (data.description ?? '').trim(),
+		...(data.tags?.length ? { tgs: data.tags } : {}),
 		ow: ownerId,
 		mb: [ownerId],
 		d: Date.now(),
@@ -122,7 +135,14 @@ export async function update_group(
 	env: QEnv,
 	id: string,
 	uid: string,
-	updates: { name?: string; description?: string; country?: string; state?: string; city?: string }
+	updates: {
+		name?: string;
+		description?: string;
+		tags?: string[];
+		country?: string;
+		state?: string;
+		city?: string;
+	}
 ): Promise<GroupView | null> {
 	await ensure(env);
 	const cur = await raw_group(env, id);
@@ -131,9 +151,10 @@ export async function update_group(
 		...cur,
 		nm: updates.name?.trim() || cur.nm,
 		ds: updates.description === undefined ? cur.ds : updates.description.trim(),
+		...(updates.tags !== undefined ? { tgs: updates.tags } : {}),
 		...apply_location(cur, updates)
 	};
-	const changed = group_text(next.nm, next.ds) !== group_text(cur.nm, cur.ds);
+	const changed = group_text(next.nm, next.ds, next.tgs) !== group_text(cur.nm, cur.ds, cur.tgs);
 	await (changed ? put(env, next) : put_payload(env, next));
 	return view(next);
 }

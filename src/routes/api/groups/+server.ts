@@ -23,6 +23,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const b = (await request.json().catch(() => null)) as {
 		name?: string;
 		description?: string;
+		tags?: string[];
 		country?: string;
 		state?: string;
 		city?: string;
@@ -33,6 +34,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		g: await save_group(env, locals.x2_ws, locals.user.id, {
 			name,
 			description: b?.description,
+			tags: b?.tags,
 			country: b?.country,
 			state: b?.state,
 			city: b?.city
