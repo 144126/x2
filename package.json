@@ -31,7 +31,8 @@
 		"@qdrant/js-client-rest": "^1.18.0",
 		"arctic": "^3.7.0",
 		"country-state-city": "^3.2.1",
-		"libphonenumber-js": "1.13.9"
+		"libphonenumber-js": "1.13.9",
+		"sqids": "^0.3.0"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^5.20260724.1",

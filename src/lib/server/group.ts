@@ -4,7 +4,7 @@ import {
 	ensure,
 	upsert,
 	retrieve_one,
-	new_id,
+	new_group_id,
 	search,
 	scroll,
 	set_payload,
@@ -80,7 +80,7 @@ export async function save_group(
 	if (!name) throw new Error('name_required');
 	const g: Group = {
 		s: 'g',
-		id: new_id(),
+		id: await new_group_id(env, async (id) => (await retrieve_one(env, id)) !== null),
 		nm: name,
 		ds: (data.description ?? '').trim(),
 		ow: ownerId,
