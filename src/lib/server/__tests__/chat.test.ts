@@ -38,6 +38,7 @@ import {
 	edit_msg,
 	get_messages,
 	get_group_messages,
+	get_message,
 	get_user_name,
 	search_messages
 } from '../chat';
@@ -197,6 +198,26 @@ describe('get_group_messages', () => {
 			undefined,
 			{ key: 'd', direction: 'desc', start_from: 99 }
 		);
+	});
+});
+
+describe('get_message', () => {
+	it('returns null when the point is missing', async () => {
+		retrieveOneMock.mockResolvedValue(null);
+		expect(await get_message(ENV, 'm1')).toBeNull();
+	});
+
+	it('returns null for a point with the wrong discriminator', async () => {
+		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: { s: 'u', n: 'x' } });
+		expect(await get_message(ENV, 'm1')).toBeNull();
+	});
+
+	it('returns the decrypted message for a message point', async () => {
+		retrieveOneMock.mockResolvedValue({
+			id: 'm1',
+			payload: { id: 'm1', s: 'm', c: 'a|b', f: 'a', t: 'b', x: 'enc:hello', d: 100 }
+		});
+		expect(await get_message(ENV, 'm1')).toMatchObject({ id: 'm1', x: 'hello', d: 100 });
 	});
 });
 

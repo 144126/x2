@@ -147,6 +147,13 @@ export async function get_group_messages(
 	return page_msgs(env, group_conv_id(group), before);
 }
 
+export async function get_message(env: QEnv, id: string): Promise<Message | null> {
+	const pt = await retrieve_one(env, id);
+	if (!pt || pt.payload?.s !== 'm') return null;
+	const m = pt.payload as unknown as Message;
+	return { ...m, x: await decrypt_text(env, m.x) };
+}
+
 export async function edit_msg(
 	env: QEnv,
 	uid: string,
