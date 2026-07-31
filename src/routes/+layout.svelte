@@ -37,9 +37,9 @@
 	});
 
 	const nav = [
-		{ href: '/app', label: 'people', icon: Users },
-		{ href: '/app/chats', label: 'chats', icon: MessagesSquare },
 		{ href: '/app/rooms', label: 'rooms', icon: DoorOpen },
+		{ href: '/app/chats', label: 'chats', icon: MessagesSquare },
+		{ href: '/app', label: 'people', icon: Users },
 		{ href: '/app/profile', label: 'profile', icon: UserRound }
 	];
 	let here = $derived($page.url.pathname);
@@ -54,7 +54,7 @@
 {#if data.user}
 	<header class="sticky top-0 z-10 border-b border-line bg-base/80 backdrop-blur-md">
 		<nav class="wrap flex items-baseline justify-between gap-4 py-5">
-			<a href="/app" class="shrink-0">
+			<a href="/app/rooms" class="shrink-0">
 				<img src="/logo.svg" alt="x2" class="h-[24px] w-[24px]" />
 			</a>
 			<!-- links live in the bottom bar on phones; only the sign-out stays up here -->

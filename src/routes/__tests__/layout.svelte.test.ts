@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import { writable } from 'svelte/store';
+import type { Snippet } from 'svelte';
 
 vi.mock('$app/stores', () => ({
 	page: writable({ url: new URL('https://x/app') })
@@ -58,5 +59,25 @@ describe('bottom nav', () => {
 			['people', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
 		);
 		expect(navLabels.length).toBe(0);
+	});
+
+	it('renders rooms as the first nav item', () => {
+		render(Layout, {
+			props: { data: { user: fakeUser }, children: (() => '') as unknown as Snippet }
+		});
+		const links = screen.getAllByRole('link').filter((l) => l.textContent?.toLowerCase().trim());
+		const navLinks = links.filter((l) =>
+			['people', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
+		);
+		expect(navLinks[0]).toHaveTextContent('rooms');
+		expect(navLinks[0]).toHaveAttribute('href', '/app/rooms');
+	});
+
+	it('logo links to /app/rooms', () => {
+		render(Layout, {
+			props: { data: { user: fakeUser }, children: (() => '') as unknown as Snippet }
+		});
+		const logo = screen.getByRole('link', { name: 'x2' });
+		expect(logo).toHaveAttribute('href', '/app/rooms');
 	});
 });
