@@ -65,6 +65,12 @@
 				remotes = stream
 					? [...remotes.filter((r) => r.uid !== uid), { uid, stream }]
 					: remotes.filter((r) => r.uid !== uid);
+			},
+			fetchTurn: async () => {
+				const r = await fetch('/api/turn', { method: 'POST' }).catch(() => null);
+				if (!r?.ok) return [];
+				const { iceServers } = await r.json() as { iceServers: RTCIceServer[] };
+				return iceServers;
 			}
 		});
 	}

@@ -22,8 +22,9 @@ export type MeshOpts = {
 	onremote: (uid: string, stream: MediaStream | null) => void;
 	/** supplied by 1:1 callers that want a ring UI; omitted = auto-answer (rooms) */
 	onincoming?: (uid: string, sdp: RTCSessionDescriptionInit) => void;
-	makePC?: () => RTCPeerConnection;
+	makePC?: (config?: RTCConfiguration) => RTCPeerConnection;
 	getMedia?: (c: MediaStreamConstraints) => Promise<MediaStream>;
+	fetchTurn?: () => Promise<RTCIceServer[]>;
 };
 
 // ponytail: free Google STUN only — add TURN for symmetric NATs in prod
@@ -37,9 +38,21 @@ export class CallMesh {
 	private pcs = new Map<string, RTCPeerConnection>();
 	private pending = new Map<string, RTCSessionDescriptionInit>();
 	private local: MediaStream | null = null;
+	private turnServers: RTCIceServer[] = [];
+	private turnFetched = false;
 
 	constructor(opts: MeshOpts) {
 		this.o = opts;
+	}
+
+	private async ensureTurn(): Promise<void> {
+		if (this.turnFetched || !this.o.fetchTurn) return;
+		this.turnFetched = true;
+		try {
+			this.turnServers = await this.o.fetchTurn();
+		} catch {
+			this.turnServers = [];
+		}
 	}
 
 	get peers(): string[] {
@@ -176,10 +189,12 @@ export class CallMesh {
 		this.o.onremote(uid, null);
 	}
 
-	private pc(uid: string): RTCPeerConnection {
+	private async pc(uid: string): Promise<RTCPeerConnection> {
 		const existing = this.pcs.get(uid);
 		if (existing) return existing;
-		const pc = (this.o.makePC ?? (() => new RTCPeerConnection({ iceServers: [STUN] })))();
+		await this.ensureTurn();
+		const iceServers = [STUN, ...this.turnServers];
+		const pc = (this.o.makePC ?? (() => new RTCPeerConnection({ iceServers })))({ iceServers });
 		pc.onicecandidate = (e) => {
 			if (e.candidate) this.o.send(uid, { type: 'ice', candidate: e.candidate.toJSON() });
 		};
@@ -203,14 +218,14 @@ export class CallMesh {
 	}
 
 	private async offer(uid: string): Promise<void> {
-		const pc = this.pc(uid);
+		const pc = await this.pc(uid);
 		const o = await pc.createOffer();
 		await pc.setLocalDescription(o);
 		this.o.send(uid, { type: 'offer', sdp: o });
 	}
 
 	private async answer(uid: string, sdp: RTCSessionDescriptionInit): Promise<void> {
-		const pc = this.pc(uid);
+		const pc = await this.pc(uid);
 		await pc.setRemoteDescription(sdp);
 		const a = await pc.createAnswer();
 		await pc.setLocalDescription(a);

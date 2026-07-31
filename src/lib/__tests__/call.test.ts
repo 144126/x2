@@ -4,6 +4,7 @@ import { CallMesh, type CallSignal, type MeshOpts, DISCONNECT_GRACE_MS } from '.
 type FakeSender = { track: unknown; replaceTrack: (t: unknown) => Promise<void> };
 
 class FakePC {
+	config?: RTCConfiguration;
 	localDescription: unknown = null;
 	remoteDescription: unknown = null;
 	ice: unknown[] = [];
@@ -13,6 +14,7 @@ class FakePC {
 	ontrack: ((e: { streams: unknown[] }) => void) | null = null;
 	onconnectionstatechange: (() => void) | null = null;
 	connectionState = 'new';
+	constructor(config?: RTCConfiguration) { this.config = config; }
 	async createOffer() {
 		return { type: 'offer', sdp: 'OFFER' };
 	}
@@ -68,15 +70,16 @@ function harness(me: string, opts: Partial<MeshOpts> = {}) {
 	const remotes: { uid: string; stream: MediaStream | null }[] = [];
 	const pcs: FakePC[] = [];
 	const made: FakeTrack[][] = [];
+	const defaultMakePC = (config?: RTCConfiguration) => {
+		const pc = new FakePC(config);
+		pcs.push(pc);
+		return pc as unknown as RTCPeerConnection;
+	};
 	const mesh = new CallMesh({
 		me,
 		send: (to, signal) => sent.push({ to, signal }),
 		onremote: (uid, stream) => remotes.push({ uid, stream }),
-		makePC: () => {
-			const pc = new FakePC();
-			pcs.push(pc);
-			return pc as unknown as RTCPeerConnection;
-		},
+		makePC: opts.makePC ?? (() => defaultMakePC()),
 		getMedia: async () => {
 			const { stream, tracks } = fakeStream();
 			made.push(tracks);
@@ -84,7 +87,7 @@ function harness(me: string, opts: Partial<MeshOpts> = {}) {
 		},
 		...opts
 	});
-	return { mesh, sent, remotes, pcs, made };
+	return { mesh, sent, remotes, pcs, made, defaultMakePC };
 }
 
 describe('CallMesh glare avoidance', () => {
@@ -276,6 +279,57 @@ describe('CallMesh video renegotiation', () => {
 		await mesh.setVideo(false); // no video tracks locally — no senders added, no renegotiation
 		expect(sent.filter((s) => s.signal.type === 'offer')).toHaveLength(0);
 		expect(pcs[0].senders[0]).toBe(audioSenderBefore);
+	});
+});
+
+describe('CallMesh TURN credential fetch', () => {
+	const fakeMedia = async () => ({ getTracks: () => [], getAudioTracks: () => [], getVideoTracks: () => [], addTrack: () => {}, removeTrack: () => {} } as unknown as MediaStream);
+
+	it('fetches TURN once and merges with STUN in the default makePC', async () => {
+		const turnFetch = vi.fn().mockResolvedValue([
+			{ urls: 'turn:example.com', username: 'u', credential: 'p' }
+		]);
+		const pcs: FakePC[] = [];
+		const mesh = new CallMesh({
+			me: 'alice', send: () => {}, onremote: () => {}, getMedia: fakeMedia,
+			fetchTurn: turnFetch,
+			makePC: (config) => { const pc = new FakePC(config); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
+		});
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' });
+
+		expect(turnFetch).toHaveBeenCalledTimes(1);
+		expect(pcs[0].config?.iceServers).toContainEqual({ urls: 'stun:stun.l.google.com:19302' });
+		expect(pcs[0].config?.iceServers).toContainEqual({ urls: 'turn:example.com', username: 'u', credential: 'p' });
+	});
+
+	it('fetches TURN only once across multiple peers in the same call', async () => {
+		const turnFetch = vi.fn().mockResolvedValue([]);
+		const pcs: FakePC[] = [];
+		const mesh = new CallMesh({
+			me: 'alice', send: () => {}, onremote: () => {}, getMedia: fakeMedia,
+			fetchTurn: turnFetch,
+			makePC: (config) => { const pc = new FakePC(config); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
+		});
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' });
+		await mesh.handle('carol', { type: 'join' });
+		expect(turnFetch).toHaveBeenCalledTimes(1);
+	});
+
+	it('falls back to STUN-only when the TURN fetch fails', async () => {
+		const turnFetch = vi.fn().mockRejectedValue(new Error('network error'));
+		const pcs: FakePC[] = [];
+		const mesh = new CallMesh({
+			me: 'alice', send: () => {}, onremote: () => {}, getMedia: fakeMedia,
+			fetchTurn: turnFetch,
+			makePC: (config) => { const pc = new FakePC(config); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
+		});
+		await mesh.open(false);
+		await mesh.handle('bob', { type: 'join' });
+
+		expect(turnFetch).toHaveBeenCalledTimes(1);
+		expect(pcs[0].config?.iceServers).toEqual([{ urls: 'stun:stun.l.google.com:19302' }]);
 	});
 });
 

@@ -125,7 +125,13 @@
 				remoteStream = stream;
 				callState = 'connected';
 			},
-			onincoming: () => (callState = 'ringing')
+			onincoming: () => (callState = 'ringing'),
+			fetchTurn: async () => {
+				const r = await fetch('/api/turn', { method: 'POST' }).catch(() => null);
+				if (!r?.ok) return [];
+				const { iceServers } = await r.json() as { iceServers: RTCIceServer[] };
+				return iceServers;
+			}
 		});
 	}
 
