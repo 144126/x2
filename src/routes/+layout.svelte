@@ -39,7 +39,7 @@
 	const nav = [
 		{ href: '/app/rooms', label: 'rooms', icon: DoorOpen },
 		{ href: '/app/chats', label: 'chats', icon: MessagesSquare },
-		{ href: '/app', label: 'people', icon: Users },
+		{ href: '/app', label: 'match', icon: Users },
 		{ href: '/app/profile', label: 'profile', icon: UserRound }
 	];
 	let here = $derived($page.url.pathname);

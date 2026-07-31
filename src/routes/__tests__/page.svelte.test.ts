@@ -35,4 +35,12 @@ describe('/ (logged-out home)', () => {
 		expect(links.length).toBeGreaterThan(0);
 		for (const a of links) expect(a).toHaveAttribute('href', '/login');
 	});
+
+	it('carries the final home-page copy', () => {
+		render(Page, { props: { data: { user: null, rooms: [] } } });
+		expect(screen.getByText(/the room finds you/)).toBeInTheDocument();
+		expect(screen.getByText(/find a room\./)).toBeInTheDocument();
+		expect(screen.getByText(/every room here is built around one thing/)).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: /start free/ })).toHaveAttribute('href', '/login');
+	});
 });

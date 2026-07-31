@@ -57,6 +57,13 @@ beforeEach(() => {
 });
 
 describe('/app/rooms page', () => {
+	it('carries the final rooms-page copy', () => {
+		render(Page, { props: { data: data({ mine: [] }) } });
+		expect(screen.getByText('your rooms')).toBeInTheDocument();
+		expect(screen.getByText('yours')).toBeInTheDocument();
+		expect(screen.getByText('nothing yet — search above, or start your own.')).toBeInTheDocument();
+	});
+
 	it('shows the location under a room name when set', () => {
 		const mine = [
 			{

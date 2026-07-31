@@ -70,9 +70,9 @@
 </script>
 
 <section>
-	<div class="eyebrow">search x2 — by vibe, not keywords</div>
+	<div class="eyebrow">or match one-to-one</div>
 	<h2 class="display mt-3.5 mb-9 text-[clamp(34px,5.5vw,60px)] leading-[0.98]">
-		find people who <em class="italic text-accent">get it</em>.
+		prefer a person over a <em class="italic text-accent">room</em>?
 	</h2>
 
 	<div class="flex flex-row gap-2 sm:gap-3">

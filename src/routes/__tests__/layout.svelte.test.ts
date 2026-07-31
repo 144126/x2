@@ -49,14 +49,14 @@ describe('bottom nav', () => {
 		render(Layout, { props: { data: { user: fakeUser }, children: () => '' } });
 		const links = screen.getAllByRole('link');
 		const labels = links.map((l) => l.textContent?.toLowerCase().trim());
-		expect(labels).toEqual(expect.arrayContaining(['people', 'chats', 'rooms', 'profile']));
+		expect(labels).toEqual(expect.arrayContaining(['match', 'chats', 'rooms', 'profile']));
 	});
 
 	it('renders no nav at all when signed out', () => {
 		render(Layout, { props: { data: { user: null }, children: () => '' } });
 		const links = screen.queryAllByRole('link');
 		const navLabels = links.filter((l) =>
-			['people', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
+			['match', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
 		);
 		expect(navLabels.length).toBe(0);
 	});
@@ -67,7 +67,7 @@ describe('bottom nav', () => {
 		});
 		const links = screen.getAllByRole('link').filter((l) => l.textContent?.toLowerCase().trim());
 		const navLinks = links.filter((l) =>
-			['people', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
+			['match', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
 		);
 		expect(navLinks[0]).toHaveTextContent('rooms');
 		expect(navLinks[0]).toHaveAttribute('href', '/app/rooms');

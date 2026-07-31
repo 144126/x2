@@ -20,6 +20,11 @@ beforeEach(() => {
 });
 
 describe('search page filters modal', () => {
+	it('carries the secondary match page copy', () => {
+		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
+		expect(screen.getByText('or match one-to-one')).toBeInTheDocument();
+	});
+
 	it('hides the filter controls until the filter button is clicked', () => {
 		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
 		const modal = screen.queryByRole('dialog');

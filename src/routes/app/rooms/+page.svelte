@@ -103,7 +103,7 @@
 </script>
 
 <section class="mb-[64px]">
-	<div class="eyebrow">rooms — many people, one thread</div>
+	<div class="eyebrow">your rooms</div>
 	<h2 class="display mt-3.5 mb-9 text-[clamp(30px,5.5vw,60px)] leading-[0.98]">
 		find a <em class="italic text-accent">room</em><br />or start one.
 	</h2>
@@ -257,7 +257,7 @@
 </Modal>
 
 <section>
-	<div class="eyebrow mb-1">joined rooms</div>
+	<div class="eyebrow mb-1">yours</div>
 	<label class="mt-2 flex w-fit cursor-pointer items-center gap-2 text-[12px] text-mute">
 		<input type="checkbox" class="!w-auto accent-accent" bind:checked={onlyCreated} />
 		rooms you created
@@ -291,6 +291,6 @@
 			{/each}
 		</ul>
 	{:else}
-		<p class="mt-4 text-[14.5px] text-faint">you haven't joined a room yet.</p>
+		<p class="mt-4 text-[14.5px] text-faint">nothing yet — search above, or start your own.</p>
 	{/if}
 </section>
