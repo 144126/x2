@@ -184,3 +184,31 @@ describe('reactions', () => {
 		await vi.waitFor(() => expect(screen.queryByText('old')).toBeNull());
 	});
 });
+
+describe('stickers', () => {
+	function renderWith(messages: Record<string, unknown>[]) {
+		render(Page, { props: { data: { ...data, messages: messages as unknown as Message[] } } });
+	}
+
+	it('clicking the sticker button opens the picker and selecting a sticker sends it', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
+		globalThis.fetch = mockFetch;
+		renderWith([]);
+		await fireEvent.click(screen.getByRole('button', { name: 'sticker' }));
+		await fireEvent.click(screen.getByTitle('wave'));
+		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ to: 'bob', sticker: 'wave' })
+		});
+	});
+
+	it('renders a message with sk borderless as a sticker image', () => {
+		renderWith([{ id: 'm1', f: 'bob', x: '', sk: 'wave', d: 100 }]);
+		const img = screen.getByAltText('wave sticker');
+		expect(img).toHaveAttribute('src', '/stickers/basics/wave.webp');
+		const bubble = img.closest('div')!;
+		expect(bubble.className).toContain('border-0');
+		expect(bubble.className).toContain('bg-transparent');
+	});
+});

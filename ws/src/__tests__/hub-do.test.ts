@@ -221,6 +221,24 @@ describe('ChatHub.fetch', () => {
 		]);
 	});
 
+	it('forwards a sticker id through the relay to the recipient socket', async () => {
+		const recipient = new FakeSocket();
+		state.acceptWebSocket(recipient, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.fetch(
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({
+					to: 'bob', from: 'alice', from_name: 'Alice', text: '', sticker: 'wave', ts: 123
+				})
+			})
+		);
+		expect(recipient.sent).toEqual([
+			JSON.stringify({ type: 'msg', from: 'alice', from_name: 'Alice', text: '', sticker: 'wave', ts: 123 })
+		]);
+	});
+
 	it('relays a reaction update to the recipient socket', async () => {
 		const recipient = new FakeSocket();
 		state.acceptWebSocket(recipient, ['bob']);

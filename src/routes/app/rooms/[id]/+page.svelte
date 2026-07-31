@@ -11,6 +11,8 @@
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
+	import StickerPicker from '$lib/components/StickerPicker.svelte';
+	import { sticker_src } from '$lib/stickers';
 	import AiThread from '$lib/components/AiThread.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import LocationPicker from '$lib/LocationPicker.svelte';
@@ -28,7 +30,6 @@
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
 	type Row = Message & { cid?: string; err?: boolean; fl?: FileAttach };
-
 	let { data } = $props();
 	let g = $state(data.g);
 	let messages = $state(data.messages as Row[]);
@@ -168,6 +169,29 @@
 			const { rx } = await res.json();
 			messages = messages.map((e) => (e.id === id ? { ...e, rx } : e));
 		}
+	}
+
+	let stickerOpen = $state(false);
+
+	async function sendSticker(id: string) {
+		stickerOpen = false;
+		const row: Row = {
+			s: 'm', id: '', cid: crypto.randomUUID(), c: '', f: me!, t: '', gr: g.id, x: '', sk: id, d: Date.now()
+		};
+		messages = [...messages, row];
+		scroll_down();
+		const res = await fetch('/api/send', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ group: g.id, sticker: id })
+		}).catch(() => null);
+		if (!res?.ok) {
+			messages = mark_failed(messages, row.cid!);
+			return;
+		}
+		mark_first_send();
+		const { m } = await res.json();
+		if (m) messages = confirm_sent(messages, row.cid!, { id: m.id, d: m.ts });
 	}
 
 	async function load_older() {
@@ -310,6 +334,7 @@
 				gr: g.id,
 				x: (m.text as string) ?? '',
 				im: m.image as string | undefined,
+				sk: m.sticker as string | undefined,
 				d: m.ts as number
 			});
 		});
@@ -529,9 +554,19 @@
 					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
 						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
 						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+					class:border-0={m.sk}
+					class:bg-transparent={m.sk}
+					class:p-0={m.sk}
 					class:opacity-60={m.id === '' && !m.err}
 				>
-					{#if m.rp}
+					{#if m.sk}
+						<img
+							src={sticker_src(m.sk)}
+							alt={m.sk + ' sticker'}
+							class="h-[120px] w-[120px] object-contain"
+						/>
+					{:else}
+						{#if m.rp}
 						<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
 							{quoted[m.rp]?.x || 'original message'}
 						</div>
@@ -567,6 +602,7 @@
 								>
 							{/if}
 						</div>
+					{/if}
 					{/if}
 				</div>
 				{#if m.err}
@@ -618,6 +654,15 @@
 		</Modal>
 	{/if}
 
+	{#if stickerOpen}
+		<Modal open onclose={() => (stickerOpen = false)} title="sticker">
+			<StickerPicker
+				onselect={(e) => sendSticker(e)}
+				onclose={() => (stickerOpen = false)}
+			/>
+		</Modal>
+	{/if}
+
 	{#if mine}
 		{#if replyTo}
 			<div
@@ -655,6 +700,15 @@
 				</span>
 				<input type="file" accept="image/*" class="hidden" onchange={onpick} />
 			</label>
+			<button
+				type="button"
+				class="btn shrink-0 px-3 py-3"
+				aria-label="sticker"
+				title="send a sticker"
+				onclick={() => (stickerOpen = true)}
+			>
+				<span class="text-[15px] leading-none">🙂</span>
+			</button>
 			<input
 				class="min-w-0 flex-1 text-[15px]"
 				bind:value={text}

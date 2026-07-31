@@ -33,6 +33,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		file?: { key: string; name: string; size: number; type: string };
 		at?: number;
 		reply_to?: string;
+		sticker?: string;
 	};
 	const to = b?.to?.trim();
 	const group = b?.group?.trim();
@@ -40,7 +41,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const image = b?.image?.trim() || undefined;
 	const file = b?.file;
 	const reply_to = b?.reply_to?.trim() || undefined;
-	if (!text && !image && !file) throw error(400, 'text, image or file required');
+	const sticker = b?.sticker?.trim() || undefined;
+	if (!text && !image && !file && !sticker) throw error(400, 'text, image, file or sticker required');
 	if (!to && !group) throw error(400, 'to or group required');
 
 	const me = locals.user;
@@ -54,9 +56,11 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		const g = await get_group(env, group);
 		if (!g) throw error(404, 'no group');
 		if (!(await is_member(env, locals.x2_ws, g.id, me.id))) throw error(403, 'not a member');
-		const m = await send_group_msg(env, me.id, group, text, image, file, reply_to).catch(() => {
-			throw error(503, 'not_stored');
-		});
+		const m = await send_group_msg(env, me.id, group, text, image, file, reply_to, sticker).catch(
+			() => {
+				throw error(503, 'not_stored');
+			}
+		);
 
 		locals.bg(
 			Promise.all([
@@ -70,11 +74,16 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 						text,
 						image,
 						file,
+						sticker,
 						ts: m.d,
 						conv: group_conv_id(group),
 						mute_key: group,
 						title: g.name,
-						push_body: file ? `${me.username}: 📎 ${file.name}` : `${me.username}: ${text}`,
+						push_body: file
+							? `${me.username}: 📎 ${file.name}`
+							: sticker
+								? `${me.username}: sent a sticker`
+								: `${me.username}: ${text}`,
 						url: `/app/rooms/${group}`,
 						kind: 'r',
 						reply_to: group,
@@ -84,18 +93,26 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 					locals.x2_ws
 				),
 				backfill_vector(env, m.id, text),
-				hub_conv(env, locals.x2_ws, me.id, group_conv_id(group), { group }, m.d, text || (file ? '📎 file' : '📷 image')).catch(() => {})
+				hub_conv(
+					env,
+					locals.x2_ws,
+					me.id,
+					group_conv_id(group),
+					{ group },
+					m.d,
+					text || (file ? '📎 file' : sticker ? 'sticker' : '📷 image')
+				).catch(() => {})
 			])
 		);
 
 		return json({
 			ok: true,
-			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp }
+			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk }
 		});
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image, file, reply_to).catch(() => {
+	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker).catch(() => {
 		throw error(503, 'not_stored');
 	});
 
@@ -110,11 +127,12 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 					text,
 					image,
 					file,
+					sticker,
 					ts: m.d,
 					conv: conv_id(me.id, to),
 					mute_key: me.id,
 					title: me.username,
-					push_body: file ? `📎 ${file.name}` : text,
+					push_body: file ? `📎 ${file.name}` : sticker ? 'sent a sticker' : text,
 					url: `/app/chat/${me.id}`,
 					kind: 'u',
 					reply_to: me.id,
@@ -124,12 +142,20 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 				locals.x2_ws
 			),
 			backfill_vector(env, m.id, text),
-			hub_conv(env, locals.x2_ws, me.id, conv_id(me.id, to), { peer: to }, m.d, text || (file ? '📎 file' : '📷 image')).catch(() => {})
+			hub_conv(
+				env,
+				locals.x2_ws,
+				me.id,
+				conv_id(me.id, to),
+				{ peer: to },
+				m.d,
+				text || (file ? '📎 file' : sticker ? 'sticker' : '📷 image')
+			).catch(() => {})
 		])
 	);
 
 	return json({
 		ok: true,
-		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp }
+		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk }
 	});
 };

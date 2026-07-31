@@ -101,8 +101,32 @@ describe('POST /api/send — validation', () => {
 		});
 	});
 
-	it('400s with neither text nor image', async () => {
+	it('400s with neither text, image, file nor sticker', async () => {
 		await expect(POST(event({ to: 'bob' }))).rejects.toMatchObject({ status: 400 });
+	});
+
+	it('accepts a sticker-only body (no text/image/file)', async () => {
+		sendMsgMock.mockResolvedValue({
+			id: 'm1', f: 'ada', t: 'bob', x: '', sk: 'wave', d: 1_700_000_000_000
+		});
+		const body = await (await POST(event({ to: 'bob', sticker: 'wave' }))).json();
+		expect(sendMsgMock).toHaveBeenCalledWith(
+			expect.anything(), 'ada', 'bob', '', undefined, undefined, undefined, 'wave'
+		);
+		expect(body.m).toMatchObject({ sk: 'wave' });
+	});
+
+	it('threads sticker into send_group_msg on a group send', async () => {
+		sendGroupMsgMock.mockResolvedValue({
+			id: 'm2', f: 'ada', x: '', sk: 'heart-eyes', d: 1_700_000_000_000
+		});
+		const body = await (
+			await POST(event({ group: 'g1', sticker: 'heart-eyes' }))
+		).json();
+		expect(sendGroupMsgMock).toHaveBeenCalledWith(
+			expect.anything(), 'ada', 'g1', '', undefined, undefined, undefined, 'heart-eyes'
+		);
+		expect(body.m).toMatchObject({ sk: 'heart-eyes' });
 	});
 
 	it('400s with neither to nor group', async () => {
@@ -176,7 +200,7 @@ describe('POST /api/send — response shape', () => {
 			await POST(event({ to: 'bob', text: 'hi', reply_to: 'orig-1' }))
 		).json();
 		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, 'orig-1'
+			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, 'orig-1', undefined
 		);
 		expect(body.m).toMatchObject({ rp: 'orig-1' });
 	});
@@ -189,7 +213,7 @@ describe('POST /api/send — response shape', () => {
 			await POST(event({ group: 'g1', text: 'hi', reply_to: 'orig-2' }))
 		).json();
 		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, 'orig-2'
+			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, 'orig-2', undefined
 		);
 		expect(body.m).toMatchObject({ rp: 'orig-2' });
 	});
@@ -270,6 +294,18 @@ describe('POST /api/send — the relay call the recipient’s ChatHub receives',
 		await POST(event({ to: 'bob', text: 'hi' }));
 		await settle();
 		expect(call_bodies[0]).not.toHaveProperty('reply_msg');
+	});
+
+	it('carries sticker in the 1:1 relay payload so the recipient renders it', async () => {
+		await POST(event({ to: 'bob', sticker: 'wave' }));
+		await settle();
+		expect(call_bodies[0]).toMatchObject({ sticker: 'wave' });
+	});
+
+	it('carries sticker in the group relay payload', async () => {
+		await POST(event({ group: 'g1', sticker: 'heart-eyes' }));
+		await settle();
+		expect(call_bodies[0]).toMatchObject({ sticker: 'heart-eyes' });
 	});
 });
 

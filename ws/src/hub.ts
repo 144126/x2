@@ -384,6 +384,7 @@ function build_relay_payload(type: string, body: Record<string, unknown>): Recor
 		text: body.text,
 		image: body.image,
 		file: body.file,
+		sticker: body.sticker,
 		group: body.group,
 		reply_msg: body.reply_msg,
 		ts: body.ts

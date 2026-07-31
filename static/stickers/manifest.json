@@ -1,0 +1,13 @@
+{
+	"packs": [
+		{
+			"id": "basics",
+			"label": "basics",
+			"stickers": [
+				{ "id": "wave", "file": "basics/wave.webp", "keywords": ["hi", "hello", "wave"] },
+				{ "id": "thumbs-up", "file": "basics/thumbs-up.webp", "keywords": ["yes", "good", "agree"] },
+				{ "id": "heart-eyes", "file": "basics/heart-eyes.webp", "keywords": ["love", "adore"] }
+			]
+		}
+	]
+}

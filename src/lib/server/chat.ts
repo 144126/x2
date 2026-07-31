@@ -33,7 +33,8 @@ export async function send_msg(
 	text: string,
 	image?: string,
 	file?: Message['fl'],
-	reply_to?: string
+	reply_to?: string,
+	sticker?: string
 ): Promise<Message> {
 	await ensure(env);
 	const m: Message = {
@@ -46,6 +47,7 @@ export async function send_msg(
 		...(image ? { im: image } : {}),
 		...(file ? { fl: file } : {}),
 		...(reply_to ? { rp: reply_to } : {}),
+		...(sticker ? { sk: sticker } : {}),
 		d: Date.now()
 	};
 	await upsert(env, [
@@ -68,7 +70,8 @@ export async function send_group_msg(
 	text: string,
 	image?: string,
 	file?: Message['fl'],
-	reply_to?: string
+	reply_to?: string,
+	sticker?: string
 ): Promise<Message> {
 	await ensure(env);
 	const m: Message = {
@@ -82,6 +85,7 @@ export async function send_group_msg(
 		...(image ? { im: image } : {}),
 		...(file ? { fl: file } : {}),
 		...(reply_to ? { rp: reply_to } : {}),
+		...(sticker ? { sk: sticker } : {}),
 		d: Date.now()
 	};
 	await upsert(env, [

@@ -33,6 +33,7 @@ export interface Message {
 	gr?: string; // group id, when this is a group message
 	rp?: string; // id of the message this one quotes
 	rx?: Record<string, string[]>; // emoji -> uids who reacted
+	sk?: string; // sticker id (static asset, see static/stickers/manifest.json) — when set, this message renders as a sticker, not text/image
 	im?: string; // media key in R2, when an image is attached
 	fl?: { key: string; name: string; size: number; type: string }; // non-image file attachment
 	x: string; // text (may be empty when im or fl is set)

@@ -116,6 +116,19 @@ describe('send_msg', () => {
 		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
 		expect(m).not.toHaveProperty('rp');
 	});
+
+	it('stores a sticker id as sk on the message', async () => {
+		const m = await send_msg(ENV, 'alice', 'bob', '', undefined, undefined, undefined, 'wave');
+		expect(m.sk).toBe('wave');
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:' } }
+		]);
+	});
+
+	it('omits sk when no sticker is given', async () => {
+		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
+		expect(m).not.toHaveProperty('sk');
+	});
 });
 
 describe('send_group_msg', () => {
@@ -131,6 +144,14 @@ describe('send_group_msg', () => {
 		expect(m.rp).toBe('orig-2');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:me too' } }
+		]);
+	});
+
+	it('stores a sticker id as sk on a group message too', async () => {
+		const m = await send_group_msg(ENV, 'alice', 'g1', '', undefined, undefined, undefined, 'heart-eyes');
+		expect(m.sk).toBe('heart-eyes');
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:' } }
 		]);
 	});
 });

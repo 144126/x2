@@ -10,6 +10,8 @@
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
+	import StickerPicker from '$lib/components/StickerPicker.svelte';
+	import { sticker_src } from '$lib/stickers';
 	import Modal from '$lib/components/Modal.svelte';
 	import AiThread from '$lib/components/AiThread.svelte';
 	import {
@@ -39,6 +41,7 @@
 		d: number;
 		rp?: string;
 		rx?: Record<string, string[]>;
+		sk?: string;
 		cid?: string;
 		err?: boolean;
 	};
@@ -99,6 +102,26 @@
 			const { rx } = await res.json();
 			messages = messages.map((e) => (e.id === id ? { ...e, rx } : e));
 		}
+	}
+
+	let stickerOpen = $state(false);
+
+	async function sendSticker(id: string) {
+		stickerOpen = false;
+		const row: Msg = { id: '', cid: crypto.randomUUID(), f: me!, x: '', sk: id, d: Date.now() };
+		add_msg(row);
+		const res = await fetch('/api/send', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ to: data.peer, sticker: id })
+		}).catch(() => null);
+		if (!res?.ok) {
+			messages = mark_failed(messages, row.cid!);
+			return;
+		}
+		mark_first_send();
+		const { m } = await res.json();
+		if (m) messages = confirm_sent(messages, row.cid!, { id: m.id, d: m.ts });
 	}
 
 	async function load_older() {
@@ -259,6 +282,7 @@
 					im: m.image as string | undefined,
 					fl: m.file as FileAttach | undefined,
 					rp: m.reply_msg as string | undefined,
+					sk: m.sticker as string | undefined,
 					d: m.ts as number
 				});
 			} else if (m.type === 'signal' && m.from === data.peer && m.ctx === 'dm') {
@@ -477,12 +501,22 @@
 						? 'self-end items-end'
 						: 'self-start'}"
 				>
-					<div
-						class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
-							? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
-							: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
-						class:opacity-60={m.id === '' && !m.err}
-					>
+				<div
+					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
+						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
+						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+					class:border-0={m.sk}
+					class:bg-transparent={m.sk}
+					class:p-0={m.sk}
+					class:opacity-60={m.id === '' && !m.err}
+				>
+					{#if m.sk}
+						<img
+							src={sticker_src(m.sk)}
+							alt={m.sk + ' sticker'}
+							class="h-[120px] w-[120px] object-contain"
+						/>
+					{:else}
 						{#if m.rp}
 							<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
 								{quoted[m.rp]?.x || 'original message'}
@@ -522,17 +556,18 @@
 										{emoji} {uids.length}
 									</button>
 								{/each}
-								{#if Object.keys(m.rx).length > 3}
-									<button
-										type="button"
-										class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
-										onclick={() => (reactionListFor = m.id)}
-										>+{Object.keys(m.rx).length - 3}</button
-									>
-								{/if}
-							</div>
-						{/if}
-					</div>
+							{#if Object.keys(m.rx).length > 3}
+								<button
+									type="button"
+									class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
+									onclick={() => (reactionListFor = m.id)}
+									>+{Object.keys(m.rx).length - 3}</button
+								>
+							{/if}
+						</div>
+					{/if}
+					{/if}
+				</div>
 					{#if m.err}
 						<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
 							not sent — retry
@@ -593,6 +628,15 @@
 		</Modal>
 	{/if}
 
+	{#if stickerOpen}
+		<Modal open onclose={() => (stickerOpen = false)} title="sticker">
+			<StickerPicker
+				onselect={(e) => sendSticker(e)}
+				onclose={() => (stickerOpen = false)}
+			/>
+		</Modal>
+	{/if}
+
 	{#if showSchedule}
 		<div class="flex items-center gap-2 border-t border-line pt-4 text-[13px] text-ink-soft">
 			<label for="schedule-at">send at</label>
@@ -631,6 +675,15 @@
 				}}
 			/>
 		</label>
+		<button
+			type="button"
+			class="btn shrink-0 px-3 py-3"
+			aria-label="sticker"
+			title="send a sticker"
+			onclick={() => (stickerOpen = true)}
+		>
+			<span class="text-[15px] leading-none">🙂</span>
+		</button>
 		<input
 			class="min-w-0 flex-1 text-[15px]"
 			bind:value={text}
