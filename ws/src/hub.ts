@@ -373,6 +373,9 @@ function build_relay_payload(type: string, body: Record<string, unknown>): Recor
 	if (type === 'delete') {
 		return { type: 'delete', id: body.id };
 	}
+	if (type === 'reaction') {
+		return { type: 'reaction', id: body.id, rx: body.rx };
+	}
 	return {
 		type: 'msg',
 		id: body.id,

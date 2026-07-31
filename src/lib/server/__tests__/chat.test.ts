@@ -1,15 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, idState } =
-	vi.hoisted(() => ({
-		ensureMock: vi.fn(),
-		upsertMock: vi.fn(),
-		retrieveOneMock: vi.fn(),
-		scrollMock: vi.fn(),
-		searchMock: vi.fn(),
-		embedMock: vi.fn(),
-		idState: { n: 0 }
-	}));
+const {
+	ensureMock,
+	upsertMock,
+	retrieveOneMock,
+	scrollMock,
+	searchMock,
+	embedMock,
+	setPayloadMock,
+	idState
+} = vi.hoisted(() => ({
+	ensureMock: vi.fn(),
+	upsertMock: vi.fn(),
+	retrieveOneMock: vi.fn(),
+	scrollMock: vi.fn(),
+	searchMock: vi.fn(),
+	embedMock: vi.fn(),
+	setPayloadMock: vi.fn(),
+	idState: { n: 0 }
+}));
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
@@ -20,6 +29,7 @@ vi.mock('../qdrant', async () => {
 		retrieve_one: retrieveOneMock,
 		scroll: scrollMock,
 		search: searchMock,
+		set_payload: setPayloadMock,
 		new_id: () => `id-${++idState.n}`
 	};
 });
@@ -40,7 +50,8 @@ import {
 	get_group_messages,
 	get_message,
 	get_user_name,
-	search_messages
+	search_messages,
+	toggle_reaction
 } from '../chat';
 import { ZV, f, f_or, eq } from '../qdrant';
 
@@ -264,5 +275,48 @@ describe('get_user_name', () => {
 			payload: { s: 'u', n: 'Ada Lovelace', u: 'ada_lovelace' }
 		});
 		expect(await get_user_name(ENV, 'uid')).toBe('ada_lovelace');
+	});
+});
+
+describe('toggle_reaction', () => {
+	function messagePoint(rx?: Record<string, string[]>) {
+		return {
+			id: 'm1',
+			payload: { s: 'm', id: 'm1', c: 'a|b', f: 'a', t: 'b', x: 'hi', d: 1, ...(rx ? { rx } : {}) }
+		};
+	}
+
+	it('adds the uid on first react and removes it on second react to the same emoji', async () => {
+		retrieveOneMock.mockResolvedValue(messagePoint());
+		setPayloadMock.mockResolvedValue(undefined);
+		const rx = await toggle_reaction(ENV, 'me', 'm1', '👍');
+		expect(rx).toEqual({ '👍': ['me'] });
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'm1', { rx: { '👍': ['me'] } });
+
+		retrieveOneMock.mockResolvedValue(messagePoint({ '👍': ['me'] }));
+		const rx2 = await toggle_reaction(ENV, 'me', 'm1', '👍');
+		expect(rx2).toEqual({});
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'm1', { rx: {} });
+	});
+
+	it('removes the emoji key entirely when its last reactor un-reacts', async () => {
+		retrieveOneMock.mockResolvedValue(messagePoint({ '👍': ['me', 'bob'] }));
+		setPayloadMock.mockResolvedValue(undefined);
+		const rx = await toggle_reaction(ENV, 'me', 'm1', '👍');
+		expect(rx).toEqual({ '👍': ['bob'] });
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'm1', { rx: { '👍': ['bob'] } });
+	});
+
+	it('uses set_payload, not a full upsert', async () => {
+		retrieveOneMock.mockResolvedValue(messagePoint());
+		setPayloadMock.mockResolvedValue(undefined);
+		await toggle_reaction(ENV, 'me', 'm1', '👍');
+		expect(setPayloadMock).toHaveBeenCalled();
+		expect(upsertMock).not.toHaveBeenCalled();
+	});
+
+	it('throws when the message does not exist', async () => {
+		retrieveOneMock.mockResolvedValue(null);
+		await expect(toggle_reaction(ENV, 'me', 'm1', '👍')).rejects.toThrow('not found');
 	});
 });

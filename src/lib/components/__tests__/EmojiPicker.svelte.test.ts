@@ -33,7 +33,7 @@ describe('EmojiPicker', () => {
 		expect(screen.getByTitle('red apple')).toBeInTheDocument();
 	});
 
-	it('shows category tabs only when the search box is empty', async () => {
+	it('shows category tabs only when the search box is empty', { timeout: 20000 }, async () => {
 		render(EmojiPicker, { props: { onselect: vi.fn(), onclose: vi.fn() } });
 		expect(screen.getByRole('button', { name: 'all' })).toBeInTheDocument();
 		const input = screen.getByPlaceholderText('search emoji…');

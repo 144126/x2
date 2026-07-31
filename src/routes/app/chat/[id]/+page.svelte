@@ -9,6 +9,8 @@
 	import { CallMesh, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
+	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import AiThread from '$lib/components/AiThread.svelte';
 	import {
 		ArrowLeft,
@@ -36,6 +38,7 @@
 		fl?: FileAttach;
 		d: number;
 		rp?: string;
+		rx?: Record<string, string[]>;
 		cid?: string;
 		err?: boolean;
 	};
@@ -81,6 +84,22 @@
 	$effect(() => {
 		for (const m of messages) if (m.rp && !(m.rp in quoted)) resolveQuote(m.rp);
 	});
+
+	let reactingTo = $state<string | null>(null);
+	let reactionListFor = $state<string | null>(null);
+
+	async function react(id: string, emoji: string) {
+		reactingTo = null;
+		const res = await fetch(`/api/messages/${id}/react`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ emoji })
+		}).catch(() => null);
+		if (res?.ok) {
+			const { rx } = await res.json();
+			messages = messages.map((e) => (e.id === id ? { ...e, rx } : e));
+		}
+	}
 
 	async function load_older() {
 		if (loading_older || no_more || !messages.length) return;
@@ -222,6 +241,16 @@
 				endCall(true);
 			} else if (m.type === 'presence' && m.uid === data.peer) {
 				online = m.online as boolean;
+			} else if (m.type === 'reaction') {
+				messages = messages.map((e) =>
+					e.id === m.id ? { ...e, rx: m.rx as Record<string, string[]> } : e
+				);
+			} else if (m.type === 'edit') {
+				messages = messages.map((e) =>
+					e.id === m.id ? { ...e, x: m.text as string, e: m.ts as number } : e
+				);
+			} else if (m.type === 'delete') {
+				messages = messages.filter((e) => e.id !== m.id);
 			} else if (m.type === 'msg' && m.from === data.peer) {
 				add_msg({
 					id: m.id as string,
@@ -481,6 +510,28 @@
 							</a>
 						{/if}
 						{#if m.x}{m.x}{/if}
+						{#if m.rx && Object.keys(m.rx).length}
+							<div class="mt-1 flex flex-wrap gap-1">
+								{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
+									<button
+										type="button"
+										class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
+										class:border-accent={uids.includes(me)}
+										onclick={() => react(m.id, emoji)}
+									>
+										{emoji} {uids.length}
+									</button>
+								{/each}
+								{#if Object.keys(m.rx).length > 3}
+									<button
+										type="button"
+										class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
+										onclick={() => (reactionListFor = m.id)}
+										>+{Object.keys(m.rx).length - 3}</button
+									>
+								{/if}
+							</div>
+						{/if}
 					</div>
 					{#if m.err}
 						<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
@@ -495,6 +546,12 @@
 							class="text-[11px] text-faint hover:text-accent"
 							onclick={() => startReply(m)}
 							>reply</button
+						>
+						<button
+							type="button"
+							class="text-[11px] text-faint hover:text-accent"
+							onclick={() => (reactingTo = m.id)}
+							>react</button
 						>
 					</div>
 				</div>
@@ -513,6 +570,27 @@
 				>&times;</button
 			>
 		</div>
+	{/if}
+
+	{#if reactingTo}
+		<Modal open onclose={() => (reactingTo = null)} title="react">
+			<EmojiPicker
+				onselect={(e) => react(reactingTo!, e)}
+				onclose={() => (reactingTo = null)}
+			/>
+		</Modal>
+	{/if}
+	{#if reactionListFor}
+		<Modal open onclose={() => (reactionListFor = null)} title="reactions">
+			<div class="flex flex-col gap-2">
+				{#each Object.entries(messages.find((e) => e.id === reactionListFor)?.rx ?? {}) as [emoji, uids] (emoji)}
+					<div class="flex items-center gap-2 text-[14px]">
+						<span>{emoji}</span>
+						<span>{uids.map((u) => (u === me ? 'you' : data.peer_name)).join(', ')}</span>
+					</div>
+				{/each}
+			</div>
+		</Modal>
 	{/if}
 
 	{#if showSchedule}

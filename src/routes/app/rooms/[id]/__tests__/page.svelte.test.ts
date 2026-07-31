@@ -3,6 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/svelte';
 
 const { goto, pushState } = vi.hoisted(() => ({ goto: vi.fn(), pushState: vi.fn() }));
+const { wsOnMock, wsSendMock } = vi.hoisted(() => {
+	const wsOnMock = vi.fn();
+	const wsSendMock = vi.fn();
+	return { wsOnMock, wsSendMock };
+});
 const { pageStore } = vi.hoisted(() => {
 	let value = { data: { user: { id: 'me' } }, state: {} };
 	const subs = new Set<(v: unknown) => void>();
@@ -23,7 +28,7 @@ const { pageStore } = vi.hoisted(() => {
 
 vi.mock('$app/navigation', () => ({ goto, pushState }));
 vi.mock('$app/stores', () => ({ page: pageStore }));
-vi.mock('$lib/ws', () => ({ ws_on: vi.fn(), ws_send: vi.fn() }));
+vi.mock('$lib/ws', () => ({ ws_on: wsOnMock, ws_send: wsSendMock }));
 vi.mock('$lib/attach', () => ({
 	upload_image: vi.fn(),
 	media_src: (k: string) => k,
@@ -271,5 +276,79 @@ describe('replying', () => {
 			expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1')
 		);
 		await vi.waitFor(() => expect(screen.getByText('quoted old text')).toBeInTheDocument());
+	});
+});
+
+describe('reactions', () => {
+	function renderWith(messages: Message[]) {
+		render(Page, {
+			props: {
+				data: {
+					user: { id: 'me', username: 'me' },
+					g: { ...g, members: ['me'] } as GroupView,
+					messages,
+					names: { me: 'Me', bob: 'Bob' },
+					muted: false
+				}
+			}
+		});
+	}
+
+	function lastWsHandler() {
+		return wsOnMock.mock.calls.at(-1)![0];
+	}
+
+	it('clicking react opens the emoji picker and selecting an emoji POSTs and updates the grouped display', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ rx: { '👍️': ['me'] } })
+		});
+		globalThis.fetch = mockFetch;
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 }]);
+		await fireEvent.click(screen.getByRole('button', { name: 'react' }));
+		const search = screen.getByPlaceholderText('search emoji…');
+		await fireEvent.input(search, { target: { value: 'thumbs up' } });
+		await fireEvent.click(screen.getByTitle('thumbs up'));
+		expect(mockFetch).toHaveBeenCalledWith('/api/messages/m1/react', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ emoji: '👍️' })
+		});
+		await vi.waitFor(() => expect(screen.getByText('👍️ 1')).toBeInTheDocument());
+	});
+
+	it('clicking an existing reaction chip toggles it off', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ rx: {} })
+		});
+		globalThis.fetch = mockFetch;
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100, rx: { '👍': ['me', 'bob'] } }
+		]);
+		await fireEvent.click(screen.getByText('👍 2'));
+		expect(mockFetch).toHaveBeenCalledWith('/api/messages/m1/react', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ emoji: '👍' })
+		});
+	});
+
+	it('an incoming ws reaction message updates the thread live', async () => {
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 }]);
+		lastWsHandler()({ type: 'reaction', id: 'm1', rx: { '❤️': ['bob'] } });
+		await vi.waitFor(() => expect(screen.getByText('❤️ 1')).toBeInTheDocument());
+	});
+
+	it('an incoming ws edit message updates the text live', async () => {
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'old', d: 100 }]);
+		lastWsHandler()({ type: 'edit', id: 'm1', text: 'edited!', ts: 200 });
+		await vi.waitFor(() => expect(screen.getByText('edited!')).toBeInTheDocument());
+	});
+
+	it('an incoming ws delete message removes the message live', async () => {
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'old', d: 100 }]);
+		lastWsHandler()({ type: 'delete', id: 'm1' });
+		await vi.waitFor(() => expect(screen.queryByText('old')).toBeNull());
 	});
 });

@@ -1,5 +1,5 @@
 import type { Message } from '../types';
-import { ensure, upsert, retrieve_one, remove, new_id, type QEnv, f, f_or, eq, scroll, search, ZV, update_vectors } from './qdrant';
+import { ensure, upsert, retrieve_one, remove, new_id, type QEnv, f, f_or, eq, scroll, search, ZV, update_vectors, set_payload } from './qdrant';
 import { embed } from './or';
 import { get_group } from './group';
 import { encrypt_text, decrypt_text } from './msg_crypto';
@@ -178,6 +178,26 @@ export async function edit_msg(
 		}
 	]);
 	return next;
+}
+
+export async function toggle_reaction(
+	env: QEnv,
+	uid: string,
+	msg_id: string,
+	emoji: string
+): Promise<Record<string, string[]>> {
+	await ensure(env);
+	const pt = await retrieve_one(env, msg_id);
+	if (!pt || pt.payload?.s !== 'm') throw new Error('not found');
+	const m = pt.payload as unknown as Message;
+	const rx = { ...(m.rx ?? {}) };
+	const set = new Set(rx[emoji] ?? []);
+	if (set.has(uid)) set.delete(uid);
+	else set.add(uid);
+	if (set.size) rx[emoji] = [...set];
+	else delete rx[emoji];
+	await set_payload(env, msg_id, { rx });
+	return rx;
 }
 
 export async function delete_msg(

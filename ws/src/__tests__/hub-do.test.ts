@@ -221,6 +221,56 @@ describe('ChatHub.fetch', () => {
 		]);
 	});
 
+	it('relays a reaction update to the recipient socket', async () => {
+		const recipient = new FakeSocket();
+		state.acceptWebSocket(recipient, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.fetch(
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({
+					to: 'bob', type: 'reaction', id: 'm1', rx: { '👍': ['alice'] }, ts: 123
+				})
+			})
+		);
+		expect(recipient.sent).toEqual([
+			JSON.stringify({ type: 'reaction', id: 'm1', rx: { '👍': ['alice'] } })
+		]);
+	});
+
+	it('relays an edit update to the recipient socket', async () => {
+		const recipient = new FakeSocket();
+		state.acceptWebSocket(recipient, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.fetch(
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({
+					to: 'bob', type: 'edit', id: 'm1', from: 'alice', text: 'edited', e: 456, ts: 123
+				})
+			})
+		);
+		expect(recipient.sent).toEqual([
+			JSON.stringify({ type: 'edit', id: 'm1', from: 'alice', text: 'edited', e: 456, ts: 123 })
+		]);
+	});
+
+	it('relays a delete to the recipient socket', async () => {
+		const recipient = new FakeSocket();
+		state.acceptWebSocket(recipient, ['bob']);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hub = new ChatHub(state as any, env as any);
+		await hub.fetch(
+			req('https://dummy/relay', {
+				method: 'POST',
+				body: JSON.stringify({ to: 'bob', type: 'delete', id: 'm1', ts: 123 })
+			})
+		);
+		expect(recipient.sent).toEqual([JSON.stringify({ type: 'delete', id: 'm1' })]);
+	});
+
 	it('reports the relay as delivered when a socket was there to take it', async () => {
 		state.acceptWebSocket(new FakeSocket(), ['bob']);
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
