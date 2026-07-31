@@ -2,6 +2,7 @@ import type { Message } from '../types';
 import { ensure, upsert, retrieve_one, remove, new_id, type QEnv, f, f_or, eq, scroll, search, ZV, update_vectors } from './qdrant';
 import { embed } from './or';
 import { get_group } from './group';
+import { encrypt_text, decrypt_text } from './msg_crypto';
 export { get_user_name, get_user_names } from './user';
 
 export { ensure };
@@ -49,7 +50,7 @@ export async function send_msg(
 		{
 			id: m.id,
 			vector: {},
-			payload: m as unknown as Record<string, unknown>
+			payload: { ...m, x: await encrypt_text(env, text) } as unknown as Record<string, unknown>
 		}
 	]);
 	return m;
@@ -83,7 +84,7 @@ export async function send_group_msg(
 		{
 			id: m.id,
 			vector: {},
-			payload: m as unknown as Record<string, unknown>
+			payload: { ...m, x: await encrypt_text(env, text) } as unknown as Record<string, unknown>
 		}
 	]);
 	return m;
@@ -102,7 +103,12 @@ export async function search_messages(
 		? f(eq('s', 'm'), eq('c', conv))
 		: f_or([eq('s', 'm')], [eq('f', uid), eq('t', uid)]);
 	const pts = await search(env, vector, filter, limit);
-	return pts.map((p) => p.payload as unknown as Message);
+	return Promise.all(
+		pts.map(async (p) => {
+			const m = p.payload as unknown as Message;
+			return { ...m, x: await decrypt_text(env, m.x) };
+		})
+	);
 }
 
 export const PAGE = 50;
@@ -113,7 +119,13 @@ async function page_msgs(env: QEnv, conv: string, before?: number): Promise<Mess
 		direction: 'desc',
 		...(before === undefined ? {} : { start_from: before - 1 })
 	});
-	return pts.map((p) => p.payload as unknown as Message).sort((x, y) => x.d - y.d);
+	const msgs = await Promise.all(
+		pts.map(async (p) => {
+			const m = p.payload as unknown as Message;
+			return { ...m, x: await decrypt_text(env, m.x) };
+		})
+	);
+	return msgs.sort((x, y) => x.d - y.d);
 }
 
 export async function get_messages(
@@ -151,7 +163,7 @@ export async function edit_msg(
 		{
 			id: msg_id,
 			vector: pt.vector ?? {},
-			payload: next as unknown as Record<string, unknown>
+			payload: { ...next, x: await encrypt_text(env, new_text) } as unknown as Record<string, unknown>
 		}
 	]);
 	return next;

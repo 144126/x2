@@ -22,6 +22,11 @@ vi.mock('../qdrant', async () => {
 	};
 });
 vi.mock('../group', () => ({ get_group: getGroupMock, is_member: isMemberMock }));
+vi.mock('../msg_crypto', () => ({
+	encrypt_text: async (_env: unknown, text: string) => `enc:${text}`,
+	decrypt_text: async (_env: unknown, stored: string) =>
+		stored.startsWith('enc:') ? stored.slice(4) : stored
+}));
 
 import {
 	save_scheduled,
@@ -158,7 +163,7 @@ describe('send_scheduled_batch', () => {
 		await send_scheduled_batch(ENV, ws, 1000);
 		expect(getGroupMock).toHaveBeenCalledWith(ENV, 'g1');
 		const msgUpsert = upsertMock.mock.calls.find((c) => c[1][0].payload.s === 'm');
-		expect(msgUpsert![1][0].payload).toMatchObject({ gr: 'g1', f: 'ada', x: 'hi' });
+		expect(msgUpsert![1][0].payload).toMatchObject({ gr: 'g1', f: 'ada', x: 'enc:hi' });
 	});
 
 	it('carries conv and mute_key (the sender) in a 1:1 relay, for the recipient’s own DO', async () => {

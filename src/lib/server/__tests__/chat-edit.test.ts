@@ -28,6 +28,11 @@ vi.mock('$lib/server/qdrant', async () => {
 });
 vi.mock('$lib/server/or', () => ({ embed: embedMock }));
 vi.mock('$lib/server/group', () => ({ get_group: getGroupMock }));
+vi.mock('$lib/server/msg_crypto', () => ({
+	encrypt_text: async (_env: unknown, text: string) => `enc:${text}`,
+	decrypt_text: async (_env: unknown, stored: string) =>
+		stored.startsWith('enc:') ? stored.slice(4) : stored
+}));
 
 import { edit_msg, delete_msg } from '../chat';
 
@@ -49,7 +54,7 @@ describe('edit_msg', () => {
 		expect(upsertMock).toHaveBeenCalledOnce();
 		const upsertCall = upsertMock.mock.calls[0][1][0];
 		expect(upsertCall.id).toBe('m1');
-		expect(upsertCall.payload.x).toBe('new');
+		expect(upsertCall.payload.x).toBe('enc:new');
 		expect(typeof upsertCall.payload.e).toBe('number');
 	});
 

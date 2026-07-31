@@ -24,6 +24,11 @@ vi.mock('../qdrant', async () => {
 	};
 });
 vi.mock('../or', () => ({ embed: embedMock }));
+vi.mock('../msg_crypto', () => ({
+	encrypt_text: async (_env: unknown, text: string) => `enc:${text}`,
+	decrypt_text: async (_env: unknown, stored: string) =>
+		stored.startsWith('enc:') ? stored.slice(4) : stored
+}));
 
 import {
 	conv_id,
@@ -74,20 +79,26 @@ describe('send_msg', () => {
 			x: 'hi there',
 			d: expect.any(Number)
 		});
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: 'id-1', vector: {}, payload: m }]);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: 'id-1', vector: {}, payload: { ...m, x: 'enc:hi there' } }
+		]);
 	});
 
 	it('stores short messages with no vector (no embed at send time)', async () => {
 		const m = await send_msg(ENV, 'alice', 'bob', 'ok');
 		expect(embedMock).not.toHaveBeenCalled();
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: m.id, vector: {}, payload: m }]);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:ok' } }
+		]);
 	});
 });
 
 describe('send_group_msg', () => {
 	it('stores the group message with no vector either', async () => {
 		const m = await send_group_msg(ENV, 'alice', 'g1', 'hi room');
-		expect(upsertMock).toHaveBeenCalledWith(ENV, [{ id: m.id, vector: {}, payload: m }]);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi room' } }
+		]);
 	});
 });
 
