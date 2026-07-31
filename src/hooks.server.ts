@@ -1,5 +1,6 @@
 import { dev } from '$app/environment';
 import { decode_session } from '$lib/server/session';
+import { hub_sv_get } from '$lib/server/hub_client';
 import type { Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 
@@ -13,13 +14,6 @@ function devFetcher(): Fetcher {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const session_id = event.cookies.get('session');
-	event.locals.user = null;
-	if (session_id) {
-		const s = await decode_session(env.SECRET, session_id);
-		if (s) event.locals.user = s.user;
-		else event.cookies.delete('session', { path: '/' });
-	}
 	// adapter-cloudflare's platform.env is a Proxy that throws on any property access while
 	// prerendering (e.g. building the static /offline fallback) — there's no real platform then.
 	let x2_ws: Fetcher | undefined;
@@ -29,6 +23,23 @@ export const handle: Handle = async ({ event, resolve }) => {
 		x2_ws = undefined;
 	}
 	event.locals.x2_ws = x2_ws ?? devFetcher();
+
+	const session_id = event.cookies.get('session');
+	event.locals.user = null;
+	if (session_id && x2_ws) {
+		const s = await decode_session(env.SECRET, session_id);
+		if (s) {
+			const sv = await hub_sv_get(env, x2_ws, s.user.id).catch(() => null);
+			if (sv === null || sv <= s.v) event.locals.user = s.user;
+			else event.cookies.delete('session', { path: '/' });
+		} else {
+			event.cookies.delete('session', { path: '/' });
+		}
+	} else if (session_id) {
+		const s = await decode_session(env.SECRET, session_id);
+		if (s) event.locals.user = s.user;
+		else event.cookies.delete('session', { path: '/' });
+	}
 
 	let geo: App.Geo | null = null;
 	try {

@@ -41,19 +41,11 @@ async function open() {
 		});
 		return;
 	}
-	console.log('[WS-CLIENT] fetching /api/wstoken…');
 	const r = await fetch('/api/wstoken');
-	console.log('[WS-CLIENT] /api/wstoken responded', { status: r.status, ok: r.ok });
-	if (!r.ok) {
-		console.error('[WS-CLIENT] /api/wstoken FAILED, will retry', {
-			status: r.status,
-			body: await r.text().catch(() => '<unreadable>')
-		});
-		return retry();
-	}
-	const { ws } = (await r.json()) as { ws: string };
-	console.log('[WS-CLIENT] opening WebSocket to', ws);
-	const s = new WebSocket(ws);
+	if (!r.ok) return retry();
+	const { ws, t, uid, exp } = (await r.json()) as { ws: string; t: string; uid: string; exp: number };
+	const proto = `x2.${uid}.${exp}.${t}`;
+	const s = new WebSocket(ws, [proto]);
 	sock = s;
 	s.onopen = () => {
 		console.log('[WS-CLIENT] socket OPEN', { url: ws, handshakeQueued: handshake.length });

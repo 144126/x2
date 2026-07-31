@@ -18,11 +18,13 @@ const worker: ExportedHandler<Env> = {
 		const url = new URL(request.url);
 
 		if (url.pathname === '/ws') {
-			const uid = url.searchParams.get('uid') ?? '';
-			if (!uid) {
-				console.warn('[WS-WORKER] /ws request with no uid, rejecting');
-				return new Response('no uid', { status: 400 });
+			const proto = request.headers.get('sec-websocket-protocol') ?? '';
+			const parts = proto.match(/^x2\.([^.]+)\.\d+\.[0-9a-f]{64}$/);
+			if (!parts) {
+				console.warn('[WS-WORKER] /ws request with no auth subprotocol, rejecting');
+				return new Response('denied', { status: 400 });
 			}
+			const uid = parts[1];
 			const id = env.CHAT_HUB.idFromName(uid);
 			const stub = env.CHAT_HUB.get(id);
 			return stub.fetch(request);
@@ -46,7 +48,7 @@ const worker: ExportedHandler<Env> = {
 		}
 
 		const hub = url.pathname.match(
-			/^\/hub\/([^/]+)\/(unread|read|mute|unmute|mutes|sub|unsub|convs|conv)$/
+			/^\/hub\/([^/]+)\/(unread|read|mute|unmute|mutes|sub|unsub|convs|conv|sv)$/
 		);
 		if (hub) {
 			const secret = await get_secret(env.SECRET, env.DEV_SECRET);

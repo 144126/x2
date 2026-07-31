@@ -14,11 +14,18 @@ afterEach(() => {
 });
 
 describe('encode_session / decode_session', () => {
-	it('round-trips a valid session', async () => {
+	it('round-trips a valid session with version 0', async () => {
 		const token = await encode_session(SECRET, USER);
 		const decoded = await decode_session(SECRET, token);
 		expect(decoded).not.toBeNull();
 		expect(decoded!.user).toEqual(USER);
+		expect(decoded!.v).toBe(0);
+	});
+
+	it('encodes a non-zero version', async () => {
+		const token = await encode_session(SECRET, { ...USER, v: 3 });
+		const decoded = await decode_session(SECRET, token);
+		expect(decoded!.v).toBe(3);
 	});
 
 	it('omits optional fields cleanly', async () => {

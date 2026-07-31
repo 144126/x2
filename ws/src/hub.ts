@@ -35,10 +35,15 @@ export class ChatHub implements DurableObject {
 	async fetch(request: Request): Promise<Response> {
 		const url = new URL(request.url);
 		if (request.headers.get('upgrade') === 'websocket') {
-			const uid = url.searchParams.get('uid') ?? '';
-			const token = url.searchParams.get('t') ?? '';
+			const proto = request.headers.get('sec-websocket-protocol') ?? '';
+			const parts = proto.match(/^x2\.([^.]+)\.(\d+)\.([0-9a-f]{64})$/);
+			if (!parts) {
+				console.warn('[HUB-WS-UPGRADE] missing or malformed auth subprotocol');
+				return new Response('denied', { status: 403 });
+			}
+			const [, uid, exp, token] = parts;
 			const secret = await get_secret(this.env.SECRET, this.env.DEV_SECRET);
-			const valid = await verify_token(secret, uid, token);
+			const valid = await verify_token(secret, uid, Number(exp), token);
 			if (!valid) {
 				console.warn(`[HUB-WS-UPGRADE] DENIED uid=${uid}`);
 				return new Response('denied', { status: 403 });
@@ -48,7 +53,7 @@ export class ChatHub implements DurableObject {
 			this.state.acceptWebSocket(server, [uid]);
 			this.announce(uid, true);
 			await this.notify_watchers(uid, true);
-			return new Response(null, { status: 101, webSocket: client });
+			return new Response(null, { status: 101, webSocket: client, headers: { 'sec-websocket-protocol': proto } });
 		}
 		if (url.pathname === '/relay' && request.method === 'POST') {
 			const body = (await request.json()) as Record<string, unknown>;
@@ -120,6 +125,15 @@ export class ChatHub implements DurableObject {
 		if (url.pathname === '/convs' && request.method === 'GET') {
 			const convs = await this.list_convs();
 			return Response.json({ convs });
+		}
+		if (url.pathname === '/sv' && request.method === 'GET') {
+			const sv = (await this.state.storage.get<number>('sv')) ?? 0;
+			return Response.json({ sv });
+		}
+		if (url.pathname === '/sv' && request.method === 'POST') {
+			const { sv } = (await request.json()) as { sv: number };
+			await this.state.storage.put('sv', sv);
+			return new Response('ok');
 		}
 		if (url.pathname === '/conv' && request.method === 'POST') {
 			const body = (await request.json()) as {
@@ -372,10 +386,18 @@ function build_relay_payload(type: string, body: Record<string, unknown>): Recor
 	};
 }
 
-export async function verify_token(secret: string, uid: string, token: string): Promise<boolean> {
-	if (!secret || !token) return false;
-	const raw = new TextEncoder().encode(`${uid}.${secret}`);
-	const sig = await crypto.subtle.digest('SHA-256', raw);
+export async function verify_token(secret: string, uid: string, exp: number, token: string): Promise<boolean> {
+	if (!secret || !token || !exp) return false;
+	if (exp < Date.now()) return false;
+	const k = await crypto.subtle.importKey(
+		'raw',
+		new TextEncoder().encode(secret).slice(0, 32),
+		{ name: 'HMAC', hash: 'SHA-256' },
+		false,
+		['sign']
+	);
+	const raw = new TextEncoder().encode(`${uid}.${exp}`);
+	const sig = await crypto.subtle.sign('HMAC', k, raw);
 	const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
 	return hex === token;
 }

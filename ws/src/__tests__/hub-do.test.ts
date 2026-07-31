@@ -160,16 +160,21 @@ describe('ChatHub.fetch', () => {
 			}
 		);
 		const bound_env = { ...env, SECRET: { get: async () => SECRET } };
-		const raw = new TextEncoder().encode(`uid-1.${SECRET}`);
-		const sig = await crypto.subtle.digest('SHA-256', raw);
+		const k = await crypto.subtle.importKey(
+			'raw', new TextEncoder().encode(SECRET).slice(0, 32),
+			{ name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+		);
+		const exp = Date.now() + 60_000;
+		const sig = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(`uid-1.${exp}`));
 		const t = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+		const proto = `x2.uid-1.${exp}.${t}`;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const hub = new ChatHub(state as any, bound_env as any);
 		// the 101-upgrade Response construction itself is workerd-only (see note above) and throws
 		// under Node — what we're actually verifying is that we got PAST the auth check, i.e.
 		// get_secret correctly unwrapped the bound SECRET before verify_token compared it.
 		await hub
-			.fetch(req(`https://dummy/ws?uid=uid-1&t=${t}`, { headers: { upgrade: 'websocket' } }))
+			.fetch(req('https://dummy/ws', { headers: { upgrade: 'websocket', 'sec-websocket-protocol': proto } }))
 			.catch(() => {});
 		expect(state.acceptWebSocket).toHaveBeenCalledWith(expect.anything(), ['uid-1']);
 		vi.unstubAllGlobals();

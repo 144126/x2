@@ -152,6 +152,16 @@ export async function room_is_member(env: QEnv, ws: Fetcher, id: string, uid: st
 	return (await res.json()).ok;
 }
 
+export async function hub_sv_get(env: QEnv, ws: Fetcher, uid: string): Promise<number> {
+	const res = await call(env, ws, uid, '/sv').catch(() => null);
+	if (!res?.ok) return 0;
+	return (await res.json()).sv;
+}
+
+export async function hub_sv_set(env: QEnv, ws: Fetcher, uid: string, sv: number): Promise<void> {
+	await call(env, ws, uid, '/sv', { method: 'POST', body: JSON.stringify({ sv }) });
+}
+
 export async function hub_unsub(
 	env: QEnv,
 	ws: Fetcher,
