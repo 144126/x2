@@ -1,6 +1,9 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
 	import { Sparkles, Send as SendIcon, LoaderCircle, Brain, ChevronDown } from '@lucide/svelte';
+	import { Chat } from '@ai-sdk/svelte';
+	import { DefaultChatTransport } from 'ai';
+	import type { UIMessage } from 'ai';
 
 	let {
 		conv,
@@ -12,136 +15,89 @@
 
 	let open = $state(false);
 	let question = $state('');
-	let busy = $state(false);
-	let transcript = $state<
-		{ role: 'user' | 'assistant'; text: string; reason?: string; showReason?: boolean }[]
-	>([]);
 	let balance = $state<number | null>(null);
-	let maxSeconds = $state(0);
 	let koboPerSec = $state(0);
 	let costKobo = $state<number | null>(null);
 	let truncated = $state(false);
 	let done = $state(false);
 	let countdownInterval: ReturnType<typeof setInterval> | null = null;
-	let startBalance = $state(0);
+	let showReason = $state<Record<string, boolean>>({});
+
+	const chat = new Chat({
+		transport: new DefaultChatTransport({
+			api: '/api/ai/thread',
+			prepareSendMessagesRequest: ({ messages }) => {
+				const last = [...messages].reverse().find((m) => m.role === 'user');
+				const question =
+					last?.parts
+						.filter((p) => p.type === 'text')
+						.map((p) => p.text)
+						.join('') ?? '';
+				return { body: { conv, question } };
+			}
+		}),
+		onData: (dataPart) => {
+			if (dataPart.type !== 'data-billing') return;
+			const d = dataPart.data as {
+				balance?: number;
+				max_seconds?: number;
+				kobo_per_sec?: number;
+				cost_kobo?: number;
+				truncated?: boolean;
+			};
+			if (d.kobo_per_sec !== undefined) {
+				koboPerSec = d.kobo_per_sec;
+				balance = d.balance ?? null;
+				if (koboPerSec > 0 && !countdownInterval) {
+					countdownInterval = setInterval(() => {
+						if (balance !== null && balance > 0) {
+							balance = Math.max(0, balance - Math.round(koboPerSec));
+						}
+					}, 1000);
+				}
+			} else if (d.cost_kobo !== undefined) {
+				balance = d.balance ?? null;
+				costKobo = d.cost_kobo;
+				truncated = d.truncated ?? false;
+				done = true;
+				if (countdownInterval) clearInterval(countdownInterval);
+				countdownInterval = null;
+			}
+		}
+	});
+
+	let busy = $derived(chat.status === 'submitted' || chat.status === 'streaming');
 
 	function balanceDisplay(b: number | null): string {
 		if (b === null) return '—';
 		return `₦${(b / 100).toFixed(2)}`;
 	}
 
-	function updateAssistant(assistantText: string, assistantReason: string) {
-		const idx = transcript.findLastIndex((t) => t.role === 'assistant');
-		if (idx >= 0) {
-			transcript = [
-				...transcript.slice(0, idx),
-				{
-					role: 'assistant',
-					text: assistantText,
-					reason: assistantReason,
-					showReason: transcript[idx].showReason
-				}
-			];
+	function partsOf(m: UIMessage): { text: string; reason: string } {
+		return {
+			text: m.parts.filter((p) => p.type === 'text').map((p) => p.text).join(''),
+			reason: m.parts.filter((p) => p.type === 'reasoning').map((p) => p.text).join('')
+		};
+	}
+
+	function toggleReason(id: string) {
+		const next = { ...showReason };
+		if (showReason[id]) {
+			delete next[id];
 		} else {
-			transcript = [
-				...transcript,
-				{ role: 'assistant', text: assistantText, reason: assistantReason }
-			];
+			next[id] = true;
 		}
+		showReason = next;
 	}
 
 	async function ask() {
 		const q = question.trim();
 		if (!q || busy) return;
 		question = '';
-		busy = true;
 		done = false;
 		costKobo = null;
 		truncated = false;
-		transcript = [...transcript, { role: 'user', text: q }];
-
-		const res = await fetch('/api/ai/thread', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ conv, question: q })
-		});
-
-		if (!res.ok) {
-			transcript = [
-				...transcript,
-				{ role: 'assistant', text: '(service unavailable — try again)' }
-			];
-			busy = false;
-			return;
-		}
-
-		const reader = res.body?.getReader();
-		if (!reader) {
-			transcript = [...transcript, { role: 'assistant', text: '(service unavailable)' }];
-			busy = false;
-			return;
-		}
-
-		let assistantText = '';
-		let assistantReason = '';
-		const decoder = new TextDecoder();
-		let leftover = '';
-
-		while (true) {
-			const { done: readDone, value } = await reader.read();
-			if (readDone && !leftover) break;
-
-			const chunk = value ? decoder.decode(value, { stream: true }) : '';
-			leftover += chunk;
-			const lines = leftover.split('\n');
-			leftover = lines.pop() ?? '';
-
-			for (const line of lines) {
-				if (line.startsWith('event: ')) {
-					const eventType = line.slice(7).trim();
-					// next line should be data:
-					continue;
-				}
-				if (line.startsWith('data: ')) {
-					try {
-						const data = JSON.parse(line.slice(6));
-						if (data.kobo_per_sec) {
-							koboPerSec = data.kobo_per_sec;
-							maxSeconds = data.max_seconds;
-							balance = data.balance;
-							startBalance = data.balance;
-							if (koboPerSec > 0) {
-								countdownInterval = setInterval(() => {
-									if (balance !== null && balance > 0) {
-										balance = Math.max(0, balance - Math.round(koboPerSec));
-									}
-								}, 1000);
-							}
-						}
-						if (data.reason) {
-							assistantReason += data.reason;
-							updateAssistant(assistantText, assistantReason);
-						}
-						if (data.text) {
-							assistantText += data.text;
-							updateAssistant(assistantText, assistantReason);
-						}
-						if (data.balance !== undefined && data.cost_kobo !== undefined) {
-							balance = data.balance;
-							costKobo = data.cost_kobo;
-							truncated = data.truncated;
-							done = true;
-							if (countdownInterval) clearInterval(countdownInterval);
-							countdownInterval = null;
-						}
-					} catch {}
-				}
-			}
-		}
-
-		busy = false;
-		if (countdownInterval) clearInterval(countdownInterval);
-		countdownInterval = null;
+		await chat.sendMessage({ text: q });
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -156,49 +112,53 @@
 	<Sparkles size={15} /> AI
 </button>
 
-<Modal bind:open wide title="Ask AI about this thread">
+<Modal bind:open wide title="ask AI about {peerName || 'this thread'}">
 	<div class="flex h-full flex-col gap-4">
 		<div class="flex flex-1 flex-col gap-3 overflow-y-auto">
-			{#if transcript.length === 0}
+			{#if chat.messages.length === 0}
 				<p class="text-[13px] text-faint">
 					Ask anything about this conversation — the AI has read the whole thread.
 				</p>
 			{/if}
-			{#each transcript as entry, i (i)}
+			{#each chat.messages as m (m.id)}
+				{@const { text, reason } = partsOf(m)}
 				<div
-					class="max-w-[85%] rounded-[12px] px-4 py-3 text-[14px] leading-[1.5] {entry.role ===
+					class="max-w-[85%] rounded-[12px] px-4 py-3 text-[14px] leading-[1.5] {m.role ===
 					'user'
 						? 'self-end bg-accent text-accent-ink'
 						: 'self-start border border-line bg-panel-solid'}"
 				>
-					{#if entry.role === 'assistant' && entry.reason}
+					{#if m.role === 'assistant' && reason}
 						<button
 							class="mb-2.5 flex items-center gap-1.5 text-[12px] text-mute transition-colors duration-300 hover:text-ink"
-							onclick={() => {
-								transcript = transcript.map((t, j) =>
-									j === i ? { ...t, showReason: !t.showReason } : t
-								);
-							}}
-							aria-expanded={!!entry.showReason}
+						onclick={() => toggleReason(m.id)}
+						aria-expanded={!!showReason[m.id]}
 						>
 							<Brain size={13} />
 							<span>thoughts</span>
 							<ChevronDown
 								size={13}
-								class="transition-transform duration-300 {entry.showReason ? 'rotate-180' : ''}"
+								class="transition-transform duration-300 {showReason[m.id] ? 'rotate-180' : ''}"
 							/>
 						</button>
-						{#if entry.showReason}
+						{#if showReason[m.id]}
 							<div
 								class="mb-3 border-l-2 border-line-2 pl-3 text-[12.5px] italic leading-[1.6] text-ink-soft whitespace-pre-wrap"
 							>
-								{entry.reason}
+								{reason}
 							</div>
 						{/if}
 					{/if}
-					{entry.text}
+					{text}
 				</div>
 			{/each}
+			{#if chat.status === 'error'}
+				<div
+					class="max-w-[85%] self-start rounded-[12px] border border-line bg-panel-solid px-4 py-3 text-[14px] leading-[1.5]"
+				>
+					(service unavailable — try again)
+				</div>
+			{/if}
 			{#if balance !== null && !done}
 				<p class="text-[12px] text-mute">balance: {balanceDisplay(balance)}</p>
 			{/if}

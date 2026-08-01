@@ -1,13 +1,23 @@
+import { createOpenAICompatible, type OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
+import type { LanguageModel } from 'ai';
 import { get_secret, type QEnv, type SecretVal } from './qdrant';
 import type { Message } from '../types';
 
 export const MODAL_KOBO_PER_SEC = 278.1;
 export const MODAL_START_HOLD_KOBO = 5000;
 export const MODAL_MAX_SECONDS = 60;
+export const MODAL_MODEL = 'qwen3.6-35b';
 
 let endpoint_url: string | null = null;
 
-async function endpoint(env: QEnv & { MODAL_ENDPOINT_URL?: SecretVal }): Promise<string> {
+async function endpoint(
+	env: QEnv & {
+		MODAL_ENDPOINT_URL?: SecretVal;
+		MODAL_WORKSPACE?: SecretVal;
+		MODAL_ENDPOINT_NAME?: SecretVal;
+		MODAL_ROUTING_REGION?: SecretVal;
+	}
+): Promise<string> {
 	if (endpoint_url) return endpoint_url;
 	const url = await get_secret(env.MODAL_ENDPOINT_URL);
 	if (url) {
@@ -38,22 +48,17 @@ export function serialize_thread(messages: Message[], my_uid: string): { role: '
 	}));
 }
 
-export async function modal_stream(
-	env: QEnv & { MODAL_ENDPOINT_URL?: SecretVal; MODAL_WORKSPACE?: SecretVal; MODAL_ENDPOINT_NAME?: SecretVal; MODAL_ROUTING_REGION?: SecretVal; MODAL_PROXY_TOKEN_ID?: SecretVal; MODAL_PROXY_TOKEN_SECRET?: SecretVal },
-	messages: { role: string; content: string }[]
-): Promise<Response> {
-	const url = await endpoint(env);
-	const auth = await auth_header(env);
-	return fetch(`${url}/v1/chat/completions`, {
-		method: 'POST',
-		headers: {
-			'Authorization': auth,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			model: 'default',
-			messages,
-			stream: true
-		})
-	});
+let provider: OpenAICompatibleProvider | null = null;
+
+export async function modal_model(
+	env: QEnv & { MODAL_ENDPOINT_URL?: SecretVal; MODAL_WORKSPACE?: SecretVal; MODAL_ENDPOINT_NAME?: SecretVal; MODAL_ROUTING_REGION?: SecretVal; MODAL_PROXY_TOKEN_ID?: SecretVal; MODAL_PROXY_TOKEN_SECRET?: SecretVal }
+): Promise<LanguageModel> {
+	if (!provider) {
+		provider = createOpenAICompatible({
+			name: 'modal',
+			baseURL: `${await endpoint(env)}/v1`,
+			apiKey: (await auth_header(env)).slice('Bearer '.length)
+		});
+	}
+	return provider(MODAL_MODEL);
 }
