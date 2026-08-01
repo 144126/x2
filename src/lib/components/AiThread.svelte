@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
-	import { Sparkles, Send as SendIcon, LoaderCircle } from '@lucide/svelte';
+	import { Sparkles, Send as SendIcon, LoaderCircle, Brain, ChevronDown } from '@lucide/svelte';
 
 	let {
 		conv,
@@ -13,7 +13,9 @@
 	let open = $state(false);
 	let question = $state('');
 	let busy = $state(false);
-	let transcript = $state<{ role: 'user' | 'assistant'; text: string }[]>([]);
+	let transcript = $state<
+		{ role: 'user' | 'assistant'; text: string; reason?: string; showReason?: boolean }[]
+	>([]);
 	let balance = $state<number | null>(null);
 	let maxSeconds = $state(0);
 	let koboPerSec = $state(0);
@@ -26,6 +28,26 @@
 	function balanceDisplay(b: number | null): string {
 		if (b === null) return '—';
 		return `₦${(b / 100).toFixed(2)}`;
+	}
+
+	function updateAssistant(assistantText: string, assistantReason: string) {
+		const idx = transcript.findLastIndex((t) => t.role === 'assistant');
+		if (idx >= 0) {
+			transcript = [
+				...transcript.slice(0, idx),
+				{
+					role: 'assistant',
+					text: assistantText,
+					reason: assistantReason,
+					showReason: transcript[idx].showReason
+				}
+			];
+		} else {
+			transcript = [
+				...transcript,
+				{ role: 'assistant', text: assistantText, reason: assistantReason }
+			];
+		}
 	}
 
 	async function ask() {
@@ -45,7 +67,10 @@
 		});
 
 		if (!res.ok) {
-			transcript = [...transcript, { role: 'assistant', text: '(service unavailable — try again)' }];
+			transcript = [
+				...transcript,
+				{ role: 'assistant', text: '(service unavailable — try again)' }
+			];
 			busy = false;
 			return;
 		}
@@ -58,6 +83,7 @@
 		}
 
 		let assistantText = '';
+		let assistantReason = '';
 		const decoder = new TextDecoder();
 		let leftover = '';
 
@@ -92,27 +118,19 @@
 								}, 1000);
 							}
 						}
+						if (data.reason) {
+							assistantReason += data.reason;
+							updateAssistant(assistantText, assistantReason);
+						}
 						if (data.text) {
 							assistantText += data.text;
-							const idx = transcript.findIndex((t) => t.role === 'assistant' && t.text === assistantText.slice(0, -data.text.length));
-							if (idx >= 0) {
-								transcript = [...transcript.slice(0, idx), { role: 'assistant', text: assistantText }];
-							} else {
-								transcript = [...transcript, { role: 'assistant', text: assistantText }];
-							}
+							updateAssistant(assistantText, assistantReason);
 						}
 						if (data.balance !== undefined && data.cost_kobo !== undefined) {
 							balance = data.balance;
 							costKobo = data.cost_kobo;
 							truncated = data.truncated;
 							done = true;
-							if (countdownInterval) clearInterval(countdownInterval);
-							countdownInterval = null;
-						}
-						if (data.reason) {
-							transcript = [...transcript, { role: 'assistant', text: `(${data.reason})` }];
-							done = true;
-							busy = false;
 							if (countdownInterval) clearInterval(countdownInterval);
 							countdownInterval = null;
 						}
@@ -142,15 +160,42 @@
 	<div class="flex h-full flex-col gap-4">
 		<div class="flex flex-1 flex-col gap-3 overflow-y-auto">
 			{#if transcript.length === 0}
-				<p class="text-[13px] text-faint">Ask anything about this conversation — the AI has
-				read the whole thread.</p>
+				<p class="text-[13px] text-faint">
+					Ask anything about this conversation — the AI has read the whole thread.
+				</p>
 			{/if}
 			{#each transcript as entry, i (i)}
 				<div
-					class="max-w-[85%] rounded-[12px] px-4 py-3 text-[14px] leading-[1.5] {entry.role === 'user'
+					class="max-w-[85%] rounded-[12px] px-4 py-3 text-[14px] leading-[1.5] {entry.role ===
+					'user'
 						? 'self-end bg-accent text-accent-ink'
 						: 'self-start border border-line bg-panel-solid'}"
 				>
+					{#if entry.role === 'assistant' && entry.reason}
+						<button
+							class="mb-2.5 flex items-center gap-1.5 text-[12px] text-mute transition-colors duration-300 hover:text-ink"
+							onclick={() => {
+								transcript = transcript.map((t, j) =>
+									j === i ? { ...t, showReason: !t.showReason } : t
+								);
+							}}
+							aria-expanded={!!entry.showReason}
+						>
+							<Brain size={13} />
+							<span>thoughts</span>
+							<ChevronDown
+								size={13}
+								class="transition-transform duration-300 {entry.showReason ? 'rotate-180' : ''}"
+							/>
+						</button>
+						{#if entry.showReason}
+							<div
+								class="mb-3 border-l-2 border-line-2 pl-3 text-[12.5px] italic leading-[1.6] text-ink-soft whitespace-pre-wrap"
+							>
+								{entry.reason}
+							</div>
+						{/if}
+					{/if}
 					{entry.text}
 				</div>
 			{/each}

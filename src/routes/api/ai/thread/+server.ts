@@ -39,36 +39,40 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 	const holdResult = await deduct(locals.x2_ws, uid, MODAL_START_HOLD_KOBO);
 	if (!holdResult.ok) {
-		return new Response(
-			JSON.stringify({ ok: false, reason: 'insufficient_credits' }),
-			{ status: 402, headers: { 'content-type': 'application/json' } }
-		);
+		return new Response(JSON.stringify({ ok: false, reason: 'insufficient_credits' }), {
+			status: 402,
+			headers: { 'content-type': 'application/json' }
+		});
 	}
 
 	const budget_kobo = holdResult.balance + MODAL_START_HOLD_KOBO;
 	const max_seconds = Math.min(MODAL_MAX_SECONDS, Math.floor(budget_kobo / MODAL_KOBO_PER_SEC));
 
-	const modalRes = await modal_stream(
-		env as never,
-		[{ role: 'system', content: 'You are a helpful assistant in a messaging app. Answer the user\'s question about the conversation thread concisely.' }, ...thread]
-	);
+	const modalRes = await modal_stream(env as never, [
+		{
+			role: 'system',
+			content:
+				"You are a helpful assistant in a messaging app. Answer the user's question about the conversation thread concisely."
+		},
+		...thread
+	]);
 
 	if (!modalRes.ok) {
 		await credit(locals.x2_ws, uid, MODAL_START_HOLD_KOBO);
-		return new Response(
-			JSON.stringify({ ok: false, reason: 'modal_unavailable' }),
-			{ status: 502, headers: { 'content-type': 'application/json' } }
-		);
+		return new Response(JSON.stringify({ ok: false, reason: 'modal_unavailable' }), {
+			status: 502,
+			headers: { 'content-type': 'application/json' }
+		});
 	}
 
 	const encoder = new TextEncoder();
 	const reader = modalRes.body?.getReader();
 	if (!reader) {
 		await credit(locals.x2_ws, uid, MODAL_START_HOLD_KOBO);
-		return new Response(
-			JSON.stringify({ ok: false, reason: 'modal_unavailable' }),
-			{ status: 502, headers: { 'content-type': 'application/json' } }
-		);
+		return new Response(JSON.stringify({ ok: false, reason: 'modal_unavailable' }), {
+			status: 502,
+			headers: { 'content-type': 'application/json' }
+		});
 	}
 
 	let billable_ms = 0;
@@ -78,9 +82,11 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 	const stream = new ReadableStream({
 		async pull(controller) {
-			controller.enqueue(encoder.encode(
-				`event: start\ndata: ${JSON.stringify({ balance: holdResult.balance + MODAL_START_HOLD_KOBO, max_seconds, kobo_per_sec: MODAL_KOBO_PER_SEC })}\n\n`
-			));
+			controller.enqueue(
+				encoder.encode(
+					`event: start\ndata: ${JSON.stringify({ balance: holdResult.balance + MODAL_START_HOLD_KOBO, max_seconds, kobo_per_sec: MODAL_KOBO_PER_SEC })}\n\n`
+				)
+			);
 
 			let leftover = '';
 			try {
@@ -103,18 +109,27 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 						if (line.startsWith('data: ')) {
 							try {
 								const data = JSON.parse(line.slice(6));
-								const content = (data as { choices: { delta: { content?: string } }[] }).choices?.[0]?.delta?.content;
+								const delta = (
+									data as { choices: { delta: { content?: string; reasoning_content?: string } }[] }
+								).choices?.[0]?.delta;
+								const reason = delta?.reasoning_content;
+								if (reason) {
+									controller.enqueue(
+										encoder.encode(`event: reason\ndata: ${JSON.stringify({ reason })}\n\n`)
+									);
+								}
+								const content = delta?.content;
 								if (content) {
 									text += content;
-									controller.enqueue(encoder.encode(`event: text\ndata: ${JSON.stringify({ text: content })}\n\n`));
+									controller.enqueue(
+										encoder.encode(`event: text\ndata: ${JSON.stringify({ text: content })}\n\n`)
+									);
 								}
-							} catch {
-							}
+							} catch {}
 						}
 					}
 				}
-			} catch {
-			}
+			} catch {}
 
 			billable_ms = Date.now() - start;
 			const cost = modal_cost_kobo(billable_ms / 1000);
@@ -136,7 +151,11 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 				final_balance = holdResult.balance;
 			}
 
-			controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify({ balance: final_balance, cost_kobo: cost, truncated })}\n\n`));
+			controller.enqueue(
+				encoder.encode(
+					`event: done\ndata: ${JSON.stringify({ balance: final_balance, cost_kobo: cost, truncated })}\n\n`
+				)
+			);
 			controller.close();
 		}
 	});
@@ -145,7 +164,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		headers: {
 			'content-type': 'text/event-stream',
 			'cache-control': 'no-cache',
-			'connection': 'keep-alive'
+			connection: 'keep-alive'
 		}
 	});
 };
