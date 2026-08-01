@@ -390,3 +390,70 @@ describe('stickers', () => {
 		expect(bubble.className).toContain('bg-transparent');
 	});
 });
+
+describe('forwarding', () => {
+	function renderWith(messages: Message[]) {
+		render(Page, {
+			props: {
+				data: {
+					user: { id: 'me', username: 'me' },
+					g: { ...g, members: ['me'] } as GroupView,
+					messages,
+					names: { me: 'Me', bob: 'Bob' },
+					muted: false
+				}
+			}
+		});
+	}
+
+	function stubTargets() {
+		const mockFetch = vi.fn((url: string) => {
+			if (url === '/api/conversations') {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ r: [{ peer: 'bob', last: 100, preview: 'hi', unread: 0 }] })
+				});
+			}
+			if (url === '/api/groups?mine=1') {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ r: [{ id: 'g2', name: 'Design Club' }] })
+				});
+			}
+			return Promise.resolve({ ok: true, json: () => Promise.resolve({ m: null }) });
+		});
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+		return mockFetch;
+	}
+
+	it('clicking forward opens the picker, lazy-loading conversations and rooms', async () => {
+		const mockFetch = stubTargets();
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 }]);
+		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
+		expect(mockFetch).toHaveBeenCalledWith('/api/conversations');
+		expect(mockFetch).toHaveBeenCalledWith('/api/groups?mine=1');
+	});
+
+	it('confirming a selection POSTs /api/send once per target with forwarded: true', async () => {
+		const mockFetch = stubTargets();
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 }]);
+		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
+		await fireEvent.click(screen.getByLabelText('Design Club'));
+		await fireEvent.click(screen.getByLabelText('bob'));
+		await fireEvent.click(screen.getByRole('button', { name: 'forward to 2' }));
+		await vi.waitFor(() =>
+			expect(mockFetch).toHaveBeenCalledWith('/api/send', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ text: 'hi', forwarded: true, group: 'g2' })
+			})
+		);
+		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ text: 'hi', forwarded: true, to: 'bob' })
+		});
+	});
+});

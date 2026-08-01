@@ -34,7 +34,8 @@ export async function send_msg(
 	image?: string,
 	file?: Message['fl'],
 	reply_to?: string,
-	sticker?: string
+	sticker?: string,
+	forwarded?: boolean
 ): Promise<Message> {
 	await ensure(env);
 	const m: Message = {
@@ -48,6 +49,7 @@ export async function send_msg(
 		...(file ? { fl: file } : {}),
 		...(reply_to ? { rp: reply_to } : {}),
 		...(sticker ? { sk: sticker } : {}),
+		...(forwarded ? { fw: true } : {}),
 		d: Date.now()
 	};
 	await upsert(env, [

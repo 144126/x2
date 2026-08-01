@@ -212,3 +212,72 @@ describe('stickers', () => {
 		expect(bubble.className).toContain('bg-transparent');
 	});
 });
+
+describe('forwarding', () => {
+	function renderWith(messages: Record<string, unknown>[]) {
+		render(Page, { props: { data: { ...data, messages: messages as unknown as Message[] } } });
+	}
+
+	function stubTargets() {
+		const mockFetch = vi.fn((url: string) => {
+			if (url === '/api/conversations') {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ r: [{ peer: 'bob', last: 100, preview: 'hi', unread: 0 }] })
+				});
+			}
+			if (url === '/api/groups?mine=1') {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ r: [{ id: 'g2', name: 'Design Club' }] })
+				});
+			}
+			return Promise.resolve({ ok: true, json: () => Promise.resolve({ m: null }) });
+		});
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+		return mockFetch;
+	}
+
+	it('clicking forward opens the picker, lazy-loading conversations and rooms', async () => {
+		const mockFetch = stubTargets();
+		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
+		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
+		expect(mockFetch).toHaveBeenCalledWith('/api/conversations');
+		expect(mockFetch).toHaveBeenCalledWith('/api/groups?mine=1');
+	});
+
+	it('lazy-loads conversations and rooms only once across reopens', async () => {
+		const mockFetch = stubTargets();
+		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
+		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
+		await fireEvent.click(screen.getByLabelText('cancel forward'));
+		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
+		expect(mockFetch.mock.calls.filter((c) => c[0] === '/api/conversations')).toHaveLength(1);
+		expect(mockFetch.mock.calls.filter((c) => c[0] === '/api/groups?mine=1')).toHaveLength(1);
+	});
+
+	it('confirming a selection POSTs /api/send once per target with forwarded: true', async () => {
+		const mockFetch = stubTargets();
+		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
+		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
+		await fireEvent.click(screen.getByLabelText('Design Club'));
+		await fireEvent.click(screen.getByLabelText('bob'));
+		await fireEvent.click(screen.getByRole('button', { name: 'forward to 2' }));
+		await vi.waitFor(() =>
+			expect(mockFetch).toHaveBeenCalledWith('/api/send', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ text: 'hi', forwarded: true, group: 'g2' })
+			})
+		);
+		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ text: 'hi', forwarded: true, to: 'bob' })
+		});
+	});
+});

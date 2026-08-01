@@ -111,7 +111,7 @@ describe('POST /api/send — validation', () => {
 		});
 		const body = await (await POST(event({ to: 'bob', sticker: 'wave' }))).json();
 		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'bob', '', undefined, undefined, undefined, 'wave'
+			expect.anything(), 'ada', 'bob', '', undefined, undefined, undefined, 'wave', undefined
 		);
 		expect(body.m).toMatchObject({ sk: 'wave' });
 	});
@@ -124,7 +124,7 @@ describe('POST /api/send — validation', () => {
 			await POST(event({ group: 'g1', sticker: 'heart-eyes' }))
 		).json();
 		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'g1', '', undefined, undefined, undefined, 'heart-eyes'
+			expect.anything(), 'ada', 'g1', '', undefined, undefined, undefined, 'heart-eyes', undefined
 		);
 		expect(body.m).toMatchObject({ sk: 'heart-eyes' });
 	});
@@ -200,7 +200,7 @@ describe('POST /api/send — response shape', () => {
 			await POST(event({ to: 'bob', text: 'hi', reply_to: 'orig-1' }))
 		).json();
 		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, 'orig-1', undefined
+			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, 'orig-1', undefined, undefined
 		);
 		expect(body.m).toMatchObject({ rp: 'orig-1' });
 	});
@@ -213,7 +213,7 @@ describe('POST /api/send — response shape', () => {
 			await POST(event({ group: 'g1', text: 'hi', reply_to: 'orig-2' }))
 		).json();
 		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, 'orig-2', undefined
+			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, 'orig-2', undefined, undefined
 		);
 		expect(body.m).toMatchObject({ rp: 'orig-2' });
 	});
@@ -221,6 +221,37 @@ describe('POST /api/send — response shape', () => {
 	it('omits rp from the response when the stored message has none', async () => {
 		const body = await (await POST(event({ to: 'bob', text: 'hi' }))).json();
 		expect(body.m).not.toHaveProperty('rp');
+	});
+
+	it('threads forwarded into send_msg and returns fw on a 1:1 send', async () => {
+		sendMsgMock.mockResolvedValue({
+			id: 'm1', f: 'ada', t: 'bob', x: 'hi', fw: true, d: 1_700_000_000_000
+		});
+		const body = await (
+			await POST(event({ to: 'bob', text: 'hi', forwarded: true }))
+		).json();
+		expect(sendMsgMock).toHaveBeenCalledWith(
+			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, undefined, undefined, true
+		);
+		expect(body.m).toMatchObject({ fw: true });
+	});
+
+	it('threads forwarded into send_group_msg and returns fw on a group send', async () => {
+		sendGroupMsgMock.mockResolvedValue({
+			id: 'm2', f: 'ada', x: 'hi', fw: true, d: 1_700_000_000_000
+		});
+		const body = await (
+			await POST(event({ group: 'g1', text: 'hi', forwarded: true }))
+		).json();
+		expect(sendGroupMsgMock).toHaveBeenCalledWith(
+			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, undefined, undefined, true
+		);
+		expect(body.m).toMatchObject({ fw: true });
+	});
+
+	it('omits fw from the response when not forwarding', async () => {
+		const body = await (await POST(event({ to: 'bob', text: 'hi' }))).json();
+		expect(body.m).not.toHaveProperty('fw');
 	});
 });
 

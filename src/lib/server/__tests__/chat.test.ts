@@ -129,6 +129,19 @@ describe('send_msg', () => {
 		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
 		expect(m).not.toHaveProperty('sk');
 	});
+
+	it('stores a forwarded flag as fw on the message', async () => {
+		const m = await send_msg(ENV, 'alice', 'bob', 'hi', undefined, undefined, undefined, undefined, true);
+		expect(m.fw).toBe(true);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi' } }
+		]);
+	});
+
+	it('omits fw when not forwarded', async () => {
+		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
+		expect(m).not.toHaveProperty('fw');
+	});
 });
 
 describe('send_group_msg', () => {
@@ -152,6 +165,14 @@ describe('send_group_msg', () => {
 		expect(m.sk).toBe('heart-eyes');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:' } }
+		]);
+	});
+
+	it('stores a forwarded flag as fw on a group message too', async () => {
+		const m = await send_group_msg(ENV, 'alice', 'g1', 'hi', undefined, undefined, undefined, undefined, true);
+		expect(m.fw).toBe(true);
+		expect(upsertMock).toHaveBeenCalledWith(ENV, [
+			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi' } }
 		]);
 	});
 });
