@@ -16,7 +16,7 @@ const g = {
 describe('/ (logged-out home)', () => {
 	it('shows the room grid from load data', () => {
 		render(Page, { props: { data: { user: null, rooms: [g] } } });
-		expect(screen.getByRole('link', { name: 'Chess Club' })).toHaveAttribute('href', '/login');
+		expect(screen.getByRole('link', { name: 'Chess Club' })).toHaveAttribute('href', '/app/rooms/g1');
 		expect(screen.getByText(/openings, endgames/)).toBeInTheDocument();
 		expect(screen.getByText('2 members')).toBeInTheDocument();
 	});
@@ -29,11 +29,11 @@ describe('/ (logged-out home)', () => {
 		expect(input).toHaveValue('chess');
 	});
 
-	it('has every CTA pointing to /login', () => {
+	it('points every CTA at the rooms surface, reachable while logged out', () => {
 		render(Page, { props: { data: { user: null, rooms: [g] } } });
 		const links = screen.getAllByRole('link');
 		expect(links.length).toBeGreaterThan(0);
-		for (const a of links) expect(a).toHaveAttribute('href', '/login');
+		for (const a of links) expect(a.getAttribute('href')).toMatch(/^\/app\/rooms/);
 	});
 
 	it('carries the final home-page copy', () => {
@@ -41,6 +41,6 @@ describe('/ (logged-out home)', () => {
 		expect(screen.getByText(/the room finds you/)).toBeInTheDocument();
 		expect(screen.getByText(/find a room\./)).toBeInTheDocument();
 		expect(screen.getByText(/every room here is built around one thing/)).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: /start free/ })).toHaveAttribute('href', '/login');
+		expect(screen.getByRole('link', { name: /start free/ })).toHaveAttribute('href', '/app/rooms');
 	});
 });

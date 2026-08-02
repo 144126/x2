@@ -6,6 +6,7 @@ import { get_group, is_member } from '$lib/server/group';
 import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
 import { guard } from '$lib/server/rl';
 import { hub_conv } from '$lib/server/hub_client';
+import { ensure_device_session } from '$lib/server/device';
 
 // Best-effort: the message is already durably stored by the time this runs. The recipient's
 // own ChatHub Durable Object decides delivery, unread count and push from here — see
@@ -23,9 +24,10 @@ async function relay(payload: Record<string, unknown>, ws: Fetcher): Promise<voi
 	}
 }
 
-export const POST: RequestHandler = async ({ request, locals, platform }) => {
-	if (!locals.user) throw error(401, 'auth');
-	await guard(platform, 'RL_SEND', locals.user.id);
+export const POST: RequestHandler = async ({ request, locals, platform, cookies, getClientAddress }) => {
+	const me = locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
+	if (!me) throw error(401, 'auth');
+	await guard(platform, 'RL_SEND', me.id);
 	const b = (await request.json().catch(() => null)) as {
 		to?: string;
 		group?: string;
@@ -47,8 +49,6 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const forwarded = b?.forwarded ? true : undefined;
 	if (!text && !image && !file && !sticker) throw error(400, 'text, image, file or sticker required');
 	if (!to && !group) throw error(400, 'to or group required');
-
-	const me = locals.user;
 
 	if (b?.at && b.at > Date.now() + MIN_LEAD_MS) {
 		const sm = await save_scheduled(env, me.id, { to, group, text, image, file, at: b.at });

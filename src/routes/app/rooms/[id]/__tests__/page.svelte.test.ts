@@ -2,7 +2,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/svelte';
 
-const { goto, pushState } = vi.hoisted(() => ({ goto: vi.fn(), pushState: vi.fn() }));
+const { goto, pushState, invalidateAll } = vi.hoisted(() => ({
+	goto: vi.fn(),
+	pushState: vi.fn(),
+	invalidateAll: vi.fn()
+}));
 const { wsOnMock, wsSendMock } = vi.hoisted(() => {
 	const wsOnMock = vi.fn();
 	const wsSendMock = vi.fn();
@@ -26,7 +30,7 @@ const { pageStore } = vi.hoisted(() => {
 	};
 });
 
-vi.mock('$app/navigation', () => ({ goto, pushState }));
+vi.mock('$app/navigation', () => ({ goto, pushState, invalidateAll }));
 vi.mock('$app/stores', () => ({ page: pageStore }));
 vi.mock('$lib/ws', () => ({ ws_on: wsOnMock, ws_send: wsSendMock }));
 vi.mock('$lib/attach', () => ({
@@ -486,5 +490,35 @@ describe('forwarding', () => {
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ text: 'hi', forwarded: true, to: 'bob' })
 		});
+	});
+});
+
+describe('membership while anonymous', () => {
+	it('clicking join while logged out invalidates the load after a successful response', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ g: { ...g, members: [...g.members, 'dev1'] } })
+		});
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+		pageStore.set({ data: { user: null }, state: {} });
+		render(Page, { props: { data: data({ members: ['bob', 'carol'] }) } });
+		await fireEvent.click(screen.getByRole('button', { name: 'join' }));
+		await vi.waitFor(() => expect(invalidateAll).toHaveBeenCalledTimes(1));
+		expect(mockFetch).toHaveBeenCalledWith('/api/groups/g1', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ action: 'join' })
+		});
+	});
+
+	it('clicking join while logged in does not invalidate the load', async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ g: { ...g, owner: 'bob', members: [...g.members, 'me'] } })
+		}) as unknown as typeof fetch;
+		render(Page, { props: { data: data({ members: ['bob', 'carol'], owner: 'bob' }) } });
+		await fireEvent.click(screen.getByRole('button', { name: 'join' }));
+		await vi.waitFor(() => expect(screen.getByRole('button', { name: 'leave room' })).toBeInTheDocument());
+		expect(invalidateAll).not.toHaveBeenCalled();
 	});
 });

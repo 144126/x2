@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { searchGroupsMock, listGroupsMock, saveGroupMock } = vi.hoisted(() => ({
+const { searchGroupsMock, listGroupsMock, saveGroupMock, ensureDeviceSessionMock } = vi.hoisted(() => ({
 	searchGroupsMock: vi.fn(),
 	listGroupsMock: vi.fn(),
-	saveGroupMock: vi.fn()
+	saveGroupMock: vi.fn(),
+	ensureDeviceSessionMock: vi.fn()
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
@@ -12,6 +13,8 @@ vi.mock('$lib/server/group', () => ({
 	list_groups: listGroupsMock,
 	save_group: saveGroupMock
 }));
+vi.mock('$lib/server/device', () => ({ ensure_device_session: ensureDeviceSessionMock }));
+vi.mock('$lib/server/rl', () => ({ guard: vi.fn().mockResolvedValue(undefined) }));
 
 import { GET, POST } from '../+server';
 
@@ -29,7 +32,8 @@ function postEvent(body: unknown, uid = 'me') {
 			headers: { 'content-type': 'application/json' },
 			body: body !== undefined ? JSON.stringify(body) : undefined
 		}),
-		locals: { user: uid ? { id: uid, username: 'Me' } : null, x2_ws: {} }
+		locals: { user: uid ? { id: uid, username: 'Me' } : null, x2_ws: {} },
+		platform: undefined
 	} as unknown as Parameters<typeof POST>[0];
 }
 
@@ -38,6 +42,7 @@ beforeEach(() => {
 	searchGroupsMock.mockResolvedValue([]);
 	listGroupsMock.mockResolvedValue([]);
 	saveGroupMock.mockResolvedValue({ id: 'g1', name: 'test' });
+	ensureDeviceSessionMock.mockResolvedValue(null);
 });
 
 describe('GET /api/groups', () => {
@@ -75,5 +80,22 @@ describe('POST /api/groups', () => {
 			state: 'CA',
 			city: 'SF'
 		});
+	});
+
+	it('creates as a freshly-minted device user when an anonymous visitor has a device_id', async () => {
+		ensureDeviceSessionMock.mockResolvedValue({ id: 'dev1', username: 'dev1' });
+		const res = await POST(postEvent({ name: 'devroom' }, ''));
+		expect(res.status).toBe(200);
+		expect(saveGroupMock).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			'dev1',
+			expect.objectContaining({ name: 'devroom' })
+		);
+	});
+
+	it('still 401s an anonymous create with no device_id at all', async () => {
+		await expect(POST(postEvent({ name: 'devroom' }, ''))).rejects.toMatchObject({ status: 401 });
+		expect(saveGroupMock).not.toHaveBeenCalled();
 	});
 });

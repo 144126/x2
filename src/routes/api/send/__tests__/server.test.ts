@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { sendMsgMock, sendGroupMsgMock, getGroupMock, isMemberMock, saveScheduledMock, guardMock } = vi.hoisted(
-	() => ({
+const { sendMsgMock, sendGroupMsgMock, getGroupMock, isMemberMock, saveScheduledMock, guardMock, ensureDeviceSessionMock } =
+	vi.hoisted(() => ({
 		sendMsgMock: vi.fn(),
 		sendGroupMsgMock: vi.fn(),
 		getGroupMock: vi.fn(),
 		isMemberMock: vi.fn(),
 		saveScheduledMock: vi.fn(),
-		guardMock: vi.fn()
-	})
-);
+		guardMock: vi.fn(),
+		ensureDeviceSessionMock: vi.fn()
+	}));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/chat', async () => {
@@ -25,6 +25,7 @@ vi.mock('$lib/server/scheduled', () => ({
 	MIN_LEAD_MS: 60_000
 }));
 vi.mock('$lib/server/rl', () => ({ guard: guardMock }));
+vi.mock('$lib/server/device', () => ({ ensure_device_session: ensureDeviceSessionMock }));
 
 import { POST } from '../+server';
 
@@ -76,6 +77,7 @@ beforeEach(() => {
 	saveScheduledMock.mockResolvedValue({ id: 'sm1', sent: 0 });
 	guardMock.mockResolvedValue(undefined);
 	isMemberMock.mockResolvedValue(true);
+	ensureDeviceSessionMock.mockResolvedValue(null);
 });
 
 describe('POST /api/send — scheduling', () => {
@@ -91,6 +93,25 @@ describe('POST /api/send — scheduling', () => {
 		await POST(event({ to: 'bob', text: 'hi', at: Date.now() + 1000 }));
 		expect(sendMsgMock).toHaveBeenCalled();
 		expect(saveScheduledMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('POST /api/send — anonymous device send', () => {
+	it('sends as a freshly-minted device user when an anonymous visitor has a device_id', async () => {
+		ensureDeviceSessionMock.mockResolvedValue({ id: 'dev1', username: 'dev1' });
+		const res = await POST(event({ to: 'bob', text: 'hi' }, null));
+		expect(res.status).toBe(200);
+		expect(sendMsgMock).toHaveBeenCalledWith(
+			expect.anything(), 'dev1', 'bob', 'hi', undefined, undefined, undefined, undefined, undefined
+		);
+		expect(guardMock).toHaveBeenCalledWith(undefined, 'RL_SEND', 'dev1');
+	});
+
+	it('still 401s an anonymous send with no device_id at all', async () => {
+		await expect(POST(event({ to: 'bob', text: 'hi' }, null))).rejects.toMatchObject({
+			status: 401
+		});
+		expect(sendMsgMock).not.toHaveBeenCalled();
 	});
 });
 

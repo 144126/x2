@@ -2,6 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { get_group, update_group, delete_group, join_group, leave_group } from '$lib/server/group';
+import { ensure_device_session } from '$lib/server/device';
 
 export const GET: RequestHandler = async ({ params, locals }) => {
 	if (!locals.user) throw error(401, 'auth');
@@ -33,13 +34,14 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	return json({ g });
 };
 
-export const POST: RequestHandler = async ({ params, request, locals }) => {
-	if (!locals.user) throw error(401, 'auth');
+export const POST: RequestHandler = async ({ params, request, locals, platform, cookies, getClientAddress }) => {
+	const me = locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
+	if (!me) throw error(401, 'auth');
 	const b = (await request.json().catch(() => null)) as { action?: string };
 	const g =
 		b?.action === 'leave'
-			? await leave_group(env, locals.x2_ws, params.id, locals.user.id)
-			: await join_group(env, locals.x2_ws, params.id, locals.user.id);
+			? await leave_group(env, locals.x2_ws, params.id, me.id)
+			: await join_group(env, locals.x2_ws, params.id, me.id);
 	if (!g) throw error(400, b?.action === 'leave' ? 'owner cannot leave' : 'no group');
 	return json({ g });
 };

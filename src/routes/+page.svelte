@@ -36,7 +36,7 @@
 	<ul class="mt-4 grid gap-3.5 sm:grid-cols-2">
 		{#each data.rooms as g, i (g.id)}
 			<li class="card reveal" style="--i:{i}">
-				<a href="/login" class="font-display text-[20px] font-medium tracking-[-0.01em] hover:text-accent">{g.name}</a>
+				<a href="/app/rooms/{g.id}" class="font-display text-[20px] font-medium tracking-[-0.01em] hover:text-accent">{g.name}</a>
 				<p class="mt-2 line-clamp-2 text-[13.5px] text-ink-soft">{g.description}</p>
 				<span class="mt-3 flex items-center gap-1 text-[12px] text-mute">
 					<Users size={13} /> {g.members.length} member{g.members.length === 1 ? '' : 's'}
@@ -45,6 +45,6 @@
 		{/each}
 	</ul>
 	<div class="mt-10 text-center">
-		<a class="btn btn-amber px-8 py-3.5 text-[14px]" href="/login">start free — join or create a room</a>
+		<a class="btn btn-amber px-8 py-3.5 text-[14px]" href="/app/rooms">start free — join or create a room</a>
 	</div>
 </section>

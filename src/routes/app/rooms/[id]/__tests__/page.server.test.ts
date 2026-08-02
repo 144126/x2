@@ -41,7 +41,16 @@ describe('/app/rooms/[id] page server', () => {
 		expect(data.names.lurker).toBe('Lurker');
 	});
 
-	it('401s when signed out', async () => {
-		await expect(load({ params: { id: 'g1' }, locals: { user: null } } as any)).rejects.toMatchObject({ status: 401 });
+	it('serves an anonymous visitor the room and names but no message history', async () => {
+		getGroupMessagesMock.mockResolvedValue([
+			{ f: 'ada', x: 'secret', d: 1 }
+		]);
+		const data = (await load({ params: { id: 'g1' }, locals: { user: null } } as any)) as { g: { id: string }; names: Record<string, string>; messages: unknown[]; muted: boolean };
+		expect(data.g.id).toBe('g1');
+		expect(data.names).toEqual({ ada: 'Ada', lurker: 'Lurker' });
+		expect(data.messages).toEqual([]);
+		expect(data.muted).toBe(false);
+		expect(getGroupMessagesMock).not.toHaveBeenCalled();
+		expect(isMocked).not.toHaveBeenCalled();
 	});
 });

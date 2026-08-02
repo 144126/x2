@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto, pushState } from '$app/navigation';
+	import { goto, pushState, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { ws_on, ws_send } from '$lib/ws';
@@ -284,7 +284,10 @@
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ action })
 		});
-		if (res.ok) g = (await res.json()).g;
+		if (res.ok) {
+			g = (await res.json()).g;
+			if (!me) await invalidateAll();
+		}
 	}
 
 	async function save_edits() {
