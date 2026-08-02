@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, within } from '@testing-library/svelte';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 const { wsOnMock, wsSendMock, wsDropMock } = vi.hoisted(() => ({
@@ -252,7 +252,10 @@ describe('forwarding', () => {
 		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
 		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
-		await fireEvent.click(screen.getByLabelText('cancel forward'));
+		const dialog = screen
+			.getAllByRole('dialog', { hidden: true })
+			.find((d) => d.querySelector('h2')?.textContent === 'forward to…')!;
+		await fireEvent.click(within(dialog).getByLabelText('close'));
 		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
 		expect(mockFetch.mock.calls.filter((c) => c[0] === '/api/conversations')).toHaveLength(1);

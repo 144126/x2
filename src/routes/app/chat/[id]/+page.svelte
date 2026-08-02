@@ -11,6 +11,7 @@
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
 	import StickerPicker from '$lib/components/StickerPicker.svelte';
+	import ForwardPicker from '$lib/components/ForwardPicker.svelte';
 	import { sticker_src } from '$lib/stickers';
 	import Modal from '$lib/components/Modal.svelte';
 	import AiThread from '$lib/components/AiThread.svelte';
@@ -42,6 +43,7 @@
 		rp?: string;
 		rx?: Record<string, string[]>;
 		sk?: string;
+		fw?: boolean;
 		cid?: string;
 		err?: boolean;
 	};
@@ -122,6 +124,31 @@
 		mark_first_send();
 		const { m } = await res.json();
 		if (m) messages = confirm_sent(messages, row.cid!, { id: m.id, d: m.ts });
+	}
+
+	let forwarding = $state<Msg | null>(null);
+	let forwardData = $state<{ conversations: { peer: string }[]; rooms: { id: string; name: string }[] } | null>(null);
+	async function openForward(m: Msg) {
+		forwarding = m;
+		if (forwardData) return;
+		forwardData = await Promise.all([
+			fetch('/api/conversations').then((r) => r.json()),
+			fetch('/api/groups?mine=1').then((r) => r.json())
+		]).then(([c, g]) => ({ conversations: ((c as { r?: { peer: string }[] })?.r ?? []), rooms: ((g as { r?: { id: string; name: string }[] })?.r ?? []) }));
+	}
+	async function doForward(targets: { to?: string; group?: string }[]) {
+		if (!forwarding) return;
+		const body = forwarding.sk ? { sticker: forwarding.sk } : { text: forwarding.x };
+		await Promise.all(
+			targets.map((t) =>
+				fetch('/api/send', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ ...body, forwarded: true, ...t })
+				})
+			)
+		);
+		forwarding = null;
 	}
 
 	async function load_older() {
@@ -283,6 +310,7 @@
 					fl: m.file as FileAttach | undefined,
 					rp: m.reply_msg as string | undefined,
 					sk: m.sticker as string | undefined,
+					fw: m.fw as boolean | undefined,
 					d: m.ts as number
 				});
 			} else if (m.type === 'signal' && m.from === data.peer && m.ctx === 'dm') {
@@ -508,16 +536,19 @@
 					class:border-0={m.sk}
 					class:bg-transparent={m.sk}
 					class:p-0={m.sk}
-					class:opacity-60={m.id === '' && !m.err}
-				>
-					{#if m.sk}
-						<img
-							src={sticker_src(m.sk)}
-							alt={m.sk + ' sticker'}
-							class="h-[120px] w-[120px] object-contain"
-						/>
-					{:else}
-						{#if m.rp}
+				class:opacity-60={m.id === '' && !m.err}
+			>
+				{#if m.fw}
+					<div class="mb-1 text-[10.5px] uppercase tracking-[0.12em] text-faint">forwarded</div>
+				{/if}
+				{#if m.sk}
+					<img
+						src={sticker_src(m.sk)}
+						alt={m.sk + ' sticker'}
+						class="h-[120px] w-[120px] object-contain"
+					/>
+				{:else}
+					{#if m.rp}
 							<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
 								{quoted[m.rp]?.x || 'original message'}
 							</div>
@@ -588,6 +619,12 @@
 							onclick={() => (reactingTo = m.id)}
 							>react</button
 						>
+						<button
+							type="button"
+							class="text-[11px] text-faint hover:text-accent"
+							onclick={() => openForward(m)}
+							>forward</button
+						>
 					</div>
 				</div>
 			{/each}
@@ -634,6 +671,20 @@
 				onselect={(e) => sendSticker(e)}
 				onclose={() => (stickerOpen = false)}
 			/>
+		</Modal>
+	{/if}
+
+	{#if forwarding}
+		<Modal open onclose={() => (forwarding = null)} title="forward to…">
+			{#if forwardData}
+				<ForwardPicker
+					data={forwardData}
+					onforward={(targets) => doForward(targets)}
+					onclose={() => (forwarding = null)}
+				/>
+			{:else}
+				<p class="text-[13px] text-faint">loading…</p>
+			{/if}
 		</Modal>
 	{/if}
 

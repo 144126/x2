@@ -17,8 +17,9 @@ async function relay(payload: Record<string, unknown>, ws: Fetcher): Promise<voi
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify(payload)
 		});
-	} catch {
-		/* best-effort */
+	} catch (e) {
+		/* best-effort — but the conv index write loss on the recipient is a real diagnosis signal */
+		console.error('[RELAY] send relay failed', e);
 	}
 }
 
@@ -34,6 +35,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		at?: number;
 		reply_to?: string;
 		sticker?: string;
+		forwarded?: boolean;
 	};
 	const to = b?.to?.trim();
 	const group = b?.group?.trim();
@@ -42,6 +44,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const file = b?.file;
 	const reply_to = b?.reply_to?.trim() || undefined;
 	const sticker = b?.sticker?.trim() || undefined;
+	const forwarded = b?.forwarded ? true : undefined;
 	if (!text && !image && !file && !sticker) throw error(400, 'text, image, file or sticker required');
 	if (!to && !group) throw error(400, 'to or group required');
 
@@ -56,11 +59,11 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		const g = await get_group(env, group);
 		if (!g) throw error(404, 'no group');
 		if (!(await is_member(env, locals.x2_ws, g.id, me.id))) throw error(403, 'not a member');
-		const m = await send_group_msg(env, me.id, group, text, image, file, reply_to, sticker).catch(
-			() => {
-				throw error(503, 'not_stored');
-			}
-		);
+		const m = await send_group_msg(
+			env, me.id, group, text, image, file, reply_to, sticker, forwarded
+		).catch(() => {
+			throw error(503, 'not_stored');
+		});
 
 		locals.bg(
 			Promise.all([
@@ -75,6 +78,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 						image,
 						file,
 						sticker,
+						fw: forwarded || undefined,
 						ts: m.d,
 						conv: group_conv_id(group),
 						mute_key: group,
@@ -101,18 +105,18 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 					{ group },
 					m.d,
 					text || (file ? '📎 file' : sticker ? 'sticker' : '📷 image')
-				).catch(() => {})
+				).catch((e) => console.error('[HUB-CONV] sender self-index failed', e))
 			])
 		);
 
 		return json({
 			ok: true,
-			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk }
+			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk, fw: m.fw }
 		});
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker).catch(() => {
+	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker, forwarded).catch(() => {
 		throw error(503, 'not_stored');
 	});
 
@@ -128,6 +132,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 					image,
 					file,
 					sticker,
+					fw: forwarded || undefined,
 					ts: m.d,
 					conv: conv_id(me.id, to),
 					mute_key: me.id,
@@ -150,12 +155,12 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 				{ peer: to },
 				m.d,
 				text || (file ? '📎 file' : sticker ? 'sticker' : '📷 image')
-			).catch(() => {})
+			).catch((e) => console.error('[HUB-CONV] sender self-index failed', e))
 		])
 	);
 
 	return json({
 		ok: true,
-		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk }
+		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk, fw: m.fw }
 	});
 };
