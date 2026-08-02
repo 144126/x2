@@ -68,8 +68,8 @@ describe('ensure', () => {
 		mockClient.getCollection.mockResolvedValue({
 			payload_schema: {
 				s: {}, t: {}, r: {}, c: {}, f: {}, co: {}, st: {}, ci: {}, u: {},
-				ow: {}, mb: {}, gr: {}, uid: {}, ac: {}, tg: {}, k: {}, rs: {},
-				ag: {}, at: {}, sent: {}, d: {}
+			ow: {}, mb: {}, gr: {}, uid: {}, ac: {}, tg: {}, k: {}, rs: {}, m: {}, gl: {},
+			ag: {}, at: {}, sent: {}, d: {}
 			}
 		});
 
