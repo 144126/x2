@@ -1,17 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { deductMock, creditMock } = vi.hoisted(() => ({
+const { deductMock, creditMock, modalCompleteMock } = vi.hoisted(() => ({
 	deductMock: vi.fn(),
-	creditMock: vi.fn()
+	creditMock: vi.fn(),
+	modalCompleteMock: vi.fn()
 }));
 
 vi.mock('../credit_client', () => ({ deduct: deductMock, credit: creditMock }));
+vi.mock('../modal', () => ({ modal_complete: modalCompleteMock }));
 
 import { whats_in_common } from '../groq';
 import type { User } from '../../types';
 
 const ws = {} as never;
-const env = { GROQ: 'test-key' } as never;
+const env = {} as never;
 
 const a: User = {
 	s: 'u',
@@ -36,69 +38,44 @@ const b: User = {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	vi.stubGlobal('fetch', vi.fn());
 	deductMock.mockResolvedValue({ ok: true, balance: 5000 });
 	creditMock.mockResolvedValue({ balance: 5100 });
 });
 
 describe('whats_in_common', () => {
-	it('short-circuits on insufficient credits without calling Groq', async () => {
+	it('short-circuits on insufficient credits without calling modal', async () => {
 		deductMock.mockResolvedValue({ ok: false, reason: 'insufficient_credits', balance: 0 });
 		const r = await whats_in_common(env, ws, 'viewer', a, b);
 		expect(r).toEqual({ ok: false, reason: 'insufficient_credits' });
-		expect(fetch).not.toHaveBeenCalled();
+		expect(modalCompleteMock).not.toHaveBeenCalled();
 	});
 
 	it('deducts the viewer, not the profile owner', async () => {
-		vi.mocked(fetch).mockResolvedValue(
-			new Response(
-				JSON.stringify({
-					choices: [{ message: { content: 'you both love synths and music' } }],
-					usage: { prompt_tokens: 100, completion_tokens: 20 }
-				})
-			)
-		);
+		modalCompleteMock.mockResolvedValue('you both love synths and music');
 		await whats_in_common(env, ws, 'viewer-uid', a, b);
 		expect(deductMock).toHaveBeenCalledWith(ws, 'viewer-uid', expect.any(Number));
 	});
 
-	it('never sends email/password/whatsapp fields to Groq', async () => {
+	it('never sends email/password/whatsapp fields to modal', async () => {
 		const withSecrets: User = { ...a, m: 'ada@example.com', h: 'hash', w: '5551234' };
-		vi.mocked(fetch).mockResolvedValue(
-			new Response(
-				JSON.stringify({
-					choices: [{ message: { content: 'text' } }],
-					usage: { prompt_tokens: 1, completion_tokens: 1 }
-				})
-			)
-		);
+		modalCompleteMock.mockResolvedValue('text');
 		await whats_in_common(env, ws, 'viewer', withSecrets, b);
-		const body = JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string);
-		const prompt = JSON.stringify(body);
-		expect(prompt).not.toContain('ada@example.com');
-		expect(prompt).not.toContain('hash');
-		expect(prompt).not.toContain('5551234');
+		const content = modalCompleteMock.mock.calls[0][1][0].content as string;
+		expect(content).not.toContain('ada@example.com');
+		expect(content).not.toContain('hash');
+		expect(content).not.toContain('5551234');
 	});
 
-	it('returns the generated text and cost on success', async () => {
-		vi.mocked(fetch).mockResolvedValue(
-			new Response(
-				JSON.stringify({
-					choices: [{ message: { content: 'you both love synths and music' } }],
-					usage: { prompt_tokens: 100, completion_tokens: 20 }
-				})
-			)
-		);
+	it('returns the generated text on success', async () => {
+		modalCompleteMock.mockResolvedValue('you both love synths and music');
 		const r = await whats_in_common(env, ws, 'viewer', a, b);
-		expect(r).toMatchObject({ ok: true, text: 'you both love synths and music' });
-		if (r.ok) expect(r.cost_kobo).toBeGreaterThan(0);
+		expect(r).toEqual({ ok: true, text: 'you both love synths and music' });
 	});
 
-	it('refunds the viewer if Groq fails after a successful deduct', async () => {
-		vi.mocked(fetch).mockResolvedValue(new Response('server error', { status: 500 }));
+	it('refunds the viewer if modal fails after a successful deduct', async () => {
+		modalCompleteMock.mockRejectedValue(new Error('modal_error'));
 		const r = await whats_in_common(env, ws, 'viewer', a, b);
 		expect(r).toEqual({ ok: false, reason: 'llm_error' });
-		const deducted = deductMock.mock.calls[0][2];
-		expect(creditMock).toHaveBeenCalledWith(ws, 'viewer', deducted);
+		expect(creditMock).toHaveBeenCalledWith(ws, 'viewer', deductMock.mock.calls[0][2]);
 	});
 });

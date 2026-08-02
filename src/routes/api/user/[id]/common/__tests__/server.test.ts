@@ -32,9 +32,11 @@ describe('GET /api/user/[id]/common', () => {
 		await expect(GET(event(null, 'bob'))).rejects.toMatchObject({ status: 401 });
 	});
 
-	it('404s when the other user does not exist', async () => {
+	it('returns llm_error instead of 404 when the other user does not exist', async () => {
 		retrieveOneMock.mockResolvedValueOnce(undefined);
-		await expect(GET(event('ada', 'ghost'))).rejects.toMatchObject({ status: 404 });
+		const res = await GET(event('ada', 'ghost'));
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: false, reason: 'llm_error' });
 	});
 
 	it('calls whats_in_common with the viewer as spender and returns the text', async () => {

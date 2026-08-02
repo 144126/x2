@@ -9,7 +9,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	const viewer = (await retrieve_one(env, locals.user.id))?.payload as unknown as User | undefined;
 	const other = (await retrieve_one(env, params.id))?.payload as unknown as User | undefined;
-	if (!viewer || !other) throw error(404, 'not found');
+	if (!viewer || !other) return json({ ok: false, reason: 'llm_error' });
 
 	const r = await whats_in_common(env, locals.x2_ws, locals.user.id, viewer, other);
 	return json(r.ok ? { ok: true, text: r.text } : r);
