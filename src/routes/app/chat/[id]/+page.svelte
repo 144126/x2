@@ -29,7 +29,8 @@
 		Send as SendIcon,
 		LoaderCircle,
 		FileText,
-		X
+		X,
+		Smile
 	} from '@lucide/svelte';
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
@@ -108,6 +109,25 @@
 
 	let stickerOpen = $state(false);
 
+	let emojiOpen = $state(false);
+	let composerInput: HTMLInputElement | undefined = $state();
+	let emojiCursor = $state(0);
+
+	function openEmoji() {
+		emojiCursor = composerInput?.selectionStart ?? text.length;
+		emojiOpen = true;
+	}
+
+	function insertEmoji(e: string) {
+		emojiOpen = false;
+		text = text.slice(0, emojiCursor) + e + text.slice(emojiCursor);
+		emojiCursor += e.length;
+		tick().then(() => {
+			composerInput?.focus();
+			composerInput?.setSelectionRange(emojiCursor, emojiCursor);
+		});
+	}
+
 	async function sendSticker(id: string) {
 		stickerOpen = false;
 		const row: Msg = { id: '', cid: crypto.randomUUID(), f: me!, x: '', sk: id, d: Date.now() };
@@ -127,14 +147,20 @@
 	}
 
 	let forwarding = $state<Msg | null>(null);
-	let forwardData = $state<{ conversations: { peer: string }[]; rooms: { id: string; name: string }[] } | null>(null);
+	let forwardData = $state<{
+		conversations: { peer: string }[];
+		rooms: { id: string; name: string }[];
+	} | null>(null);
 	async function openForward(m: Msg) {
 		forwarding = m;
 		if (forwardData) return;
 		forwardData = await Promise.all([
 			fetch('/api/conversations').then((r) => r.json()),
 			fetch('/api/groups?mine=1').then((r) => r.json())
-		]).then(([c, g]) => ({ conversations: ((c as { r?: { peer: string }[] })?.r ?? []), rooms: ((g as { r?: { id: string; name: string }[] })?.r ?? []) }));
+		]).then(([c, g]) => ({
+			conversations: (c as { r?: { peer: string }[] })?.r ?? [],
+			rooms: (g as { r?: { id: string; name: string }[] })?.r ?? []
+		}));
 	}
 	async function doForward(targets: { to?: string; group?: string }[]) {
 		if (!forwarding) return;
@@ -225,7 +251,7 @@
 			fetchTurn: async () => {
 				const r = await fetch('/api/turn', { method: 'POST' }).catch(() => null);
 				if (!r?.ok) return [];
-				const { iceServers } = await r.json() as { iceServers: RTCIceServer[] };
+				const { iceServers } = (await r.json()) as { iceServers: RTCIceServer[] };
 				return iceServers;
 			}
 		});
@@ -260,7 +286,15 @@
 				retry.err = false;
 				row = retry;
 			} else {
-				row = { id: '', cid: crypto.randomUUID(), f: me!, x: body, im: image, fl: file, d: Date.now() };
+				row = {
+					id: '',
+					cid: crypto.randomUUID(),
+					f: me!,
+					x: body,
+					im: image,
+					fl: file,
+					d: Date.now()
+				};
 				add_msg(row);
 			}
 		}
@@ -540,76 +574,79 @@
 						? 'self-end items-end'
 						: 'self-start'}"
 				>
-				<div
-					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
-						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
-						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
-					class:border-0={m.sk}
-					class:bg-transparent={m.sk}
-					class:p-0={m.sk}
-				class:opacity-60={m.id === '' && !m.err}
-			>
-				{#if m.fw}
-					<div class="mb-1 text-[10.5px] uppercase tracking-[0.12em] text-faint">forwarded</div>
-				{/if}
-				{#if m.sk}
-					<img
-						src={sticker_src(m.sk)}
-						alt={m.sk + ' sticker'}
-						class="h-[120px] w-[120px] object-contain"
-					/>
-				{:else}
-					{#if m.rp}
-							<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
-								{quoted[m.rp]?.x || 'original message'}
-							</div>
+					<div
+						class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
+							? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
+							: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+						class:border-0={m.sk}
+						class:bg-transparent={m.sk}
+						class:p-0={m.sk}
+						class:opacity-60={m.id === '' && !m.err}
+					>
+						{#if m.fw}
+							<div class="mb-1 text-[10.5px] uppercase tracking-[0.12em] text-faint">forwarded</div>
 						{/if}
-						{#if m.im}
-							<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
-								<img
-									src={media_src(m.im)}
-									alt=""
-									class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
-								/>
-							</a>
-						{/if}
-						{#if m.fl}
-							<a
-								href={media_src(m.fl.key)}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
-							>
-								<FileText size={15} class="shrink-0" />
-								<span class="truncate">{m.fl.name}</span>
-								<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
-							</a>
-						{/if}
-						{#if m.x}{m.x}{/if}
-						{#if m.rx && Object.keys(m.rx).length}
-							<div class="mt-1 flex flex-wrap gap-1">
-								{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
-									<button
-										type="button"
-										class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
-										class:border-accent={uids.includes(me)}
-										onclick={() => react(m.id, emoji)}
-									>
-										{emoji} {uids.length}
-									</button>
-								{/each}
-							{#if Object.keys(m.rx).length > 3}
-								<button
-									type="button"
-									class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
-									onclick={() => (reactionListFor = m.id)}
-									>+{Object.keys(m.rx).length - 3}</button
+						{#if m.sk}
+							<img
+								src={sticker_src(m.sk)}
+								alt={m.sk + ' sticker'}
+								class="h-[120px] w-[120px] object-contain"
+							/>
+						{:else}
+							{#if m.rp}
+								<div
+									class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70"
 								>
+									{quoted[m.rp]?.x || 'original message'}
+								</div>
 							{/if}
-						</div>
-					{/if}
-					{/if}
-				</div>
+							{#if m.im}
+								<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
+									<img
+										src={media_src(m.im)}
+										alt=""
+										class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
+									/>
+								</a>
+							{/if}
+							{#if m.fl}
+								<a
+									href={media_src(m.fl.key)}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
+								>
+									<FileText size={15} class="shrink-0" />
+									<span class="truncate">{m.fl.name}</span>
+									<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
+								</a>
+							{/if}
+							{#if m.x}{m.x}{/if}
+							{#if m.rx && Object.keys(m.rx).length}
+								<div class="mt-1 flex flex-wrap gap-1">
+									{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
+										<button
+											type="button"
+											class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
+											class:border-accent={uids.includes(me)}
+											onclick={() => react(m.id, emoji)}
+										>
+											{emoji}
+											{uids.length}
+										</button>
+									{/each}
+									{#if Object.keys(m.rx).length > 3}
+										<button
+											type="button"
+											class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
+											onclick={() => (reactionListFor = m.id)}
+											>+{Object.keys(m.rx).length - 3}</button
+										>
+									{/if}
+								</div>
+							{/if}
+						{/if}
+					</div>
 					{#if m.err}
 						<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
 							not sent — retry
@@ -621,20 +658,17 @@
 						<button
 							type="button"
 							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => startReply(m)}
-							>reply</button
+							onclick={() => startReply(m)}>reply</button
 						>
 						<button
 							type="button"
 							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => (reactingTo = m.id)}
-							>react</button
+							onclick={() => (reactingTo = m.id)}>react</button
 						>
 						<button
 							type="button"
 							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => openForward(m)}
-							>forward</button
+							onclick={() => openForward(m)}>forward</button
 						>
 					</div>
 				</div>
@@ -644,23 +678,21 @@
 
 	{#if replyTo}
 		<div class="flex items-center gap-2 border-t border-line px-1 py-2 text-[12.5px] text-ink-soft">
-			<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">{replyTo.x || '(attachment)'}</div>
+			<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">
+				{replyTo.x || '(attachment)'}
+			</div>
 			<button
 				type="button"
 				class="text-faint hover:text-accent"
 				onclick={cancelReply}
-				aria-label="cancel reply"
-				>&times;</button
+				aria-label="cancel reply">&times;</button
 			>
 		</div>
 	{/if}
 
 	{#if reactingTo}
 		<Modal open onclose={() => (reactingTo = null)} title="react">
-			<EmojiPicker
-				onselect={(e) => react(reactingTo!, e)}
-				onclose={() => (reactingTo = null)}
-			/>
+			<EmojiPicker onselect={(e) => react(reactingTo!, e)} onclose={() => (reactingTo = null)} />
 		</Modal>
 	{/if}
 	{#if reactionListFor}
@@ -678,10 +710,13 @@
 
 	{#if stickerOpen}
 		<Modal open onclose={() => (stickerOpen = false)} title="sticker">
-			<StickerPicker
-				onselect={(e) => sendSticker(e)}
-				onclose={() => (stickerOpen = false)}
-			/>
+			<StickerPicker onselect={(e) => sendSticker(e)} onclose={() => (stickerOpen = false)} />
+		</Modal>
+	{/if}
+
+	{#if emojiOpen}
+		<Modal open onclose={() => (emojiOpen = false)} title="emoji">
+			<EmojiPicker onselect={insertEmoji} onclose={() => (emojiOpen = false)} />
 		</Modal>
 	{/if}
 
@@ -746,8 +781,18 @@
 		>
 			<span class="text-[15px] leading-none">🙂</span>
 		</button>
+		<button
+			type="button"
+			class="btn shrink-0 px-3 py-3"
+			aria-label="emoji"
+			title="insert an emoji"
+			onclick={openEmoji}
+		>
+			<Smile size={16} />
+		</button>
 		<input
 			class="min-w-0 flex-1 text-[15px]"
+			bind:this={composerInput}
 			bind:value={text}
 			placeholder="write something considered…"
 			autocomplete="off"

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto, pushState, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { ws_on, ws_send } from '$lib/ws';
 	import { confirm_sent, mark_failed } from '$lib/chat_optimistic';
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
@@ -26,7 +26,8 @@
 		Mic,
 		MicOff,
 		Video,
-		VideoOff
+		VideoOff,
+		Smile
 	} from '@lucide/svelte';
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
@@ -83,7 +84,7 @@
 			fetchTurn: async () => {
 				const r = await fetch('/api/turn', { method: 'POST' }).catch(() => null);
 				if (!r?.ok) return [];
-				const { iceServers } = await r.json() as { iceServers: RTCIceServer[] };
+				const { iceServers } = (await r.json()) as { iceServers: RTCIceServer[] };
 				return iceServers;
 			}
 		});
@@ -174,10 +175,38 @@
 
 	let stickerOpen = $state(false);
 
+	let emojiOpen = $state(false);
+	let composerInput: HTMLInputElement | undefined = $state();
+	let emojiCursor = $state(0);
+
+	function openEmoji() {
+		emojiCursor = composerInput?.selectionStart ?? text.length;
+		emojiOpen = true;
+	}
+
+	function insertEmoji(e: string) {
+		emojiOpen = false;
+		text = text.slice(0, emojiCursor) + e + text.slice(emojiCursor);
+		emojiCursor += e.length;
+		tick().then(() => {
+			composerInput?.focus();
+			composerInput?.setSelectionRange(emojiCursor, emojiCursor);
+		});
+	}
+
 	async function sendSticker(id: string) {
 		stickerOpen = false;
 		const row: Row = {
-			s: 'm', id: '', cid: crypto.randomUUID(), c: '', f: me!, t: '', gr: g.id, x: '', sk: id, d: Date.now()
+			s: 'm',
+			id: '',
+			cid: crypto.randomUUID(),
+			c: '',
+			f: me!,
+			t: '',
+			gr: g.id,
+			x: '',
+			sk: id,
+			d: Date.now()
 		};
 		messages = [...messages, row];
 		scroll_down();
@@ -196,14 +225,20 @@
 	}
 
 	let forwarding = $state<Row | null>(null);
-	let forwardData = $state<{ conversations: { peer: string }[]; rooms: { id: string; name: string }[] } | null>(null);
+	let forwardData = $state<{
+		conversations: { peer: string }[];
+		rooms: { id: string; name: string }[];
+	} | null>(null);
 	async function openForward(m: Row) {
 		forwarding = m;
 		if (forwardData) return;
 		forwardData = await Promise.all([
 			fetch('/api/conversations').then((r) => r.json()),
 			fetch('/api/groups?mine=1').then((r) => r.json())
-		]).then(([c, g]) => ({ conversations: ((c as { r?: { peer: string }[] })?.r ?? []), rooms: ((g as { r?: { id: string; name: string }[] })?.r ?? []) }));
+		]).then(([c, g]) => ({
+			conversations: (c as { r?: { peer: string }[] })?.r ?? [],
+			rooms: (g as { r?: { id: string; name: string }[] })?.r ?? []
+		}));
 	}
 	async function doForward(targets: { to?: string; group?: string }[]) {
 		if (!forwarding) return;
@@ -255,8 +290,16 @@
 			row = retry;
 		} else {
 			row = {
-				s: 'm', id: '', cid: crypto.randomUUID(), c: '', f: me!, t: '', gr: g.id,
-				x: body, im: image, d: Date.now()
+				s: 'm',
+				id: '',
+				cid: crypto.randomUUID(),
+				c: '',
+				f: me!,
+				t: '',
+				gr: g.id,
+				x: body,
+				im: image,
+				d: Date.now()
 			};
 			messages = [...messages, row];
 			scroll_down();
@@ -431,8 +474,7 @@
 			{#if owner}
 				<button
 					class="btn px-4 py-2 text-[12px]"
-					onclick={() => pushState('', { modal: 'edit-room' })}
-					>edit</button
+					onclick={() => pushState('', { modal: 'edit-room' })}>edit</button
 				>
 			{:else if mine}
 				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}
@@ -474,15 +516,8 @@
 		</div>
 	{/if}
 
-	<Modal
-		open={$page.state.modal === 'edit-room'}
-		onclose={() => history.back()}
-		title="edit room"
-	>
-		<form
-			class="flex flex-col gap-3"
-			onsubmit={(e) => (e.preventDefault(), save_edits())}
-		>
+	<Modal open={$page.state.modal === 'edit-room'} onclose={() => history.back()} title="edit room">
+		<form class="flex flex-col gap-3" onsubmit={(e) => (e.preventDefault(), save_edits())}>
 			<input bind:value={ename} placeholder="room name" maxlength="60" />
 			<textarea bind:value={edesc} rows="2" placeholder="what this room is about (used for search)"
 			></textarea>
@@ -516,7 +551,12 @@
 					placeholder={etags.length ? '' : 'add a tag…'}
 				/>
 			</div>
-			<LocationPicker bind:country={ecountry} bind:region={eregion} bind:city={ecity} anyLabel="country" />
+			<LocationPicker
+				bind:country={ecountry}
+				bind:region={eregion}
+				bind:city={ecity}
+				anyLabel="country"
+			/>
 			<div class="flex gap-2">
 				<button class="btn btn-amber px-4 py-2 text-[12px]" type="submit">save</button>
 				<button class="btn px-4 py-2 text-[12px] text-red-400" type="button" onclick={remove}
@@ -600,42 +640,42 @@
 						/>
 					{:else}
 						{#if m.rp}
-						<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
-							{quoted[m.rp]?.x || 'original message'}
-						</div>
-					{/if}
-					{#if m.im}
-						<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
-							<img
-								src={media_src(m.im)}
-								alt=""
-								class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
-							/>
-						</a>
-					{/if}
-					{#if m.x}{m.x}{/if}
-					{#if m.rx && Object.keys(m.rx).length}
-						<div class="mt-1 flex flex-wrap gap-1">
-							{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
-								<button
-									type="button"
-									class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
-									class:border-accent={uids.includes(me)}
-									onclick={() => react(m.id, emoji)}
-								>
-									{emoji} {uids.length}
-								</button>
-							{/each}
-							{#if Object.keys(m.rx).length > 3}
-								<button
-									type="button"
-									class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
-									onclick={() => (reactionListFor = m.id)}
-									>+{Object.keys(m.rx).length - 3}</button
-								>
-							{/if}
-						</div>
-					{/if}
+							<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
+								{quoted[m.rp]?.x || 'original message'}
+							</div>
+						{/if}
+						{#if m.im}
+							<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
+								<img
+									src={media_src(m.im)}
+									alt=""
+									class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
+								/>
+							</a>
+						{/if}
+						{#if m.x}{m.x}{/if}
+						{#if m.rx && Object.keys(m.rx).length}
+							<div class="mt-1 flex flex-wrap gap-1">
+								{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
+									<button
+										type="button"
+										class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
+										class:border-accent={uids.includes(me)}
+										onclick={() => react(m.id, emoji)}
+									>
+										{emoji}
+										{uids.length}
+									</button>
+								{/each}
+								{#if Object.keys(m.rx).length > 3}
+									<button
+										type="button"
+										class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
+										onclick={() => (reactionListFor = m.id)}>+{Object.keys(m.rx).length - 3}</button
+									>
+								{/if}
+							</div>
+						{/if}
 					{/if}
 				</div>
 				{#if m.err}
@@ -649,28 +689,24 @@
 					<button
 						type="button"
 						class="text-[11px] text-faint hover:text-accent"
-						onclick={() => startReply(m)}
-						>reply</button
+						onclick={() => startReply(m)}>reply</button
 					>
 					{#if m.f !== me}
 						<button
 							type="button"
 							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => goto(`/app/chat/${m.f}?reply=${m.id}`)}
-							>reply privately</button
+							onclick={() => goto(`/app/chat/${m.f}?reply=${m.id}`)}>reply privately</button
 						>
 					{/if}
 					<button
 						type="button"
 						class="text-[11px] text-faint hover:text-accent"
-						onclick={() => (reactingTo = m.id)}
-						>react</button
+						onclick={() => (reactingTo = m.id)}>react</button
 					>
 					<button
 						type="button"
 						class="text-[11px] text-faint hover:text-accent"
-						onclick={() => openForward(m)}
-						>forward</button
+						onclick={() => openForward(m)}>forward</button
 					>
 				</div>
 			</div>
@@ -682,10 +718,7 @@
 
 	{#if reactingTo}
 		<Modal open onclose={() => (reactingTo = null)} title="react">
-			<EmojiPicker
-				onselect={(e) => react(reactingTo!, e)}
-				onclose={() => (reactingTo = null)}
-			/>
+			<EmojiPicker onselect={(e) => react(reactingTo!, e)} onclose={() => (reactingTo = null)} />
 		</Modal>
 	{/if}
 	{#if reactionListFor}
@@ -703,10 +736,13 @@
 
 	{#if stickerOpen}
 		<Modal open onclose={() => (stickerOpen = false)} title="sticker">
-			<StickerPicker
-				onselect={(e) => sendSticker(e)}
-				onclose={() => (stickerOpen = false)}
-			/>
+			<StickerPicker onselect={(e) => sendSticker(e)} onclose={() => (stickerOpen = false)} />
+		</Modal>
+	{/if}
+
+	{#if emojiOpen}
+		<Modal open onclose={() => (emojiOpen = false)} title="emoji">
+			<EmojiPicker onselect={insertEmoji} onclose={() => (emojiOpen = false)} />
 		</Modal>
 	{/if}
 
@@ -729,13 +765,14 @@
 			<div
 				class="flex items-center gap-2 border-t border-line px-1 py-2 text-[12.5px] text-ink-soft"
 			>
-				<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">{replyTo.x || '(attachment)'}</div>
+				<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">
+					{replyTo.x || '(attachment)'}
+				</div>
 				<button
 					type="button"
 					class="text-faint hover:text-accent"
 					onclick={cancelReply}
-					aria-label="cancel reply"
-					>&times;</button
+					aria-label="cancel reply">&times;</button
 				>
 			</div>
 		{/if}
@@ -770,8 +807,18 @@
 			>
 				<span class="text-[15px] leading-none">🙂</span>
 			</button>
+			<button
+				type="button"
+				class="btn shrink-0 px-3 py-3"
+				aria-label="emoji"
+				title="insert an emoji"
+				onclick={openEmoji}
+			>
+				<Smile size={16} />
+			</button>
 			<input
 				class="min-w-0 flex-1 text-[15px]"
+				bind:this={composerInput}
 				bind:value={text}
 				placeholder="say something to the room…"
 				autocomplete="off"

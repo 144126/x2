@@ -47,7 +47,11 @@
 		/>
 	</div>
 
-	{#if visibleConvs.length}
+	{#if data.hub_error}
+		<p class="mt-4 text-[14.5px] text-red-400">
+			chats unavailable — the realtime hub isn't reachable. try again shortly.
+		</p>
+	{:else if visibleConvs.length}
 		<ul class="results mt-5 grid gap-3.5">
 			{#each visibleConvs as c, i (c.peer)}
 				<li class="card person reveal" style="--i:{i}">

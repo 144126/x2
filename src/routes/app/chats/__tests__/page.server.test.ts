@@ -4,18 +4,27 @@ const {
 	getUserNamesMock,
 	listFoldersMock,
 	hubConvsMock,
-	listMutesMock
+	listMutesMock,
+	hubChatHubError
 } = vi.hoisted(() => ({
 	getUserNamesMock: vi.fn(),
 	listFoldersMock: vi.fn(),
 	hubConvsMock: vi.fn(),
-	listMutesMock: vi.fn()
+	listMutesMock: vi.fn(),
+	hubChatHubError: class extends Error {
+		constructor(public reason: string) {
+			super(reason);
+		}
+	}
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/chat', () => ({ get_user_names: getUserNamesMock }));
 vi.mock('$lib/server/folders', () => ({ list_folders: listFoldersMock }));
-vi.mock('$lib/server/hub_client', () => ({ hub_convs: hubConvsMock }));
+vi.mock('$lib/server/hub_client', () => ({
+	hub_convs: hubConvsMock,
+	ChatHubError: hubChatHubError
+}));
 vi.mock('$lib/server/mute', () => ({ list_mutes: listMutesMock }));
 
 import { load } from '../+page.server';
@@ -76,5 +85,12 @@ describe('GET /app/chats', () => {
 	it('asks for chat folders only', async () => {
 		await load(event('me'));
 		expect(listFoldersMock).toHaveBeenCalledWith(expect.anything(), 'me', 'c');
+	});
+
+	it('reports hub_error instead of the empty state when the hub read fails', async () => {
+		hubConvsMock.mockRejectedValue(new hubChatHubError('network'));
+		const data = (await load(event('me'))) as { convs: unknown[]; hub_error: string | null };
+		expect(data.convs).toEqual([]);
+		expect(data.hub_error).toBe('network');
 	});
 });

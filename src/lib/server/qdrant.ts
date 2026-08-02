@@ -59,6 +59,9 @@ export type QEnv = {
 	QDRANT_URL: SecretVal;
 	QDRANT_KEY: SecretVal;
 	SECRET?: SecretVal;
+	// local dev fallback shared with the ws worker (ws/.env DEV_SECRET) — the ws worker's
+	// Secrets Store is empty locally, so it validates bearer tokens against this instead
+	DEV_SECRET?: SecretVal;
 	VOXELL_KEY?: SecretVal;
 	MESSAGE_ENC_KEY?: SecretVal;
 	// local dev only (ws/.dev.vars): the ws worker's Secrets Store is empty there

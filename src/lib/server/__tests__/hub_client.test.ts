@@ -14,6 +14,8 @@ import {
 	hub_mutes,
 	hub_sub,
 	hub_unsub,
+	hub_convs,
+	ChatHubError,
 	room_join,
 	room_leave,
 	room_members,
@@ -155,5 +157,40 @@ describe('room_join / room_leave / room_members / room_is_member', () => {
 		expect(await room_join(ENV, w, 'g1', 'bob')).toEqual([]);
 		expect(await room_leave(ENV, w, 'g1', 'bob')).toEqual([]);
 		expect(await room_members(ENV, w, 'g1')).toEqual([]);
+	});
+});
+
+describe('hub_convs error taxonomy (chats-empty hardening)', () => {
+	it('returns convs from a healthy hub', async () => {
+		const w = ws({ convs: [{ peer: 'b', last: 1, preview: 'hi' }] });
+		const r = await hub_convs(ENV, w, 'me');
+		expect(r).toEqual([{ peer: 'b', last: 1, preview: 'hi' }]);
+	});
+
+	it('throws ChatHubError(network) when the ws fetch rejects', async () => {
+		const w = { fetch: vi.fn().mockRejectedValue(new Error('down')) } as unknown as Fetcher;
+		await expect(hub_convs(ENV, w, 'me')).rejects.toMatchObject({ reason: 'network' });
+	});
+
+	it('throws ChatHubError(http_<status>) on a non-ok response', async () => {
+		const w = ws({}, false);
+		await expect(hub_convs(ENV, w, 'me')).rejects.toMatchObject({ reason: 'http_500' });
+	});
+
+	it('throws ChatHubError(bad_shape) on a 200 non-JSON body (stale ws worker fallback)', async () => {
+		const w = {
+			fetch: vi.fn(async () => new Response('x2-ws relay+presence worker', { status: 200 }))
+		} as unknown as Fetcher;
+		await expect(hub_convs(ENV, w, 'me')).rejects.toMatchObject({ reason: 'bad_shape' });
+	});
+
+	it('throws ChatHubError(bad_shape) when .convs is missing from a valid JSON body', async () => {
+		const w = ws({ ok: 1 });
+		await expect(hub_convs(ENV, w, 'me')).rejects.toMatchObject({ reason: 'bad_shape' });
+	});
+
+	it('error instances are ChatHubError so loaders can distinguish them', async () => {
+		expect(new ChatHubError('network')).toBeInstanceOf(ChatHubError);
+		expect(new ChatHubError('network').reason).toBe('network');
 	});
 });

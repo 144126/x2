@@ -90,23 +90,6 @@ const worker: ExportedHandler<Env> = {
 			if (segments.length < 4) return new Response('bad', { status: 400 });
 			const [, , id] = segments;
 			const stub = env.ROOM.get(env.ROOM.idFromName(id));
-			return stub.fetch(
-				new Request(`https://dummy/${segments.slice(3).join('/')}${url.search}`, {
-					method: request.method,
-					headers: { 'content-type': 'application/json' },
-					body: request.method === 'PUT' || request.method === 'DELETE' ? undefined : undefined
-				})
-			);
-		}
-
-		if (url.pathname.startsWith('/room/')) {
-			const secret = await get_secret(env.SECRET, env.DEV_SECRET);
-			const auth = request.headers.get('authorization');
-			if (!secret || auth !== `Bearer ${secret}`) return new Response('denied', { status: 403 });
-			const segments = url.pathname.split('/');
-			if (segments.length < 4) return new Response('bad', { status: 400 });
-			const [, , id] = segments;
-			const stub = env.ROOM.get(env.ROOM.idFromName(id));
 			const body = request.method === 'POST' ? await request.text() : undefined;
 			return stub.fetch(
 				new Request(`https://dummy/${segments.slice(3).join('/')}${url.search}`, {

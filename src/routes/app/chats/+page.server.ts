@@ -3,17 +3,25 @@ import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { get_user_names } from '$lib/server/chat';
 import { list_folders } from '$lib/server/folders';
-import { hub_convs } from '$lib/server/hub_client';
+import { hub_convs, ChatHubError } from '$lib/server/hub_client';
 import { list_mutes } from '$lib/server/mute';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	const uid = locals.user.id;
-	const [convs, folders, mutes] = await Promise.all([
-		hub_convs(env, locals.x2_ws, uid),
+	const [folders, mutes] = await Promise.all([
 		list_folders(env, uid, 'c'),
 		list_mutes(env, locals.x2_ws, uid)
 	]);
+	let convs: Awaited<ReturnType<typeof hub_convs>> = [];
+	let hub_error: string | null = null;
+	try {
+		convs = await hub_convs(env, locals.x2_ws, uid);
+	} catch (e) {
+		// a dead/mismatched/older ws worker must render the "unavailable" banner, NOT
+		// the misleading "no conversations yet" empty state
+		hub_error = e instanceof ChatHubError ? e.reason : 'unknown';
+	}
 	const peers = convs.map((c) => c.peer ?? c.group ?? '').filter(Boolean);
 	const names = await get_user_names(env, peers);
 	const muted = new Set(mutes.filter((m) => m.k === 'u').map((m) => m.tg));
@@ -29,5 +37,5 @@ export const load: PageServerLoad = async ({ locals }) => {
 			if (peer) by_conv[peer] = c.unread;
 		}
 	}
-	return { convs: r, folders, unread: by_conv };
+	return { convs: r, folders, unread: by_conv, hub_error };
 };

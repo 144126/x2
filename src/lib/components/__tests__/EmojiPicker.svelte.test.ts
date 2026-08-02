@@ -1,9 +1,30 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import EmojiPicker from '../EmojiPicker.svelte';
 
 describe('EmojiPicker', () => {
+	beforeEach(() => localStorage.clear());
+
+	it('renders sticky group section headers in the all view', () => {
+		render(EmojiPicker, { props: { onselect: vi.fn(), onclose: vi.fn() } });
+		const matches = screen.getAllByText('smileys & emotion');
+		expect(matches.length).toBeGreaterThanOrEqual(2);
+	});
+
+	it(
+		'persists picked emojis to localStorage and shows a recent row',
+		{ timeout: 20000 },
+		async () => {
+			const onselect = vi.fn();
+			render(EmojiPicker, { props: { onselect, onclose: vi.fn() } });
+			await fireEvent.click(screen.getByTitle('grinning face'));
+			expect(onselect).toHaveBeenCalledWith('😀');
+			expect(localStorage.getItem('x2:recent_emojis')).toContain('😀');
+			expect(screen.getByRole('button', { name: /recent grinning face/ })).toBeInTheDocument();
+		}
+	);
+
 	it('calls onselect with the emoji character when one is clicked', async () => {
 		const onselect = vi.fn();
 		render(EmojiPicker, { props: { onselect, onclose: vi.fn() } });
