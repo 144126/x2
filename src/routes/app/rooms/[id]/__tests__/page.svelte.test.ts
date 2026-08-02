@@ -279,6 +279,37 @@ describe('replying', () => {
 	});
 });
 
+describe('reply privately', () => {
+	function renderWith(messages: Message[]) {
+		render(Page, {
+			props: {
+				data: {
+					user: { id: 'me', username: 'me' },
+					g: { ...g, members: ['me'] } as GroupView,
+					messages,
+					names: { me: 'Me', bob: 'Bob' },
+					muted: false
+				}
+			}
+		});
+	}
+
+	it('navigates to a private chat with the author and the message id as reply param', async () => {
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi bob', d: 100 }
+		]);
+		await fireEvent.click(screen.getByRole('button', { name: 'reply privately' }));
+		expect(goto).toHaveBeenCalledWith('/app/chat/bob?reply=m1');
+	});
+
+	it('is absent on the current user\'s own messages', () => {
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'me', t: '', gr: 'g1', x: 'hi me', d: 100 }
+		]);
+		expect(screen.queryByRole('button', { name: 'reply privately' })).toBeNull();
+	});
+});
+
 describe('reactions', () => {
 	function renderWith(messages: Message[]) {
 		render(Page, {

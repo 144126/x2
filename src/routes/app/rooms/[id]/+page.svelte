@@ -649,6 +649,14 @@
 						onclick={() => startReply(m)}
 						>reply</button
 					>
+					{#if m.f !== me}
+						<button
+							type="button"
+							class="text-[11px] text-faint hover:text-accent"
+							onclick={() => goto(`/app/chat/${m.f}?reply=${m.id}`)}
+							>reply privately</button
+						>
+					{/if}
 					<button
 						type="button"
 						class="text-[11px] text-faint hover:text-accent"

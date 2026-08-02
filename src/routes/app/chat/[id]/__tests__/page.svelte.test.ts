@@ -9,7 +9,7 @@ const { wsOnMock, wsSendMock, wsDropMock } = vi.hoisted(() => ({
 	wsDropMock: vi.fn()
 }));
 const { pageStore } = vi.hoisted(() => {
-	let value = { data: { user: { id: 'me' } }, state: {} };
+	let value = { data: { user: { id: 'me' } }, state: {}, url: new URL('http://localhost/app/chat/bob') };
 	const subs = new Set<(v: unknown) => void>();
 	return {
 		pageStore: {
@@ -54,7 +54,7 @@ const data = {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	pageStore.set({ data: { user: { id: 'me' } }, state: {} });
+	pageStore.set({ data: { user: { id: 'me' } }, state: {}, url: new URL('http://localhost/app/chat/bob') });
 	Element.prototype.scrollTo = vi.fn();
 });
 
@@ -120,6 +120,47 @@ describe('replying', () => {
 			expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1')
 		);
 		await vi.waitFor(() => expect(screen.getByText('quoted old text')).toBeInTheDocument());
+	});
+});
+
+describe('reply privately', () => {
+	function renderWith(messages: Record<string, unknown>[], reply: string | null) {
+		pageStore.set({
+			data: { user: { id: 'me' } },
+			state: {},
+			url: new URL(`http://localhost/app/chat/bob${reply ? `?reply=${reply}` : ''}`)
+		});
+		render(Page, { props: { data: { ...data, messages: messages as unknown as Message[] } } });
+	}
+
+	it('pre-populates the reply-preview strip from a message already in the window', async () => {
+		const mockFetch = vi.fn();
+		globalThis.fetch = mockFetch;
+		renderWith([{ id: 'm1', f: 'bob', x: 'private quote', d: 100 }], 'm1');
+		await vi.waitFor(() =>
+			expect(screen.getByLabelText('cancel reply').parentElement!).toHaveTextContent('private quote')
+		);
+		expect(mockFetch).not.toHaveBeenCalled();
+	});
+
+	it('fetches /api/messages/[id] when the quoted message is not in the window', async () => {
+		const mockFetch = vi.fn((url: string) => {
+			if (url === '/api/messages/orig-1') {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ m: { id: 'orig-1', x: 'quoted elsewhere' } })
+				});
+			}
+			return Promise.resolve({ ok: true, json: () => Promise.resolve({ m: null }) });
+		});
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+		renderWith([], 'orig-1');
+		await vi.waitFor(() =>
+			expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1')
+		);
+		await vi.waitFor(() =>
+			expect(screen.getByLabelText('cancel reply').parentElement!).toHaveTextContent('quoted elsewhere')
+		);
 	});
 });
 

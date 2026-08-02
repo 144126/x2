@@ -375,7 +375,18 @@
 		unsub?.();
 	});
 
-	onMount(() => connect());
+	onMount(async () => {
+		const replyId = $page.url.searchParams.get('reply');
+		if (replyId) {
+			const local = messages.find((e) => e.id === replyId);
+			if (local) replyTo = local;
+			else {
+				const res = await fetch(`/api/messages/${replyId}`).catch(() => null);
+				if (res?.ok) replyTo = (await res.json()).m;
+			}
+		}
+		connect();
+	});
 </script>
 
 <section class="chat mx-auto flex h-[calc(100dvh-var(--chrome))] max-w-[760px] flex-col">
