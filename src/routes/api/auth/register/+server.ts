@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
-import { create_pw_user, get_user } from '$lib/server/user';
+import { create_pw_user, get_user, find_user_by_email } from '$lib/server/user';
 import { uuid_from } from '$lib/server/qdrant';
 import { attribute_referral, ensure_partner_code } from '$lib/server/partner';
 import { encode_session } from '$lib/server/session';
@@ -13,6 +13,10 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	if (!e || !p || p.length < 6) throw error(400, 'email + password(>=6) required');
 
 	const id = await uuid_from(e);
+	const linked_elsewhere = await find_user_by_email(env, e);
+	if (linked_elsewhere && linked_elsewhere.id !== id) {
+		throw error(409, 'email already in use — log in instead');
+	}
 	const existed = !!(await get_user(env, id));
 	await create_pw_user(env, e, p);
 

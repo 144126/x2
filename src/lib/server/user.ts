@@ -1,6 +1,6 @@
 import type { User } from '../types';
 export type { User }; // re-export so device.ts can type its returns
-import { ensure, upsert, retrieve_one, retrieve_many, uuid_from, ZV, V, type QEnv } from './qdrant';
+import { ensure, upsert, retrieve_one, retrieve_many, uuid_from, scroll, f, f_or, eq, ZV, V, type QEnv } from './qdrant';
 import { validate_username, available_username } from './username';
 import { hash_pw, verify_pw } from './pw';
 
@@ -50,6 +50,23 @@ export function is_device_only(u: Pick<User, 'h' | 'o'>): boolean {
 	return !u.h && u.o !== 'google';
 }
 
+export async function find_user_by_email(env: QEnv, email: string): Promise<(User & { id: string }) | null> {
+	await ensure(env);
+	const pts = await scroll(env, f(eq('s', 'u'), eq('m', email)), 1);
+	const p = pts[0];
+	return p ? { ...(p.payload as unknown as User), id: String(p.id) } : null;
+}
+
+export async function find_user_by_google_sub(
+	env: QEnv,
+	sub: string
+): Promise<(User & { id: string }) | null> {
+	await ensure(env);
+	const pts = await scroll(env, f_or([eq('s', 'u')], [eq('g', sub), eq('gl', sub)]), 1);
+	const p = pts[0];
+	return p ? { ...(p.payload as unknown as User), id: String(p.id) } : null;
+}
+
 /** merges `patch` onto a user's record, preserving their existing search embedding */
 export async function patch_user(
 	env: QEnv,
@@ -93,10 +110,12 @@ export async function verify_user_pw(
 	env: QEnv,
 	email: string,
 	password: string
-): Promise<User | null> {
-	const u = await get_user(env, await uuid_from(email));
+): Promise<(User & { id: string }) | null> {
+	const found = await find_user_by_email(env, email);
+	const id = found ? found.id : await uuid_from(email);
+	const u = found ?? (await get_user(env, id));
 	if (!u || u.o !== 'local' || !u.h) return null;
-	return (await verify_pw(password, u.h)) ? u : null;
+	return (await verify_pw(password, u.h)) ? { ...u, id } : null;
 }
 
 /** username for display — the only user-facing identity. */

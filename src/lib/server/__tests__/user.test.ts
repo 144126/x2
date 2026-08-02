@@ -20,7 +20,7 @@ vi.mock('../qdrant', async () => {
 	};
 });
 
-import { save_user, get_user, create_pw_user, verify_user_pw, patch_user, get_user_names } from '../user';
+import { save_user, get_user, create_pw_user, verify_user_pw, patch_user, get_user_names, find_user_by_email, find_user_by_google_sub } from '../user';
 import { uuid_from, ZV, V } from '../qdrant';
 import { hash_pw } from '../pw';
 
@@ -107,6 +107,39 @@ describe('create_pw_user', () => {
 	});
 });
 
+describe('find_user_by_email', () => {
+	it('returns null when no account carries that email', async () => {
+		scrollMock.mockResolvedValue([]);
+		expect(await find_user_by_email(ENV, 'nobody@x.com')).toBeNull();
+	});
+
+	it('returns the record and its point id when an account carries that email', async () => {
+		scrollMock.mockResolvedValue([{ id: 'dev-uid', payload: { s: 'u', m: 'e@x.com', u: 'ada' } }]);
+		const found = await find_user_by_email(ENV, 'e@x.com');
+		expect(found?.id).toBe('dev-uid');
+		expect(found?.m).toBe('e@x.com');
+	});
+});
+
+describe('find_user_by_google_sub', () => {
+	it('returns null when no account carries that sub', async () => {
+		scrollMock.mockResolvedValue([]);
+		expect(await find_user_by_google_sub(ENV, 'sub-1')).toBeNull();
+	});
+
+	it('finds a pure google account by its g anchor', async () => {
+		scrollMock.mockResolvedValue([{ id: 'gid', payload: { s: 'u', g: 'sub-1', u: 'ada' } }]);
+		const found = await find_user_by_google_sub(ENV, 'sub-1');
+		expect(found?.id).toBe('gid');
+	});
+
+	it('finds a linked account by its gl field', async () => {
+		scrollMock.mockResolvedValue([{ id: 'dev-uid', payload: { s: 'u', g: 'device-xyz', gl: 'sub-2', u: 'ada' } }]);
+		const found = await find_user_by_google_sub(ENV, 'sub-2');
+		expect(found?.id).toBe('dev-uid');
+	});
+});
+
 describe('verify_user_pw', () => {
 	it('returns the user on a correct password', async () => {
 		const h = await hash_pw('hunter22');
@@ -116,6 +149,27 @@ describe('verify_user_pw', () => {
 		});
 		const u = await verify_user_pw(ENV, 'e@x.com', 'hunter22');
 		expect(u?.m).toBe('e@x.com');
+	});
+
+	it('resolves a linked-from-device account by email index, at its real id, not uuid_from(email)', async () => {
+		const h = await hash_pw('hunter22');
+		scrollMock.mockResolvedValue([
+			{ id: 'dev-uid', payload: { s: 'u', o: 'local', h, m: 'e@x.com', u: 'ada' } }
+		]);
+		const u = await verify_user_pw(ENV, 'e@x.com', 'hunter22');
+		expect(u?.id).toBe('dev-uid');
+		expect(u?.id).not.toBe(await uuid_from('e@x.com'));
+	});
+
+	it('still verifies a pre-existing pure-password account via the legacy derived-id path', async () => {
+		const h = await hash_pw('hunter22');
+		scrollMock.mockResolvedValue([]);
+		retrieveOneMock.mockResolvedValue({
+			id: await uuid_from('e@x.com'),
+			payload: { s: 'u', o: 'local', h, m: 'e@x.com', u: 'ada' }
+		});
+		const u = await verify_user_pw(ENV, 'e@x.com', 'hunter22');
+		expect(u?.id).toBe(await uuid_from('e@x.com'));
 	});
 
 	it('returns null on a wrong password', async () => {

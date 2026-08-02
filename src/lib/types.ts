@@ -6,6 +6,7 @@ export interface User {
 	m?: string; // email
 	d: number; // created ts
 	o?: 'google' | 'local' | 'device'; // provider — 'device' means created implicitly, no password or google link yet
+	gl?: string; // linked google sub — set when a device/local account later links Google, distinct from g (fixed at creation, used to derive id)
 	h?: string; // pw hash (local only)
 	// profile
 	u: string; // username (the only user-facing identity)

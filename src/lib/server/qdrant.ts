@@ -116,7 +116,7 @@ type Pt = {
 };
 
 const KEYWORD_KEYS = [
-	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k', 'rs'
+	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k', 'rs', 'm', 'gl'
 ] as const;
 const INT_KEYS = ['ag', 'at', 'sent', 'd'] as const;
 

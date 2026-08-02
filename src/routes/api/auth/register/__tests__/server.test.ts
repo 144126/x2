@@ -6,20 +6,23 @@ const {
 	uuidFromMock,
 	attributeReferralMock,
 	ensurePartnerCodeMock,
-	encodeSessionMock
+	encodeSessionMock,
+	findUserByEmailMock
 } = vi.hoisted(() => ({
 	createPwUserMock: vi.fn(),
 	getUserMock: vi.fn(),
 	uuidFromMock: vi.fn(),
 	attributeReferralMock: vi.fn(),
 	ensurePartnerCodeMock: vi.fn(),
-	encodeSessionMock: vi.fn()
+	encodeSessionMock: vi.fn(),
+	findUserByEmailMock: vi.fn()
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: { SECRET: 's' } }));
 vi.mock('$lib/server/user', () => ({
 	create_pw_user: createPwUserMock,
-	get_user: getUserMock
+	get_user: getUserMock,
+	find_user_by_email: findUserByEmailMock
 }));
 vi.mock('$lib/server/qdrant', () => ({ uuid_from: uuidFromMock }));
 vi.mock('$lib/server/partner', () => ({
@@ -76,5 +79,11 @@ describe('POST /api/auth/register', () => {
 		await POST(event({ e: 'a@x.com', p: 'hunter2' }));
 		expect(attributeReferralMock).not.toHaveBeenCalled();
 		expect(ensurePartnerCodeMock).toHaveBeenCalledWith(expect.anything(), 'new-uid');
+	});
+
+	it('409s when the email is already linked to a different account id', async () => {
+		findUserByEmailMock.mockResolvedValue({ id: 'other-uid', s: 'u', u: 'other', d: 1 });
+		await expect(POST(event({ e: 'a@x.com', p: 'hunter2' }))).rejects.toMatchObject({ status: 409 });
+		expect(createPwUserMock).not.toHaveBeenCalled();
 	});
 });

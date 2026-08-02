@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import { get_secret } from '$lib/server/qdrant';
-import { save_user, get_user } from '$lib/server/user';
+import { save_user, get_user, patch_user, find_user_by_google_sub } from '$lib/server/user';
 import { encode_session } from '$lib/server/session';
 import { uuid_from } from '$lib/server/qdrant';
 import { attribute_referral, ensure_partner_code } from '$lib/server/partner';
@@ -16,7 +16,7 @@ const google_client = async (origin: string) =>
 	);
 
 export const GET: RequestHandler = async ({ url, cookies, locals }) => {
-	if (locals.user) throw redirect(302, '/app');
+	if (locals.user && !locals.user.is_device) throw redirect(302, '/app');
 
 	const code = url.searchParams.get('code');
 	const state = url.searchParams.get('state');
@@ -41,20 +41,37 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 		const gu = (await ures.json()) as { sub: string; picture?: string; email?: string };
 		if (!gu.email) throw error(400, 'email_required');
 
-		const id_preview = await uuid_from(gu.sub);
-		const existed = !!(await get_user(env, id_preview));
-		const id = await save_user(env, gu.sub, gu.picture, gu.email, 'google');
+		let id: string;
+		let username: string;
+		if (locals.user?.is_device) {
+			const updated = await patch_user(env, locals.user.id, {
+				gl: gu.sub,
+				p: gu.picture,
+				m: gu.email,
+				o: 'google'
+			});
+			if (!updated) throw error(404, 'account not found');
+			id = locals.user.id;
+			username = updated.u;
+		} else {
+			const linked = await find_user_by_google_sub(env, gu.sub);
+			const id_preview = linked ? linked.id : await uuid_from(gu.sub);
+			const existed = linked ? true : !!(await get_user(env, id_preview));
+			id = linked ? linked.id : await save_user(env, gu.sub, gu.picture, gu.email, 'google');
+			username = linked ? linked.u : gu.email.split('@')[0].toLowerCase();
 
-		const ref = (cookies.get('ref_code') ?? '').trim();
-		if (!existed && ref) await attribute_referral(env, id, ref);
-		await ensure_partner_code(env, id);
-		cookies.delete('ref_code', { path: '/' });
+			const ref = (cookies.get('ref_code') ?? '').trim();
+			if (!existed && ref) await attribute_referral(env, id, ref);
+			await ensure_partner_code(env, id);
+			cookies.delete('ref_code', { path: '/' });
+		}
 
 		const session = await encode_session(env.SECRET, {
 			id,
-			username: gu.email.split('@')[0].toLowerCase(),
+			username,
 			picture: gu.picture,
-			email: gu.email
+			email: gu.email,
+			is_device: false
 		});
 		cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
 		cookies.delete('oauth_state', { path: '/' });

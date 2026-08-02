@@ -2,7 +2,6 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { verify_user_pw } from '$lib/server/user';
-import { uuid_from } from '$lib/server/qdrant';
 
 import { encode_session } from '$lib/server/session';
 
@@ -15,7 +14,7 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
 	const u = await verify_user_pw(env, e, p);
 	if (!u) throw error(401, 'invalid credentials');
 	const session = await encode_session(env.SECRET, {
-		id: await uuid_from(e),
+		id: u.id,
 		username: u.u,
 		picture: u.p,
 		email: u.m
