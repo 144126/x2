@@ -89,6 +89,12 @@
 			</div>
 		</nav>
 	</header>
+	{#if data.user.is_device}
+		<div class="wrap flex flex-wrap items-center gap-3 border-b border-line bg-accent-soft py-2.5 text-[12.5px] text-ink-soft">
+			<span>you're chatting without an account — link one so you don't lose access.</span>
+			<a href="/app/profile#link-account" class="btn btn-amber ml-auto px-3 py-1 text-[11.5px]">link account</a>
+		</div>
+	{/if}
 {/if}
 
 <main class="wrap pb-24 pt-14 max-sm:pb-[calc(76px+env(safe-area-inset-bottom))] max-sm:pt-8">

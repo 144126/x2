@@ -7,7 +7,9 @@ const { push_state, enable_push, disable_push } = vi.hoisted(() => ({
 	enable_push: vi.fn(),
 	disable_push: vi.fn()
 }));
+const { invalidateAll } = vi.hoisted(() => ({ invalidateAll: vi.fn() }));
 vi.mock('$lib/push-client', () => ({ push_state, enable_push, disable_push }));
+vi.mock('$app/navigation', () => ({ invalidateAll }));
 
 vi.mock('$lib/LocationPicker.svelte', () => ({ default: () => {} }));
 vi.mock('$lib/PhoneInput.svelte', () => ({ default: () => {} }));
@@ -20,12 +22,16 @@ function mockRes(body: Record<string, unknown> = {}) {
 }
 
 const baseData = {
+	id: 'me',
+	geo: null,
 	user: { id: 'me', username: 'testuser' },
 	p: {
 		id: 'me',
 		u: 'testuser',
 		m: 'test@x.com',
 		s: 'u',
+		g: 'me',
+		d: 1,
 		co: '',
 		st: '',
 		ci: '',
@@ -33,12 +39,19 @@ const baseData = {
 		r: '',
 		w: ''
 	},
-	partner_code: null,
+	partner_code: '',
 	mutes: [] as { target: string; kind: 'u' | 'r'; until: number; name: string }[]
 };
 
 function data(over: Record<string, unknown> = {}) {
-	return { ...baseData, ...over };
+	return { ...baseData, ...over } as unknown as {
+		user: { id: string; username: string; is_device?: boolean } | null;
+		id: string;
+		p: { s: 'u'; g: string; d: number; u: string; m?: string; [k: string]: unknown };
+		partner_code: string;
+		geo: { country: string | null; region: string | null; region_name: string | null; city: string | null; tz: string | null } | null;
+		mutes: { target: string; kind: 'u' | 'r'; until: number; name: string }[];
+	};
 }
 
 beforeEach(() => {
@@ -48,7 +61,7 @@ beforeEach(() => {
 	disable_push.mockResolvedValue(true);
 	globalThis.fetch = vi.fn((url: string) =>
 		Promise.resolve(url === '/api/push' ? mockRes({ key: 'vapid-key' }) : mockRes({ balance: 0 }))
-	);
+	) as unknown as typeof fetch;
 	Object.defineProperty(navigator, 'serviceWorker', {
 		value: { ready: Promise.resolve({}) },
 		writable: true
@@ -156,5 +169,68 @@ describe('profile notification settings', () => {
 		push_state.mockResolvedValue('unsupported');
 		render(Page, { props: { data: data() } });
 		expect(await screen.findByText(/notifications are not supported/i)).toBeInTheDocument();
+	});
+});
+
+describe('link-account section', () => {
+	function renderDevice() {
+		render(Page, {
+			props: {
+				data: data({
+					id: 'me',
+					geo: null,
+					user: { id: 'me', username: 'testuser', is_device: true }
+				})
+			}
+		});
+	}
+
+	it('renders the section only for a device-provenance user', () => {
+		render(Page, { props: { data: data() } });
+		expect(screen.queryByText('link your account')).toBeNull();
+		renderDevice();
+		expect(screen.getByText('link your account')).toBeInTheDocument();
+	});
+
+	it('offers google linking straight to the oauth start leg', () => {
+		renderDevice();
+		const link = screen.getByRole('link', { name: /continue with google/ });
+		expect(link).toHaveAttribute('href', '/google');
+	});
+
+	it('submitting the password form POSTs /api/auth/set-password with the typed credentials', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ balance: 0 }) });
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+		renderDevice();
+		await fireEvent.input(screen.getByPlaceholderText('email'), { target: { value: 'e@x.com' } });
+		await fireEvent.input(screen.getByPlaceholderText(/password/), { target: { value: 'hunter22' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'set password' }));
+		await waitFor(() =>
+			expect(mockFetch).toHaveBeenCalledWith('/api/auth/set-password', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ email: 'e@x.com', password: 'hunter22' })
+			})
+		);
+	});
+
+	it('shows the already-in-use message on a 409 and never claims success', async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 409 }) as unknown as typeof fetch;
+		renderDevice();
+		await fireEvent.input(screen.getByPlaceholderText('email'), { target: { value: 'e@x.com' } });
+		await fireEvent.input(screen.getByPlaceholderText(/password/), { target: { value: 'hunter22' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'set password' }));
+		expect(await screen.findByText(/already in use/)).toBeInTheDocument();
+		expect(screen.queryByText(/linked — you can now log in/)).toBeNull();
+	});
+
+	it('shows the success message and invalidates the load on a 200', async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ balance: 0 }) }) as unknown as typeof fetch;
+		renderDevice();
+		await fireEvent.input(screen.getByPlaceholderText('email'), { target: { value: 'e@x.com' } });
+		await fireEvent.input(screen.getByPlaceholderText(/password/), { target: { value: 'hunter22' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'set password' }));
+		expect(await screen.findByText(/linked — you can now log in/)).toBeInTheDocument();
+		await waitFor(() => expect(invalidateAll).toHaveBeenCalledTimes(1));
 	});
 });

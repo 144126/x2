@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
+import { onMount } from 'svelte';
+import { invalidateAll } from '$app/navigation';
+import { page } from '$app/state';
 	import type { User } from '$lib/types';
 	import LocationPicker from '$lib/LocationPicker.svelte';
 	import PhoneInput from '$lib/PhoneInput.svelte';
@@ -63,6 +64,33 @@
 	let saved = $state(false);
 	let locating = $state(false);
 	let locationWarning = $state<string | null>(null);
+
+	let linkEmail = $state('');
+	let linkPassword_ = $state('');
+	let linking = $state(false);
+	let linkError = $state('');
+	let linkOk = $state(false);
+
+	async function linkPassword() {
+		linkError = '';
+		linkOk = false;
+		linking = true;
+		const res = await fetch('/api/auth/set-password', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ email: linkEmail, password: linkPassword_ })
+		});
+		linking = false;
+		if (res.ok) {
+			linkOk = true;
+			linkPassword_ = '';
+			await invalidateAll();
+		} else if (res.status === 409) {
+			linkError = 'that email is already in use — try logging in instead.';
+		} else {
+			linkError = 'could not link — check your email and try again.';
+		}
+	}
 
 	$effect(() => {
 		if (data.geo) {
@@ -324,5 +352,29 @@
 			</p>
 			<p class="mt-2 text-[12px] text-mute">code · {data.partner_code}</p>
 		</div>
+	{/if}
+
+	{#if data.user?.is_device}
+		<section id="link-account" class="mt-10 border-t border-line pt-8">
+			<div class="eyebrow">link your account</div>
+			<p class="mt-2 text-[13.5px] text-ink-soft">
+				you're on a temporary account tied to this device. link google or set a password so you can log in from anywhere and never lose your rooms.
+			</p>
+			<a href="/google" class="btn btn-amber mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px]">
+				continue with google
+			</a>
+			<form
+				class="mt-4 flex max-w-[360px] flex-col gap-2"
+				onsubmit={(e) => (e.preventDefault(), linkPassword())}
+			>
+				<input type="email" bind:value={linkEmail} placeholder="email" />
+				<input type="password" bind:value={linkPassword_} placeholder="password (min 6 characters)" minlength="6" />
+				<button class="btn px-4 py-2 text-[13px]" type="submit" disabled={linking}>
+					{linking ? 'saving…' : 'set password'}
+				</button>
+				{#if linkError}<p class="text-[13px] text-red-400">{linkError}</p>{/if}
+				{#if linkOk}<p class="text-[13px] text-accent">linked — you can now log in from any device.</p>{/if}
+			</form>
+		</section>
 	{/if}
 </section>

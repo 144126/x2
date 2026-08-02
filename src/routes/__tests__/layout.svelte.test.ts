@@ -81,3 +81,28 @@ describe('bottom nav', () => {
 		expect(logo).toHaveAttribute('href', '/app/rooms');
 	});
 });
+
+describe('device-account upgrade banner', () => {
+	it('shows the banner with a link-account anchor for a device-only user', () => {
+		render(Layout, {
+			props: { data: { user: { ...fakeUser, is_device: true } }, children: (() => '') as unknown as Snippet }
+		});
+		expect(screen.getByText(/chatting without an account/)).toBeInTheDocument();
+		const link = screen.getByRole('link', { name: 'link account' });
+		expect(link).toHaveAttribute('href', '/app/profile#link-account');
+	});
+
+	it('hides the banner for a fully linked user', () => {
+		render(Layout, {
+			props: { data: { user: fakeUser }, children: (() => '') as unknown as Snippet }
+		});
+		expect(screen.queryByText(/chatting without an account/)).toBeNull();
+	});
+
+	it('hides the banner when signed out', () => {
+		render(Layout, {
+			props: { data: { user: null }, children: (() => '') as unknown as Snippet }
+		});
+		expect(screen.queryByText(/chatting without an account/)).toBeNull();
+	});
+});
