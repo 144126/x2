@@ -13,6 +13,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"dev:ws": "wrangler dev -c ws/wrangler.jsonc",
+		"dev:all": "node scripts/dev-all.mjs",
 		"dev:full": "vite build && wrangler dev -c wrangler.jsonc -c ws/wrangler.jsonc --port 4173",
 		"build": "vite build",
 		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js --port 4173",
