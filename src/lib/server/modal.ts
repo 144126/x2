@@ -6,7 +6,7 @@ import type { Message } from '../types';
 export const MODAL_KOBO_PER_SEC = 278.1;
 export const MODAL_START_HOLD_KOBO = 5000;
 export const MODAL_MAX_SECONDS = 60;
-export const MODAL_MODEL = 'qwen3.6-35b';
+export const MODAL_MODEL = 'gemma-4-26b-a4b-it';
 
 let endpoint_url: string | null = null;
 

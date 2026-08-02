@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { modal_cost_kobo, serialize_thread, MODAL_KOBO_PER_SEC } from '../modal';
+import { modal_cost_kobo, serialize_thread, MODAL_KOBO_PER_SEC, MODAL_MODEL } from '../modal';
 import type { Message } from '../../types';
+
+describe('MODAL_MODEL', () => {
+	it('is pinned to gemma-4-26b-a4b-it', () => {
+		expect(MODAL_MODEL).toBe('gemma-4-26b-a4b-it');
+	});
+});
 
 describe('modal_cost_kobo', () => {
 	it('rounds seconds to kobo', () => {
