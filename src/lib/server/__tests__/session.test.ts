@@ -6,7 +6,8 @@ const USER: SessionUser = {
 	id: 'uid-1',
 	username: 'ada',
 	picture: 'pic.png',
-	email: 'ada@example.com'
+	email: 'ada@example.com',
+	is_device: false
 };
 
 afterEach(() => {
@@ -18,7 +19,7 @@ describe('encode_session / decode_session', () => {
 		const token = await encode_session(SECRET, USER);
 		const decoded = await decode_session(SECRET, token);
 		expect(decoded).not.toBeNull();
-		expect(decoded!.user).toEqual(USER);
+		expect(decoded!.user).toEqual({ ...USER, is_device: false });
 		expect(decoded!.v).toBe(0);
 	});
 
@@ -35,6 +36,16 @@ describe('encode_session / decode_session', () => {
 		expect(decoded!.user.username).toBe('no_extras');
 		expect(decoded!.user.picture).toBeUndefined();
 		expect(decoded!.user.email).toBeUndefined();
+		expect(decoded!.user.is_device).toBe(false);
+	});
+
+	it('round-trips is_device through encode/decode', async () => {
+		const token = await encode_session(SECRET, { ...USER, is_device: true });
+		const decoded = await decode_session(SECRET, token);
+		expect(decoded!.user.is_device).toBe(true);
+		const token2 = await encode_session(SECRET, { ...USER, is_device: false });
+		const decoded2 = await decode_session(SECRET, token2);
+		expect(decoded2!.user.is_device).toBe(false);
 	});
 
 	it('rejects a token signed with a different secret', async () => {

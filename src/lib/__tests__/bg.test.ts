@@ -8,7 +8,7 @@ import { handle } from '../../hooks.server';
 const run = async (platform: unknown) => {
 	let captured: App.Locals['bg'] | undefined;
 	const event = {
-		cookies: { get: () => undefined, delete: () => {} },
+		cookies: { get: () => undefined, set: () => {}, delete: () => {} },
 		locals: {} as App.Locals,
 		platform,
 		url: new URL('https://x/')

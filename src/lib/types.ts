@@ -5,7 +5,7 @@ export interface User {
 	p?: string; // picture
 	m?: string; // email
 	d: number; // created ts
-	o?: 'google' | 'local'; // provider
+	o?: 'google' | 'local' | 'device'; // provider — 'device' means created implicitly, no password or google link yet
 	h?: string; // pw hash (local only)
 	// profile
 	u: string; // username (the only user-facing identity)

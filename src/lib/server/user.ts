@@ -1,4 +1,5 @@
 import type { User } from '../types';
+export type { User }; // re-export so device.ts can type its returns
 import { ensure, upsert, retrieve_one, retrieve_many, uuid_from, ZV, V, type QEnv } from './qdrant';
 import { validate_username, available_username } from './username';
 import { hash_pw, verify_pw } from './pw';
@@ -20,7 +21,7 @@ export async function save_user(
 	sub: string,
 	picture?: string,
 	email?: string,
-	provider: 'google' | 'local' = 'google'
+	provider: 'google' | 'local' | 'device' = 'google'
 ): Promise<string> {
 	await ensure(env);
 	const id = await uuid_from(sub);
@@ -43,6 +44,10 @@ export async function save_user(
 export async function get_user(env: QEnv, id: string): Promise<User | null> {
 	const p = (await retrieve_one(env, id))?.payload as unknown as User | undefined;
 	return p?.s === 'u' ? p : null;
+}
+
+export function is_device_only(u: Pick<User, 'h' | 'o'>): boolean {
+	return !u.h && u.o !== 'google';
 }
 
 /** merges `patch` onto a user's record, preserving their existing search embedding */

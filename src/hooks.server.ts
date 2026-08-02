@@ -24,6 +24,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	event.locals.x2_ws = x2_ws ?? devFetcher();
 
+	let device_id = event.cookies.get('device_id');
+	if (!device_id) {
+		device_id = crypto.randomUUID();
+		event.cookies.set('device_id', device_id, {
+			path: '/',
+			httpOnly: true,
+			maxAge: 60 * 60 * 24 * 400,
+			sameSite: 'lax'
+		});
+	}
+	event.locals.device_id = device_id;
+
 	const session_id = event.cookies.get('session');
 	event.locals.user = null;
 	if (session_id && x2_ws) {

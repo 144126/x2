@@ -23,7 +23,8 @@ declare global {
 		}
 
 interface Locals {
-		user?: { id: string; username: string; picture?: string; email?: string } | null;
+		user?: { id: string; username: string; picture?: string; email?: string; is_device?: boolean } | null;
+		device_id?: string;
 		x2_ws: Fetcher;
 		geo: Geo | null;
 		/**

@@ -17,7 +17,7 @@ function event(platform?: unknown, session?: string) {
 	return {
 		event: {
 			request: new Request('https://x/'),
-			cookies: { get: vi.fn(() => session ?? null), delete: vi.fn() },
+			cookies: { get: vi.fn(() => session ?? null), set: vi.fn(), delete: vi.fn() },
 			locals: {} as Record<string, unknown>,
 			platform
 		} as unknown as Parameters<typeof handle>[0]['event'],

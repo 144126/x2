@@ -8,7 +8,7 @@ export async function get_key(secret: string): Promise<CryptoKey> {
 	]);
 }
 
-export type SessionUser = { id: string; username: string; picture?: string; email?: string; v?: number };
+export type SessionUser = { id: string; username: string; picture?: string; email?: string; v?: number; is_device?: boolean };
 export type DecodedSession = { user: SessionUser; v: number };
 
 export async function encode_session(secret: SecretVal, data: SessionUser): Promise<string> {
@@ -18,6 +18,7 @@ export async function encode_session(secret: SecretVal, data: SessionUser): Prom
 		p: data.picture,
 		m: data.email,
 		v: data.v ?? 0,
+		dv: data.is_device ? 1 : 0,
 		e: Date.now() + 604800000
 	};
 	const raw = b64u(new TextEncoder().encode(JSON.stringify(p)));
@@ -40,7 +41,7 @@ export async function decode_session(
 		if (!valid) return null;
 		const p = JSON.parse(new TextDecoder().decode(unb64u(raw)));
 		if (p.e < Date.now()) return null;
-		return { user: { id: p.u, username: p.n, picture: p.p, email: p.m }, v: p.v ?? 0 };
+		return { user: { id: p.u, username: p.n, picture: p.p, email: p.m, is_device: !!p.dv }, v: p.v ?? 0 };
 	} catch {
 		return null;
 	}
