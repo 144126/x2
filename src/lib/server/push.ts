@@ -167,23 +167,25 @@ export function push_topic(conv: string): string {
 }
 
 export function clamp_payload(obj: Record<string, unknown>): string {
+	const bytes = (s: string): number => new TextEncoder().encode(s).length;
 	let out = JSON.stringify(obj);
-	if (out.length <= MAX_PLAINTEXT) return out;
+	if (bytes(out) <= MAX_PLAINTEXT) return out;
 	const body = typeof obj.body === 'string' ? obj.body : '';
-	const overhead = out.length - body.length;
-	// '…' is 3 UTF-8 bytes but 1 JS string unit — leave slack since encrypt_payload
-	// measures UTF-8 byte length, not JS string length.
-	let budget = MAX_PLAINTEXT - overhead - 8;
+	const overhead = bytes(JSON.stringify({ ...obj, body: '' }));
+	// '…' costs 3 UTF-8 bytes plus the closing quote; budget is a BYTE budget now
+	let budget = MAX_PLAINTEXT - overhead - 4;
 	if (budget < 0) budget = 0;
-	out = JSON.stringify({ ...obj, body: body.slice(0, budget) + '…' });
-	if (out.length <= MAX_PLAINTEXT) return out;
-	// an oversized non-body field: fall back to truncating the whole serialization's fields
+	let sliced = body.slice(0, Math.min(body.length, budget));
+	while (sliced && bytes(sliced) > budget) sliced = sliced.slice(0, -1);
+	out = JSON.stringify({ ...obj, body: sliced + '…' });
+	if (bytes(out) <= MAX_PLAINTEXT) return out;
+	// an oversized non-body field: truncate every long string field to 200 bytes
 	const shrunk: Record<string, unknown> = {};
 	for (const [k, v] of Object.entries(obj)) {
-		shrunk[k] = typeof v === 'string' && v.length > 200 ? v.slice(0, 200) + '…' : v;
+		shrunk[k] = typeof v === 'string' && bytes(v) > 200 ? v.slice(0, 200) + '…' : v;
 	}
 	out = JSON.stringify(shrunk);
-	return out.length <= MAX_PLAINTEXT ? out : out.slice(0, MAX_PLAINTEXT);
+	return bytes(out) <= MAX_PLAINTEXT ? out : out.slice(0, MAX_PLAINTEXT);
 }
 
 export async function send_push(

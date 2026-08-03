@@ -31,3 +31,6 @@ env.DEV_SECRET ("(hidden)")                                              Environ
 [wrangler:info] Ready on http://localhost:8787
 ⎔ Reloading local server...
 ⎔ Local server updated and ready
+[wrangler:info] GET /ws 101 Switching Protocols (13ms)
+[wrangler:info] GET /ws 101 Switching Protocols (18ms)
+[wrangler:info] GET /ws 101 Switching Protocols (14ms)
