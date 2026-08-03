@@ -5,9 +5,14 @@ let cached: CryptoKey | null = null;
 async function aes_key(env: QEnv & { MESSAGE_ENC_KEY?: SecretVal }): Promise<CryptoKey> {
 	if (cached) return cached;
 	const raw = await get_secret(env.MESSAGE_ENC_KEY);
+	if (!raw) throw new Error('MESSAGE_ENC_KEY unset — cannot encrypt message text');
 	const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
 	cached = await crypto.subtle.importKey('raw', bytes, 'AES-GCM', false, ['encrypt', 'decrypt']);
 	return cached;
+}
+
+export function __reset_msg_crypto(): void {
+	cached = null;
 }
 
 export async function encrypt_text(env: QEnv, text: string): Promise<string> {
