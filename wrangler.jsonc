@@ -75,6 +75,11 @@
 			"binding": "VAPID_SUBJECT",
 			"store_id": "45748cb1c67946df943075fa14cb8815",
 			"secret_name": "VAPID_SUBJECT"
+		},
+		{
+			"binding": "MESSAGE_ENC_KEY",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "MESSAGE_ENC_KEY"
 		}
 	],
 	// WS_ORIGIN: the deployed x2-ws worker's public origin. Committed here (not left blank and
