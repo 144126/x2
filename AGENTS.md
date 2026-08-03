@@ -9,6 +9,7 @@ Global conventions live in `~/.agents/AGENTS.md`. This file holds only what is s
 - Collections run `strict_mode`: filtering on an unindexed payload key is rejected outright. Add the index in the same change that adds the filter, or the query silently returns nothing.
 - `src/lib/server/qdrant.ts` swallows errors on reads (`scroll`/`search`/`retrieve_one` — `.catch(() => [])`), so an empty result never distinguishes "no data" from "Qdrant unreachable" — never conclude "no data" without checking the write path. Writes (`upsert`/`remove`/`update_vectors`/`set_payload`) reject on failure since `surface_write_failures`; callers must handle that (`/api/send` turns it into a 503).
 - Vectors are named (`V = 't'` in qdrant.ts) since `named_vector_migration`: a point may omit its vector entirely (`vector: {}`) at zero storage/index cost. Never write a bare unnamed array — Qdrant 400s "Not existing vector name" against this collection.
+- The ChatHub conv index (convs on /app/chats) is a DERIVED CACHE written only at send/relay time — legacy `s='x'` matches and lost DO storage leave a genuinely-empty index despite real messages. Rebuild it with `node scripts/backfill-conv-index.mjs` (needs QDRANT_URL/QDRANT_KEY, `--dry-run` first). Unlike `qdrant.ts` reads, `hub_convs` now THROWS `ChatHubError` (`network`/`http_<status>`/`bad_shape`) instead of returning `[]` — loaders must surface that as an unavailable banner, never as "no conversations".
 
 ## Status values
 

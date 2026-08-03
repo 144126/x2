@@ -1,15 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { sendMsgMock, sendGroupMsgMock, getGroupMock, isMemberMock, saveScheduledMock, guardMock, ensureDeviceSessionMock } =
-	vi.hoisted(() => ({
-		sendMsgMock: vi.fn(),
-		sendGroupMsgMock: vi.fn(),
-		getGroupMock: vi.fn(),
-		isMemberMock: vi.fn(),
-		saveScheduledMock: vi.fn(),
-		guardMock: vi.fn(),
-		ensureDeviceSessionMock: vi.fn()
-	}));
+const {
+	sendMsgMock,
+	sendGroupMsgMock,
+	getGroupMock,
+	isMemberMock,
+	saveScheduledMock,
+	guardMock,
+	ensureDeviceSessionMock
+} = vi.hoisted(() => ({
+	sendMsgMock: vi.fn(),
+	sendGroupMsgMock: vi.fn(),
+	getGroupMock: vi.fn(),
+	isMemberMock: vi.fn(),
+	saveScheduledMock: vi.fn(),
+	guardMock: vi.fn(),
+	ensureDeviceSessionMock: vi.fn()
+}));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/chat', async () => {
@@ -102,7 +109,15 @@ describe('POST /api/send — anonymous device send', () => {
 		const res = await POST(event({ to: 'bob', text: 'hi' }, null));
 		expect(res.status).toBe(200);
 		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'dev1', 'bob', 'hi', undefined, undefined, undefined, undefined, undefined
+			expect.anything(),
+			'dev1',
+			'bob',
+			'hi',
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined
 		);
 		expect(guardMock).toHaveBeenCalledWith(undefined, 'RL_SEND', 'dev1');
 	});
@@ -128,24 +143,47 @@ describe('POST /api/send — validation', () => {
 
 	it('accepts a sticker-only body (no text/image/file)', async () => {
 		sendMsgMock.mockResolvedValue({
-			id: 'm1', f: 'ada', t: 'bob', x: '', sk: 'wave', d: 1_700_000_000_000
+			id: 'm1',
+			f: 'ada',
+			t: 'bob',
+			x: '',
+			sk: 'wave',
+			d: 1_700_000_000_000
 		});
 		const body = await (await POST(event({ to: 'bob', sticker: 'wave' }))).json();
 		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'bob', '', undefined, undefined, undefined, 'wave', undefined
+			expect.anything(),
+			'ada',
+			'bob',
+			'',
+			undefined,
+			undefined,
+			undefined,
+			'wave',
+			undefined
 		);
 		expect(body.m).toMatchObject({ sk: 'wave' });
 	});
 
 	it('threads sticker into send_group_msg on a group send', async () => {
 		sendGroupMsgMock.mockResolvedValue({
-			id: 'm2', f: 'ada', x: '', sk: 'heart-eyes', d: 1_700_000_000_000
+			id: 'm2',
+			f: 'ada',
+			x: '',
+			sk: 'heart-eyes',
+			d: 1_700_000_000_000
 		});
-		const body = await (
-			await POST(event({ group: 'g1', sticker: 'heart-eyes' }))
-		).json();
+		const body = await (await POST(event({ group: 'g1', sticker: 'heart-eyes' }))).json();
 		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'g1', '', undefined, undefined, undefined, 'heart-eyes', undefined
+			expect.anything(),
+			'ada',
+			'g1',
+			'',
+			undefined,
+			undefined,
+			undefined,
+			'heart-eyes',
+			undefined
 		);
 		expect(body.m).toMatchObject({ sk: 'heart-eyes' });
 	});
@@ -223,26 +261,47 @@ describe('POST /api/send — response shape', () => {
 
 	it('threads reply_to into send_msg and returns rp on a 1:1 send', async () => {
 		sendMsgMock.mockResolvedValue({
-			id: 'm1', f: 'ada', t: 'bob', x: 'hi', rp: 'orig-1', d: 1_700_000_000_000
+			id: 'm1',
+			f: 'ada',
+			t: 'bob',
+			x: 'hi',
+			rp: 'orig-1',
+			d: 1_700_000_000_000
 		});
-		const body = await (
-			await POST(event({ to: 'bob', text: 'hi', reply_to: 'orig-1' }))
-		).json();
+		const body = await (await POST(event({ to: 'bob', text: 'hi', reply_to: 'orig-1' }))).json();
 		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, 'orig-1', undefined, undefined
+			expect.anything(),
+			'ada',
+			'bob',
+			'hi',
+			undefined,
+			undefined,
+			'orig-1',
+			undefined,
+			undefined
 		);
 		expect(body.m).toMatchObject({ rp: 'orig-1' });
 	});
 
 	it('threads reply_to into send_group_msg and returns rp on a group send', async () => {
 		sendGroupMsgMock.mockResolvedValue({
-			id: 'm2', f: 'ada', x: 'hi', rp: 'orig-2', d: 1_700_000_000_000
+			id: 'm2',
+			f: 'ada',
+			x: 'hi',
+			rp: 'orig-2',
+			d: 1_700_000_000_000
 		});
-		const body = await (
-			await POST(event({ group: 'g1', text: 'hi', reply_to: 'orig-2' }))
-		).json();
+		const body = await (await POST(event({ group: 'g1', text: 'hi', reply_to: 'orig-2' }))).json();
 		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, 'orig-2', undefined, undefined
+			expect.anything(),
+			'ada',
+			'g1',
+			'hi',
+			undefined,
+			undefined,
+			'orig-2',
+			undefined,
+			undefined
 		);
 		expect(body.m).toMatchObject({ rp: 'orig-2' });
 	});
@@ -254,26 +313,47 @@ describe('POST /api/send — response shape', () => {
 
 	it('threads forwarded into send_msg and returns fw on a 1:1 send', async () => {
 		sendMsgMock.mockResolvedValue({
-			id: 'm1', f: 'ada', t: 'bob', x: 'hi', fw: true, d: 1_700_000_000_000
+			id: 'm1',
+			f: 'ada',
+			t: 'bob',
+			x: 'hi',
+			fw: true,
+			d: 1_700_000_000_000
 		});
-		const body = await (
-			await POST(event({ to: 'bob', text: 'hi', forwarded: true }))
-		).json();
+		const body = await (await POST(event({ to: 'bob', text: 'hi', forwarded: true }))).json();
 		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'bob', 'hi', undefined, undefined, undefined, undefined, true
+			expect.anything(),
+			'ada',
+			'bob',
+			'hi',
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			true
 		);
 		expect(body.m).toMatchObject({ fw: true });
 	});
 
 	it('threads forwarded into send_group_msg and returns fw on a group send', async () => {
 		sendGroupMsgMock.mockResolvedValue({
-			id: 'm2', f: 'ada', x: 'hi', fw: true, d: 1_700_000_000_000
+			id: 'm2',
+			f: 'ada',
+			x: 'hi',
+			fw: true,
+			d: 1_700_000_000_000
 		});
-		const body = await (
-			await POST(event({ group: 'g1', text: 'hi', forwarded: true }))
-		).json();
+		const body = await (await POST(event({ group: 'g1', text: 'hi', forwarded: true }))).json();
 		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(), 'ada', 'g1', 'hi', undefined, undefined, undefined, undefined, true
+			expect.anything(),
+			'ada',
+			'g1',
+			'hi',
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			true
 		);
 		expect(body.m).toMatchObject({ fw: true });
 	});
@@ -366,6 +446,43 @@ describe('POST /api/send — the relay call the recipient’s ChatHub receives',
 		await POST(event({ group: 'g1', sticker: 'heart-eyes' }));
 		await settle();
 		expect(call_bodies[0]).toMatchObject({ sticker: 'heart-eyes' });
+	});
+});
+
+describe('POST /api/send — sender self-index hub_conv', () => {
+	it('writes the sender conv entry with { peer } for a 1:1 send', async () => {
+		await POST(event({ to: 'bob', text: 'hi' }));
+		await settle();
+		expect(call_bodies[1]).toMatchObject({
+			conv: 'ada|bob',
+			peer: 'bob',
+			last: 1_700_000_000_000,
+			preview: 'hi'
+		});
+	});
+
+	it('writes the sender conv entry with { group } for a group send', async () => {
+		await POST(event({ group: 'g1', text: 'hi' }));
+		await settle();
+		expect(call_bodies[1]).toMatchObject({
+			conv: 'g:g1',
+			group: 'g1',
+			last: 1_700_000_000_000,
+			preview: 'hi'
+		});
+	});
+
+	it('a rejected hub_conv does not fail the send response (best-effort contract)', async () => {
+		const fetcher = ws();
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		(fetcher.fetch as ReturnType<typeof vi.fn>)
+			.mockResolvedValueOnce(new Response(JSON.stringify({ delivered: true }), { status: 200 }))
+			.mockRejectedValueOnce(new Error('hub down'));
+		const res = await POST(event({ to: 'bob', text: 'hi' }, 'ada', fetcher));
+		expect(res.status).toBe(200);
+		await settle();
+		expect(spy).toHaveBeenCalledWith('[HUB-CONV] sender self-index failed', expect.any(Error));
+		spy.mockRestore();
 	});
 });
 

@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { sendPushMock } = vi.hoisted(() => ({ sendPushMock: vi.fn() }));
 vi.mock('../../../src/lib/server/push', async () => {
-	const actual =
-		await vi.importActual<typeof import('../../../src/lib/server/push')>('../../../src/lib/server/push');
+	const actual = await vi.importActual<typeof import('../../../src/lib/server/push')>(
+		'../../../src/lib/server/push'
+	);
 	return { ...actual, send_push: sendPushMock };
 });
 
@@ -170,8 +171,11 @@ describe('ChatHub.fetch', () => {
 		);
 		const bound_env = { ...env, SECRET: { get: async () => SECRET } };
 		const k = await crypto.subtle.importKey(
-			'raw', new TextEncoder().encode(SECRET).slice(0, 32),
-			{ name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+			'raw',
+			new TextEncoder().encode(SECRET).slice(0, 32),
+			{ name: 'HMAC', hash: 'SHA-256' },
+			false,
+			['sign']
 		);
 		const exp = Date.now() + 60_000;
 		const sig = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(`uid-1.${exp}`));
@@ -183,7 +187,11 @@ describe('ChatHub.fetch', () => {
 		// under Node — what we're actually verifying is that we got PAST the auth check, i.e.
 		// get_secret correctly unwrapped the bound SECRET before verify_token compared it.
 		await hub
-			.fetch(req('https://dummy/ws', { headers: { upgrade: 'websocket', 'sec-websocket-protocol': proto } }))
+			.fetch(
+				req('https://dummy/ws', {
+					headers: { upgrade: 'websocket', 'sec-websocket-protocol': proto }
+				})
+			)
 			.catch(() => {});
 		expect(state.acceptWebSocket).toHaveBeenCalledWith(expect.anything(), ['uid-1']);
 		vi.unstubAllGlobals();
@@ -221,12 +229,24 @@ describe('ChatHub.fetch', () => {
 			req('https://dummy/relay', {
 				method: 'POST',
 				body: JSON.stringify({
-					to: 'bob', from: 'alice', from_name: 'Alice', text: 'got it', reply_msg: 'orig-1', ts: 123
+					to: 'bob',
+					from: 'alice',
+					from_name: 'Alice',
+					text: 'got it',
+					reply_msg: 'orig-1',
+					ts: 123
 				})
 			})
 		);
 		expect(recipient.sent).toEqual([
-			JSON.stringify({ type: 'msg', from: 'alice', from_name: 'Alice', text: 'got it', reply_msg: 'orig-1', ts: 123 })
+			JSON.stringify({
+				type: 'msg',
+				from: 'alice',
+				from_name: 'Alice',
+				text: 'got it',
+				reply_msg: 'orig-1',
+				ts: 123
+			})
 		]);
 	});
 
@@ -239,12 +259,24 @@ describe('ChatHub.fetch', () => {
 			req('https://dummy/relay', {
 				method: 'POST',
 				body: JSON.stringify({
-					to: 'bob', from: 'alice', from_name: 'Alice', text: '', sticker: 'wave', ts: 123
+					to: 'bob',
+					from: 'alice',
+					from_name: 'Alice',
+					text: '',
+					sticker: 'wave',
+					ts: 123
 				})
 			})
 		);
 		expect(recipient.sent).toEqual([
-			JSON.stringify({ type: 'msg', from: 'alice', from_name: 'Alice', text: '', sticker: 'wave', ts: 123 })
+			JSON.stringify({
+				type: 'msg',
+				from: 'alice',
+				from_name: 'Alice',
+				text: '',
+				sticker: 'wave',
+				ts: 123
+			})
 		]);
 	});
 
@@ -257,7 +289,11 @@ describe('ChatHub.fetch', () => {
 			req('https://dummy/relay', {
 				method: 'POST',
 				body: JSON.stringify({
-					to: 'bob', type: 'reaction', id: 'm1', rx: { '👍': ['alice'] }, ts: 123
+					to: 'bob',
+					type: 'reaction',
+					id: 'm1',
+					rx: { '👍': ['alice'] },
+					ts: 123
 				})
 			})
 		);
@@ -275,7 +311,13 @@ describe('ChatHub.fetch', () => {
 			req('https://dummy/relay', {
 				method: 'POST',
 				body: JSON.stringify({
-					to: 'bob', type: 'edit', id: 'm1', from: 'alice', text: 'edited', e: 456, ts: 123
+					to: 'bob',
+					type: 'edit',
+					id: 'm1',
+					from: 'alice',
+					text: 'edited',
+					e: 456,
+					ts: 123
 				})
 			})
 		);
@@ -562,7 +604,10 @@ describe('ChatHub.webSocketClose', () => {
 describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 	let state: ReturnType<typeof makeState>;
 	let env: {
-		CHAT_HUB: { idFromName: (n: string) => string; get: (id: string) => { fetch: ReturnType<typeof vi.fn> } };
+		CHAT_HUB: {
+			idFromName: (n: string) => string;
+			get: (id: string) => { fetch: ReturnType<typeof vi.fn> };
+		};
 		SECRET: string;
 		VAPID_PUBLIC?: string;
 		VAPID_PRIVATE?: string;
@@ -713,7 +758,14 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
 		expect(sendPushMock).toHaveBeenCalledTimes(1);
 		sendPushMock.mockClear();
-		await relay(h, { to: 'me', from: 'bob', text: 'hi again', ts: 2, conv: 'bob|me', mute_key: 'bob' });
+		await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hi again',
+			ts: 2,
+			conv: 'bob|me',
+			mute_key: 'bob'
+		});
 		expect(sendPushMock).not.toHaveBeenCalled();
 	});
 
@@ -780,7 +832,14 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		expect(await res.json()).toEqual({ delivered: false });
 		expect(sendPushMock).toHaveBeenCalledTimes(2);
 		sendPushMock.mockClear();
-		await relay(h, { to: 'me', from: 'bob', text: 'hi again', ts: 2, conv: 'bob|me', mute_key: 'bob' });
+		await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hi again',
+			ts: 2,
+			conv: 'bob|me',
+			mute_key: 'bob'
+		});
 		expect(sendPushMock).toHaveBeenCalledTimes(1);
 	});
 
@@ -793,7 +852,14 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
-		const res = await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		const res = await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hi',
+			ts: 1,
+			conv: 'bob|me',
+			mute_key: 'bob'
+		});
 		expect(await res.json()).toEqual({ delivered: false });
 		expect(state.storage.delete).toHaveBeenCalled();
 	});
@@ -907,7 +973,10 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 describe('ChatHub — conversation index (hub_conv_index)', () => {
 	let state: ReturnType<typeof makeState>;
 	let env: {
-		CHAT_HUB: { idFromName: (n: string) => string; get: (id: string) => { fetch: ReturnType<typeof vi.fn> } };
+		CHAT_HUB: {
+			idFromName: (n: string) => string;
+			get: (id: string) => { fetch: ReturnType<typeof vi.fn> };
+		};
 		SECRET: string;
 		VAPID_PUBLIC?: string;
 		VAPID_PRIVATE?: string;
@@ -944,7 +1013,12 @@ describe('ChatHub — conversation index (hub_conv_index)', () => {
 	it('writes conv:<conv_id> with group and preview from a relayed group msg', async () => {
 		const h = hub();
 		await relay(h, {
-			to: 'me', from: 'alice', group: 'g1', text: 'hello room', ts: 2000, conv: 'g:g1'
+			to: 'me',
+			from: 'alice',
+			group: 'g1',
+			text: 'hello room',
+			ts: 2000,
+			conv: 'g:g1'
 		});
 		const res = await h.fetch(req('https://dummy/convs'));
 		const body = await res.json();
@@ -981,13 +1055,47 @@ describe('ChatHub — conversation index (hub_conv_index)', () => {
 	it('excludes muted conversations from convs', async () => {
 		const h = hub();
 		await h.fetch(
-			req('https://dummy/mute', { method: 'POST', body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 }) })
+			req('https://dummy/mute', {
+				method: 'POST',
+				body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 })
+			})
 		);
-		await relay(h, { to: 'me', from: 'bob', text: 'hey', ts: 100, conv: 'bob|me', mute_key: 'bob' });
+		await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hey',
+			ts: 100,
+			conv: 'bob|me',
+			mute_key: 'bob'
+		});
 		await relay(h, { to: 'me', from: 'carol', text: 'hi', ts: 200, conv: 'carol|me' });
 		const res = await h.fetch(req('https://dummy/convs'));
 		const body = await res.json();
 		expect(body.convs).toEqual([{ peer: 'carol', last: 200, preview: 'hi', unread: 1 }]);
+	});
+
+	it('an unmute restores a muted conversation to the convs list', async () => {
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/mute', {
+				method: 'POST',
+				body: JSON.stringify({ target: 'bob', kind: 'u', until: 0 })
+			})
+		);
+		await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hey',
+			ts: 100,
+			conv: 'bob|me',
+			mute_key: 'bob'
+		});
+		await h.fetch(
+			req('https://dummy/unmute', { method: 'POST', body: JSON.stringify({ target: 'bob' }) })
+		);
+		const res = await h.fetch(req('https://dummy/convs'));
+		const body = await res.json();
+		expect(body.convs).toEqual([{ peer: 'bob', last: 100, preview: 'hey', unread: 1 }]);
 	});
 
 	it('picks file or image preview when text is empty', async () => {
