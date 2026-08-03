@@ -195,16 +195,29 @@ export async function send_push(
 	opts: PushOpts = {},
 	f: typeof fetch = fetch
 ): Promise<PushResult> {
-	const body = await encrypt_payload(sub, payload);
-	const headers: Record<string, string> = {
-		'Content-Encoding': 'aes128gcm',
-		'Content-Type': 'application/octet-stream',
-		'Content-Length': String(body.byteLength),
-		TTL: String(opts.ttl ?? 86400),
-		Urgency: opts.urgency ?? 'high',
-		Authorization: await vapid_auth(keys, sub.endpoint)
-	};
-	if (opts.topic) headers.Topic = opts.topic;
+	// plaintext-too-large is a message problem, not a subscription problem — skip the
+	// sub rather than letting encrypt_payload's throw masquerade as a dead endpoint
+	if (new TextEncoder().encode(payload).length > MAX_PLAINTEXT) {
+		return { ok: false, status: 0, gone: false };
+	}
+	let body: Uint8Array;
+	let headers: Record<string, string>;
+	try {
+		body = await encrypt_payload(sub, payload);
+		headers = {
+			'Content-Encoding': 'aes128gcm',
+			'Content-Type': 'application/octet-stream',
+			'Content-Length': String(body.byteLength),
+			TTL: String(opts.ttl ?? 86400),
+			Urgency: opts.urgency ?? 'high',
+			Authorization: await vapid_auth(keys, sub.endpoint)
+		};
+		if (opts.topic) headers.Topic = opts.topic;
+	} catch {
+		// corrupt keys (non-P-256 p256dh, malformed auth) or a malformed endpoint URL —
+		// the sub can never succeed; report gone so the caller prunes it
+		return { ok: false, status: 0, gone: true };
+	}
 
 	const attempt = async (): Promise<Response | null> => {
 		try {

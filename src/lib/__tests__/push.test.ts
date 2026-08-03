@@ -1,7 +1,20 @@
-import { describe, it, expect } from 'vitest';
-import { clamp_payload, MAX_PLAINTEXT } from '../server/push';
+import { describe, it, expect, vi } from 'vitest';
+import { clamp_payload, MAX_PLAINTEXT, send_push } from '../server/push';
 
 const bytes = (s: string): number => new TextEncoder().encode(s).length;
+
+// a real 65-byte P-256 point (0x04 prefix, on-curve — exported from a generated keypair)
+const P256DH =
+	'BCZLrELsZXVOuRNyEpmXypQmMnVqtg6d_rqpwkTmb6SAR3Wo5eS7kxfaPPEYldVLd-LYzO7pRSWg3kljcvwh6sk';
+const AUTH = 'reBg-YN5Ix6V6pKwKxHB6g';
+// a real generated P-256 VAPID pair (public point + private d), or vapid_auth's jwk import throws
+const KEYS = {
+	public: 'BCZLrELsZXVOuRNyEpmXypQmMnVqtg6d_rqpwkTmb6SAR3Wo5eS7kxfaPPEYldVLd-LYzO7pRSWg3kljcvwh6sk',
+	private: '7Nx5If2-fhz7fPd4kMzWiGsS6MGpM9ayoRcSonV22rs',
+	subject: 'mailto:dev@example.com'
+};
+const b64u = (buf: Uint8Array): string =>
+	Buffer.from(buf).toString('base64url').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 describe('clamp_payload', () => {
 	it('returns the input unchanged when it already fits', () => {
@@ -22,5 +35,65 @@ describe('clamp_payload', () => {
 	it('truncates an oversized non-body field', () => {
 		const out = clamp_payload({ a: 'z'.repeat(500) });
 		expect(bytes(out)).toBeLessThanOrEqual(MAX_PLAINTEXT);
+	});
+});
+
+describe('send_push', () => {
+	it('returns gone (no throw) for a subscription whose p256dh is not a valid P-256 point', async () => {
+		const bad = new Uint8Array(65);
+		crypto.getRandomValues(bad);
+		bad[0] = 0x01;
+		const f = vi.fn();
+		const r = await send_push(
+			{ endpoint: 'https://push.example.net/push/a', keys: { p256dh: b64u(bad), auth: AUTH } },
+			JSON.stringify({ a: 'x' }),
+			KEYS,
+			{},
+			f
+		);
+		expect(r).toEqual({ ok: false, status: 0, gone: true });
+		expect(f).not.toHaveBeenCalled();
+	});
+
+	it('returns gone for a subscription with a malformed endpoint URL', async () => {
+		const f = vi.fn();
+		const r = await send_push(
+			{ endpoint: 'not-a-url', keys: { p256dh: P256DH, auth: AUTH } },
+			JSON.stringify({ a: 'x' }),
+			KEYS,
+			{},
+			f
+		);
+		expect(r).toEqual({ ok: false, status: 0, gone: true });
+		expect(f).not.toHaveBeenCalled();
+	});
+
+	it('skips (does not prune) an oversized plaintext', async () => {
+		const f = vi.fn();
+		const r = await send_push(
+			{ endpoint: 'https://push.example.net/push/a', keys: { p256dh: P256DH, auth: AUTH } },
+			'a'.repeat(5000),
+			KEYS,
+			{},
+			f
+		);
+		expect(r).toEqual({ ok: false, status: 0, gone: false });
+		expect(f).not.toHaveBeenCalled();
+	});
+
+	it('sends an encrypted push for a well-formed subscription', async () => {
+		const f = vi.fn().mockResolvedValue(new Response(null, { status: 201 }));
+		const r = await send_push(
+			{ endpoint: 'https://push.example.net/push/a', keys: { p256dh: P256DH, auth: AUTH } },
+			JSON.stringify({ a: 'x' }),
+			KEYS,
+			{},
+			f
+		);
+		expect(f).toHaveBeenCalledTimes(1);
+		const headers = f.mock.calls[0][1].headers as Record<string, string>;
+		expect(headers['Content-Encoding']).toBe('aes128gcm');
+		expect(headers.Authorization.startsWith('vapid t=')).toBe(true);
+		expect(r).toEqual({ ok: true, status: 201, gone: false });
 	});
 });
