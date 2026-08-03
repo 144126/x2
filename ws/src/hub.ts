@@ -14,6 +14,9 @@ interface Env {
 	VAPID_PUBLIC?: SecretVal;
 	VAPID_PRIVATE?: SecretVal;
 	VAPID_SUBJECT?: SecretVal;
+	DEV_VAPID_PUBLIC?: SecretVal;
+	DEV_VAPID_PRIVATE?: SecretVal;
+	DEV_VAPID_SUBJECT?: SecretVal;
 }
 
 type UnreadEntry = { n: number; mute_key: string };
@@ -347,10 +350,13 @@ export class ChatHub implements DurableObject {
 		reply_to?: string;
 		image?: string;
 	}): Promise<void> {
-		const pub = await get_secret(this.env.VAPID_PUBLIC);
-		const priv = await get_secret(this.env.VAPID_PRIVATE);
-		const subject = await get_secret(this.env.VAPID_SUBJECT);
-		if (!pub || !priv || !subject) return;
+		const pub = await get_secret(this.env.VAPID_PUBLIC, this.env.DEV_VAPID_PUBLIC);
+		const priv = await get_secret(this.env.VAPID_PRIVATE, this.env.DEV_VAPID_PRIVATE);
+		const subject = await get_secret(this.env.VAPID_SUBJECT, this.env.DEV_VAPID_SUBJECT);
+		if (!pub || !priv || !subject) {
+			console.warn('[HUB-PUSH] VAPID not configured — web push disabled');
+			return;
+		}
 		const keys: PushKeys = { public: pub, private: priv, subject };
 
 		const subs = await this.state.storage.list<SubEntry>({ prefix: 'sub:' });

@@ -567,6 +567,9 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		VAPID_PUBLIC?: string;
 		VAPID_PRIVATE?: string;
 		VAPID_SUBJECT?: string;
+		DEV_VAPID_PUBLIC?: string;
+		DEV_VAPID_PRIVATE?: string;
+		DEV_VAPID_SUBJECT?: string;
 	};
 
 	beforeEach(() => {
@@ -715,6 +718,7 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 	});
 
 	it('never pushes when VAPID is not configured', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		env.VAPID_PUBLIC = undefined;
 		const h = hub();
 		await h.fetch(
@@ -725,6 +729,29 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		);
 		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
 		expect(sendPushMock).not.toHaveBeenCalled();
+		expect(warn).toHaveBeenCalledWith(expect.stringMatching(/VAPID not configured/));
+		warn.mockRestore();
+	});
+
+	it('pushes via the DEV_VAPID_* fallback when the store VAPID is empty', async () => {
+		env = {
+			...env,
+			VAPID_PUBLIC: undefined,
+			VAPID_PRIVATE: undefined,
+			VAPID_SUBJECT: undefined,
+			DEV_VAPID_PUBLIC: 'vapid-pub',
+			DEV_VAPID_PRIVATE: 'vapid-priv',
+			DEV_VAPID_SUBJECT: 'mailto:a@b'
+		};
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
+			})
+		);
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('a corrupt subscription does not block the others and is pruned', async () => {
