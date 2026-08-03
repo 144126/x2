@@ -1,5 +1,11 @@
 import { get_secret, uuid_from, type SecretVal } from '../../src/lib/server/qdrant';
-import { send_push, clamp_payload, push_topic, type PushKeys } from '../../src/lib/server/push';
+import {
+	send_push,
+	clamp_payload,
+	push_topic,
+	valid_sub,
+	type PushKeys
+} from '../../src/lib/server/push';
 
 interface Env {
 	CHAT_HUB: DurableObjectNamespace;
@@ -188,6 +194,8 @@ export class ChatHub implements DurableObject {
 		}
 		if (url.pathname === '/sub' && request.method === 'POST') {
 			const body = (await request.json()) as { ep: string; k: string; au: string; ua?: string };
+			if (!valid_sub(body.ep, body.k, body.au))
+				return new Response('invalid subscription', { status: 400 });
 			const key = 'sub:' + (await uuid_from(body.ep));
 			const entry: SubEntry = {
 				ep: body.ep,

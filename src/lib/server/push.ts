@@ -11,6 +11,27 @@ export type PushResult = { ok: boolean; status: number; gone: boolean };
 
 export const MAX_PLAINTEXT = 4096 - 16 - 4 - 1 - 65 - 16 - 1; // 3993
 
+// Web Push subscriptions always carry the 65-byte uncompressed P-256 point (0x04
+// prefix) and a 16-byte auth secret at https endpoints; reject anything else so
+// garbage never enters storage. Must agree with send_push's gone-path (what it
+// treats as un-sendable is what /sub refuses to store).
+export function valid_sub(ep: string, k: string, au: string): boolean {
+	try {
+		let url: URL;
+		try {
+			url = new URL(ep);
+		} catch {
+			return false;
+		}
+		if (url.protocol !== 'https:') return false;
+		const pub = unb64u(k); // atob throws on non-base64 — caught below
+		if (pub.length !== 65 || pub[0] !== 0x04) return false;
+		return unb64u(au).length === 16;
+	} catch {
+		return false;
+	}
+}
+
 // TS's lib.dom types pin BufferSource to ArrayBuffer-backed views; Uint8Array's type
 // parameter is the wider ArrayBufferLike. The views are always plain ArrayBuffers here.
 const bs = (u: Uint8Array): BufferSource => u as unknown as BufferSource;

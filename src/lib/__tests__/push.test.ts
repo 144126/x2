@@ -97,3 +97,37 @@ describe('send_push', () => {
 		expect(r).toEqual({ ok: true, status: 201, gone: false });
 	});
 });
+
+describe('valid_sub', () => {
+	it('accepts a well-formed https subscription', async () => {
+		const { valid_sub } = await import('../server/push');
+		expect(valid_sub('https://push.example.net/push/a', P256DH, AUTH)).toBe(true);
+	});
+
+	it('rejects a non-https endpoint', async () => {
+		const { valid_sub } = await import('../server/push');
+		expect(valid_sub('http://push.example.net/a', P256DH, AUTH)).toBe(false);
+	});
+
+	it('rejects a malformed endpoint', async () => {
+		const { valid_sub } = await import('../server/push');
+		expect(valid_sub('not-a-url', P256DH, AUTH)).toBe(false);
+	});
+
+	it('rejects a p256dh that is not a 65-byte 0x04 P-256 point', async () => {
+		const { valid_sub } = await import('../server/push');
+		expect(valid_sub('https://push.example.net/push/a', b64u(new Uint8Array(64)), AUTH)).toBe(
+			false
+		);
+		expect(valid_sub('https://push.example.net/push/a', b64u(new Uint8Array(65)), AUTH)).toBe(
+			false
+		);
+	});
+
+	it('rejects an auth that is not 16 bytes', async () => {
+		const { valid_sub } = await import('../server/push');
+		expect(valid_sub('https://push.example.net/push/a', P256DH, b64u(new Uint8Array(15)))).toBe(
+			false
+		);
+	});
+});

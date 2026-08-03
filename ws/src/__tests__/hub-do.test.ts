@@ -81,6 +81,15 @@ function req(url: string, init?: RequestInit) {
 	return new Request(url, init);
 }
 
+const b64u = (buf: Uint8Array): string =>
+	Buffer.from(buf).toString('base64url').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+// canonical valid sub material — 65-byte 0x04 P-256 point + 16-byte auth
+const VALID_EP = 'https://push.example.net/push/a';
+const VALID_K =
+	'BOU-1nvLFd0AC5crjR73SNC4goNO-tSx3QRWpiK_jlzlme_Q-pnC7vBfYDuFdKCYtuc1H5qNGOSBbqylIArRmqs';
+const VALID_AU = 'reBg-YN5Ix6V6pKwKxHB6g';
+
 const SECRET = 'shared-secret';
 
 describe('ChatHub.fetch', () => {
@@ -625,13 +634,13 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/b', k: 'PUB2', au: 'AUTH2' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/b', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await relay(h, {
@@ -653,7 +662,7 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await h.fetch(
@@ -682,7 +691,7 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
@@ -695,7 +704,7 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
@@ -711,7 +720,7 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
@@ -724,13 +733,13 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/b', k: 'PUB2', au: 'AUTH2' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/b', k: VALID_K, au: VALID_AU })
 			})
 		);
 		const res = await relay(h, {
@@ -754,12 +763,58 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		const res = await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
 		expect(await res.json()).toEqual({ delivered: false });
 		expect(state.storage.delete).toHaveBeenCalled();
+	});
+
+	it('POST /sub rejects a p256dh that is not a 65-byte P-256 point', async () => {
+		const h = hub();
+		const res = await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: VALID_EP, k: b64u(new Uint8Array(64)), au: VALID_AU })
+			})
+		);
+		expect(res.status).toBe(400);
+	});
+
+	it('POST /sub rejects a non-https endpoint', async () => {
+		const h = hub();
+		const res = await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'http://push.example.net/a', k: VALID_K, au: VALID_AU })
+			})
+		);
+		expect(res.status).toBe(400);
+	});
+
+	it('POST /sub rejects a malformed endpoint', async () => {
+		const h = hub();
+		const res = await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'not-a-url', k: VALID_K, au: VALID_AU })
+			})
+		);
+		expect(res.status).toBe(400);
+	});
+
+	it('POST /sub accepts a well-formed subscription and pushes to it', async () => {
+		const h = hub();
+		const res = await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: VALID_EP, k: VALID_K, au: VALID_AU })
+			})
+		);
+		expect(res.status).toBe(200);
+		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('POST /mute then GET /mutes lists it as active', async () => {
@@ -806,11 +861,14 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		await h.fetch(
 			req('https://dummy/sub', {
 				method: 'POST',
-				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a', k: VALID_K, au: VALID_AU })
 			})
 		);
 		await h.fetch(
-			req('https://dummy/unsub', { method: 'POST', body: JSON.stringify({ ep: 'https://push/a' }) })
+			req('https://dummy/unsub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push.example.net/push/a' })
+			})
 		);
 		await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
 		expect(sendPushMock).not.toHaveBeenCalled();
