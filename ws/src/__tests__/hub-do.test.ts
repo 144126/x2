@@ -718,6 +718,50 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 		expect(sendPushMock).not.toHaveBeenCalled();
 	});
 
+	it('a corrupt subscription does not block the others and is pruned', async () => {
+		sendPushMock.mockRejectedValueOnce(new Error('boom'));
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/b', k: 'PUB2', au: 'AUTH2' })
+			})
+		);
+		const res = await relay(h, {
+			to: 'me',
+			from: 'bob',
+			text: 'hi',
+			ts: 1,
+			conv: 'bob|me',
+			mute_key: 'bob'
+		});
+		expect(await res.json()).toEqual({ delivered: false });
+		expect(sendPushMock).toHaveBeenCalledTimes(2);
+		sendPushMock.mockClear();
+		await relay(h, { to: 'me', from: 'bob', text: 'hi again', ts: 2, conv: 'bob|me', mute_key: 'bob' });
+		expect(sendPushMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('relay still responds when every push fails', async () => {
+		sendPushMock.mockRejectedValue(new Error('boom'));
+		const h = hub();
+		await h.fetch(
+			req('https://dummy/sub', {
+				method: 'POST',
+				body: JSON.stringify({ ep: 'https://push/a', k: 'PUB1', au: 'AUTH1' })
+			})
+		);
+		const res = await relay(h, { to: 'me', from: 'bob', text: 'hi', ts: 1, conv: 'bob|me', mute_key: 'bob' });
+		expect(await res.json()).toEqual({ delivered: false });
+		expect(state.storage.delete).toHaveBeenCalled();
+	});
+
 	it('POST /mute then GET /mutes lists it as active', async () => {
 		const h = hub();
 		await h.fetch(

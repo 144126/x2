@@ -84,6 +84,8 @@ export class ChatHub implements DurableObject {
 						kind: body.kind as string | undefined,
 						reply_to: body.reply_to as string | undefined,
 						image: body.image as string | undefined
+					}).catch((e) => {
+						console.error('[HUB-PUSH] fan-out failed — message still delivered/unread:', e);
 					});
 				}
 			}
@@ -353,13 +355,19 @@ export class ChatHub implements DurableObject {
 		const gone: string[] = [];
 		await Promise.all(
 			[...subs.entries()].map(async ([key, sub]) => {
-				const r = await send_push(
-					{ endpoint: sub.ep, keys: { p256dh: sub.k, auth: sub.au } },
-					payload,
-					keys,
-					opts
-				);
-				if (r.gone) gone.push(key);
+				try {
+					const r = await send_push(
+						{ endpoint: sub.ep, keys: { p256dh: sub.k, auth: sub.au } },
+						payload,
+						keys,
+						opts
+					);
+					if (r.gone) gone.push(key);
+				} catch (e) {
+					// one corrupt sub must not silence the other devices — log and prune it
+					console.error(`[HUB-PUSH] sub ${key} failed — pruning:`, e);
+					gone.push(key);
+				}
 			})
 		);
 		if (gone.length) await this.state.storage.delete(gone);
