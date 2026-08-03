@@ -61,7 +61,8 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 		if (!(await is_member(env, locals.x2_ws, g.id, me.id))) throw error(403, 'not a member');
 		const m = await send_group_msg(
 			env, me.id, group, text, image, file, reply_to, sticker, forwarded
-		).catch(() => {
+		).catch((e) => {
+			console.error('[SEND] not_stored', e);
 			throw error(503, 'not_stored');
 		});
 
@@ -116,7 +117,8 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker, forwarded).catch(() => {
+	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker, forwarded).catch((e) => {
+		console.error('[SEND] not_stored', e);
 		throw error(503, 'not_stored');
 	});
 

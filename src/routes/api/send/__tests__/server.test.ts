@@ -190,15 +190,23 @@ describe('POST /api/send — rate limiting', () => {
 
 describe('POST /api/send — a failed write is surfaced, not silently 200d', () => {
 	it('503s a 1:1 send when send_msg rejects, instead of lying with ok: true', async () => {
-		sendMsgMock.mockRejectedValue(new Error('qdrant down'));
+		const err = new Error('qdrant down');
+		sendMsgMock.mockRejectedValue(err);
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		await expect(POST(event({ to: 'bob', text: 'hi' }))).rejects.toMatchObject({ status: 503 });
+		expect(spy).toHaveBeenCalledWith('[SEND] not_stored', err);
+		spy.mockRestore();
 	});
 
 	it('503s a group send when send_group_msg rejects', async () => {
-		sendGroupMsgMock.mockRejectedValue(new Error('qdrant down'));
+		const err = new Error('qdrant down');
+		sendGroupMsgMock.mockRejectedValue(err);
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		await expect(POST(event({ group: 'g1', text: 'hi' }))).rejects.toMatchObject({
 			status: 503
 		});
+		expect(spy).toHaveBeenCalledWith('[SEND] not_stored', err);
+		spy.mockRestore();
 	});
 });
 
