@@ -1,0 +1,73 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('$env/dynamic/private', () => ({ env: { SECRET: 'a-test-secret-at-least-32-bytes' } }));
+
+import { GET } from '../[...key]/+server';
+import { sign_key } from '$lib/server/media';
+
+const SECRET = 'a-test-secret-at-least-32-bytes';
+const KEY = 'img/abc.png';
+
+const body = { writeHttpMetadata: () => {}, httpEtag: '"e"', body: null };
+const bucket = { get: vi.fn(async () => body) };
+
+function evt(qs: string, user: { id: string } | null = null) {
+	return {
+		params: { key: KEY },
+		url: new URL(`https://x2.local/media/${KEY}${qs}`),
+		locals: { user },
+		platform: { env: { MEDIA: bucket } }
+	} as never;
+}
+
+const status = async (e: never) => {
+	try {
+		const r = await GET(e);
+		return r.status;
+	} catch (err) {
+		return (err as { status: number }).status;
+	}
+};
+
+describe('media route is signature-only', () => {
+	beforeEach(() => bucket.get.mockClear());
+
+	it('serves a correctly signed url', async () => {
+		const exp = Date.now() + 60_000;
+		const sig = await sign_key(SECRET, KEY, exp);
+		expect(await status(evt(`?e=${exp}&s=${sig}`))).toBe(200);
+	});
+
+	it('rejects an unsigned request even with a session cookie', async () => {
+		expect(await status(evt('', { id: 'u1' }))).toBe(401);
+	});
+
+	it('never reads the bucket for an unsigned request', async () => {
+		await status(evt('', { id: 'u1' }));
+		expect(bucket.get).not.toHaveBeenCalled();
+	});
+
+	it('rejects an expired signature', async () => {
+		const exp = Date.now() - 1;
+		const sig = await sign_key(SECRET, KEY, exp);
+		expect(await status(evt(`?e=${exp}&s=${sig}`))).toBe(403);
+	});
+
+	it('rejects a forged signature', async () => {
+		const exp = Date.now() + 60_000;
+		expect(await status(evt(`?e=${exp}&s=deadbeef`))).toBe(403);
+	});
+
+	it('rejects a signature minted for a different key', async () => {
+		const exp = Date.now() + 60_000;
+		const sig = await sign_key(SECRET, 'img/other.png', exp);
+		expect(await status(evt(`?e=${exp}&s=${sig}`))).toBe(403);
+	});
+
+	it('the served response is publicly cacheable', async () => {
+		const exp = Date.now() + 60_000;
+		const sig = await sign_key(SECRET, KEY, exp);
+		const r = await GET(evt(`?e=${exp}&s=${sig}`));
+		expect(r.headers.get('cache-control')).toContain('public');
+	});
+});

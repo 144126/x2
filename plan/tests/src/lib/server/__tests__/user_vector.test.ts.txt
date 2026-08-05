@@ -1,0 +1,64 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { upsertMock, embedMock } = vi.hoisted(() => ({
+	upsertMock: vi.fn(async () => {}),
+	embedMock: vi.fn(async () => new Array(4096).fill(0.5))
+}));
+
+vi.mock('../qdrant', async () => {
+	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
+	return { ...actual, upsert: upsertMock, ensure: vi.fn(async () => {}) };
+});
+vi.mock('../or', async () => {
+	const actual = await vi.importActual<typeof import('../or')>('../or');
+	return { ...actual, embed_text: embedMock, embed: embedMock };
+});
+
+import { save_user, create_pw_user } from '../user';
+import { save_profile } from '../profile';
+import { V } from '../qdrant';
+
+const env = { QDRANT_URL: 'https://q', QDRANT_KEY: 'k' } as never;
+const last_point = () => upsertMock.mock.calls.at(-1)![2] as { vector: Record<string, number[]> };
+
+describe('no zero vectors are ever stored', () => {
+	beforeEach(() => {
+		upsertMock.mockClear();
+		embedMock.mockClear();
+	});
+
+	it('save_user omits the vector entirely', async () => {
+		await save_user(env, { id: 'u1', s: 'u', n: 'ed' } as never);
+		expect(last_point().vector).toEqual({});
+	});
+
+	it('create_pw_user omits the vector entirely', async () => {
+		await create_pw_user(env, { id: 'u2', s: 'u', n: 'ed' } as never, 'pw');
+		expect(last_point().vector).toEqual({});
+	});
+
+	it('a stored vector is never an array of zeros', async () => {
+		await save_user(env, { id: 'u1', s: 'u', n: 'ed' } as never);
+		const v = last_point().vector[V];
+		expect(v === undefined || v.some((x) => x !== 0)).toBe(true);
+	});
+
+	it('save_profile with text stores a real named vector', async () => {
+		await save_profile(env, 'u1', { about: 'i like boats' } as never);
+		expect(last_point().vector[V]).toHaveLength(4096);
+		expect(embedMock).toHaveBeenCalled();
+	});
+
+	it('save_profile with no text stores no vector and never embeds', async () => {
+		await save_profile(env, 'u1', { about: '' } as never);
+		expect(last_point().vector).toEqual({});
+		expect(embedMock).not.toHaveBeenCalled();
+	});
+
+	it('clearing a profile drops the vector rather than keeping a stale one', async () => {
+		await save_profile(env, 'u1', { about: 'i like boats' } as never);
+		expect(last_point().vector[V]).toHaveLength(4096);
+		await save_profile(env, 'u1', { about: '' } as never);
+		expect(last_point().vector).toEqual({});
+	});
+});

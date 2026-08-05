@@ -1,0 +1,89 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { DatabaseSync } from 'node:sqlite';
+import { Conv, RETENTION_MS } from '../conv';
+
+function makeState() {
+	const db = new DatabaseSync(':memory:');
+	let alarm: number | null = null;
+	return {
+		alarm_at: () => alarm,
+		storage: {
+			sql: {
+				exec: (query: string, ...bind: unknown[]) => {
+					const stmt = db.prepare(query);
+					if (/^\s*select/i.test(query)) {
+						const rows = stmt.all(...(bind as never[]));
+						return { toArray: () => rows, [Symbol.iterator]: () => rows[Symbol.iterator]() };
+					}
+					stmt.run(...(bind as never[]));
+					return { toArray: () => [] as unknown[], [Symbol.iterator]: () => [][Symbol.iterator]() };
+				}
+			},
+			setAlarm: vi.fn(async (t: number) => {
+				alarm = t;
+			}),
+			getAlarm: vi.fn(async () => alarm)
+		}
+	};
+}
+
+const req = (path: string, init?: RequestInit) => new Request(`https://dummy${path}`, init);
+
+describe('Conv retention sweep', () => {
+	let state: ReturnType<typeof makeState>;
+	let conv: Conv;
+	const now = 10_000_000_000;
+
+	beforeEach(() => {
+		vi.setSystemTime(now);
+		state = makeState();
+		conv = new Conv(state as never, {} as never);
+	});
+
+	const put = (id: string, d: number) =>
+		conv.fetch(req('/put', { method: 'POST', body: JSON.stringify({ id, f: 'a', x: 'x', d }) }));
+
+	const ids = async () => {
+		const res = await conv.fetch(req('/page'));
+		return ((await res.json()) as { m: { id: string }[] }).m.map((r) => r.id);
+	};
+
+	it('retention is a single named constant, not a scattered literal', () => {
+		expect(typeof RETENTION_MS).toBe('number');
+		expect(RETENTION_MS).toBeGreaterThan(0);
+	});
+
+	it('sweeps rows older than the cutoff', async () => {
+		await put('ancient', now - RETENTION_MS - 1);
+		await conv.alarm();
+		expect(await ids()).toEqual([]);
+	});
+
+	it('keeps rows inside the window', async () => {
+		await put('recent', now - 1000);
+		await conv.alarm();
+		expect(await ids()).toEqual(['recent']);
+	});
+
+	it('keeps a row exactly on the boundary', async () => {
+		await put('edge', now - RETENTION_MS);
+		await conv.alarm();
+		expect(await ids()).toEqual(['edge']);
+	});
+
+	it('sweeps only the old rows when both exist', async () => {
+		await put('ancient', now - RETENTION_MS - 1);
+		await put('recent', now - 1000);
+		await conv.alarm();
+		expect(await ids()).toEqual(['recent']);
+	});
+
+	it('schedules the next sweep so it keeps running', async () => {
+		await conv.alarm();
+		expect(state.alarm_at()).toBeGreaterThan(now);
+	});
+
+	it('an empty conversation sweeps without throwing', async () => {
+		await expect(conv.alarm()).resolves.toBeUndefined();
+	});
+});
