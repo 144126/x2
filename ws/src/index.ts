@@ -112,6 +112,13 @@ const worker: ExportedHandler<Env> = {
 			method: 'POST',
 			headers: { authorization: `Bearer ${secret}` }
 		}).catch(() => {});
+		const now = new Date();
+		if (now.getUTCHours() === 0 && now.getUTCMinutes() === 0) {
+			await fetch(`${origin}/api/cron/snapshot`, {
+				method: 'POST',
+				headers: { authorization: `Bearer ${secret}` }
+			}).catch(() => {});
+		}
 	}
 };
 
