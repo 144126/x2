@@ -233,7 +233,9 @@ describe('replying', () => {
 	});
 
 	it('sending while replying includes reply_to in the POST body, then clears the reply state', async () => {
-		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
 		globalThis.fetch = mockFetch;
 		renderWith([
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
@@ -248,6 +250,28 @@ describe('replying', () => {
 			body: JSON.stringify({ group: 'g1', text: 'my reply', image: undefined, reply_to: 'm1' })
 		});
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
+	});
+
+	it('shows the reply quote on the sent message immediately, without a reload', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ m: { id: 'm2', rp: 'm1' } })
+		});
+		globalThis.fetch = mockFetch;
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
+		]);
+		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		const input = screen.getByPlaceholderText('say something to the room…');
+		await fireEvent.input(input, { target: { value: 'my reply' } });
+		await fireEvent.submit(input.closest('form')!);
+		await vi.waitFor(() =>
+			expect(
+				screen.getByText(
+					(_, el) => el?.tagName === 'SPAN' && !!el.textContent?.includes('original text')
+				)
+			).toBeInTheDocument()
+		);
 	});
 
 	it('cancel button clears the reply-preview strip without sending', async () => {
@@ -274,12 +298,26 @@ describe('replying', () => {
 		});
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 		renderWith([
-			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'replying', d: 100, rp: 'orig-1' }
+			{
+				s: 'm',
+				id: 'm1',
+				c: 'g:g1',
+				f: 'bob',
+				t: '',
+				gr: 'g1',
+				x: 'replying',
+				d: 100,
+				rp: 'orig-1'
+			}
 		]);
+		await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1'));
 		await vi.waitFor(() =>
-			expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1')
+			expect(
+				screen.getByText(
+					(_, el) => !!el && el.children.length === 0 && el.textContent?.includes('quoted old text')
+				)
+			).toBeInTheDocument()
 		);
-		await vi.waitFor(() => expect(screen.getByText('quoted old text')).toBeInTheDocument());
 	});
 });
 
@@ -299,17 +337,13 @@ describe('reply privately', () => {
 	}
 
 	it('navigates to a private chat with the author and the message id as reply param', async () => {
-		renderWith([
-			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi bob', d: 100 }
-		]);
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi bob', d: 100 }]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply privately' }));
 		expect(goto).toHaveBeenCalledWith('/app/chat/bob?reply=m1');
 	});
 
-	it('is absent on the current user\'s own messages', () => {
-		renderWith([
-			{ s: 'm', id: 'm1', c: 'g:g1', f: 'me', t: '', gr: 'g1', x: 'hi me', d: 100 }
-		]);
+	it("is absent on the current user's own messages", () => {
+		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'me', t: '', gr: 'g1', x: 'hi me', d: 100 }]);
 		expect(screen.queryByRole('button', { name: 'reply privately' })).toBeNull();
 	});
 });
@@ -359,7 +393,17 @@ describe('reactions', () => {
 		});
 		globalThis.fetch = mockFetch;
 		renderWith([
-			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100, rx: { '👍': ['me', 'bob'] } }
+			{
+				s: 'm',
+				id: 'm1',
+				c: 'g:g1',
+				f: 'bob',
+				t: '',
+				gr: 'g1',
+				x: 'hi',
+				d: 100,
+				rx: { '👍': ['me', 'bob'] }
+			}
 		]);
 		await fireEvent.click(screen.getByText('👍 2'));
 		expect(mockFetch).toHaveBeenCalledWith('/api/messages/m1/react', {
@@ -404,7 +448,9 @@ describe('stickers', () => {
 	}
 
 	it('clicking the sticker button opens the picker and selecting a sticker sends it', async () => {
-		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
 		globalThis.fetch = mockFetch;
 		renderWith([]);
 		await fireEvent.click(screen.getByRole('button', { name: 'sticker' }));
@@ -417,7 +463,9 @@ describe('stickers', () => {
 	});
 
 	it('renders a message with sk borderless as a sticker image', () => {
-		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: '', sk: 'wave', d: 100 }]);
+		renderWith([
+			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: '', sk: 'wave', d: 100 }
+		]);
 		const img = screen.getByAltText('wave sticker');
 		expect(img).toHaveAttribute('src', '/stickers/basics/wave.webp');
 		const bubble = img.closest('div')!;
@@ -518,7 +566,9 @@ describe('membership while anonymous', () => {
 		}) as unknown as typeof fetch;
 		render(Page, { props: { data: data({ members: ['bob', 'carol'], owner: 'bob' }) } });
 		await fireEvent.click(screen.getByRole('button', { name: 'join' }));
-		await vi.waitFor(() => expect(screen.getByRole('button', { name: 'leave room' })).toBeInTheDocument());
+		await vi.waitFor(() =>
+			expect(screen.getByRole('button', { name: 'leave room' })).toBeInTheDocument()
+		);
 		expect(invalidateAll).not.toHaveBeenCalled();
 	});
 });

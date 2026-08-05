@@ -1,6 +1,6 @@
 import type { ScheduledMessage, Message } from '../types';
 import { ensure, upsert, scroll, remove, new_id, f, eq, range, type QEnv } from './qdrant';
-import { send_msg, send_group_msg, backfill_vector, conv_id, group_conv_id } from './chat';
+import { send_msg, send_group_msg, conv_id, group_conv_id } from './chat';
 import { get_group, is_member } from './group';
 
 export const MIN_LEAD_MS = 60_000; // schedule at least 1 minute out, otherwise just send now
@@ -95,7 +95,6 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 				const g = await get_group(env, sm.group);
 				if (g && (await is_member(env, ws, g.id, sm.f))) {
 					const m = await send_group_msg(env, sm.f, sm.group, sm.text, sm.image, sm.file);
-					await backfill_vector(env, m.id, sm.text);
 					await relay(ws, {
 						id: m.id,
 						members: g.members.filter((u) => u !== sm.f),
@@ -116,7 +115,6 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 				}
 			} else if (sm.to) {
 				const m = await send_msg(env, sm.f, sm.to, sm.text, sm.image, sm.file);
-				await backfill_vector(env, m.id, sm.text);
 				await relay(ws, {
 					id: m.id,
 					to: sm.to,

@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
-import { send_msg, send_group_msg, backfill_vector, conv_id, group_conv_id } from '$lib/server/chat';
+import { send_msg, send_group_msg, conv_id, group_conv_id } from '$lib/server/chat';
 import { get_group, is_member } from '$lib/server/group';
 import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
 import { guard } from '$lib/server/rl';
@@ -24,8 +24,15 @@ async function relay(payload: Record<string, unknown>, ws: Fetcher): Promise<voi
 	}
 }
 
-export const POST: RequestHandler = async ({ request, locals, platform, cookies, getClientAddress }) => {
-	const me = locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
+export const POST: RequestHandler = async ({
+	request,
+	locals,
+	platform,
+	cookies,
+	getClientAddress
+}) => {
+	const me =
+		locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
 	if (!me) throw error(401, 'auth');
 	await guard(platform, 'RL_SEND', me.id);
 	const b = (await request.json().catch(() => null)) as {
@@ -47,7 +54,8 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 	const reply_to = b?.reply_to?.trim() || undefined;
 	const sticker = b?.sticker?.trim() || undefined;
 	const forwarded = b?.forwarded ? true : undefined;
-	if (!text && !image && !file && !sticker) throw error(400, 'text, image, file or sticker required');
+	if (!text && !image && !file && !sticker)
+		throw error(400, 'text, image, file or sticker required');
 	if (!to && !group) throw error(400, 'to or group required');
 
 	if (b?.at && b.at > Date.now() + MIN_LEAD_MS) {
@@ -60,7 +68,15 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 		if (!g) throw error(404, 'no group');
 		if (!(await is_member(env, locals.x2_ws, g.id, me.id))) throw error(403, 'not a member');
 		const m = await send_group_msg(
-			env, me.id, group, text, image, file, reply_to, sticker, forwarded
+			env,
+			me.id,
+			group,
+			text,
+			image,
+			file,
+			reply_to,
+			sticker,
+			forwarded
 		).catch((e) => {
 			console.error('[SEND] not_stored', e);
 			throw error(503, 'not_stored');
@@ -97,7 +113,6 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 					},
 					locals.x2_ws
 				),
-				backfill_vector(env, m.id, text),
 				hub_conv(
 					env,
 					locals.x2_ws,
@@ -112,15 +127,28 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 
 		return json({
 			ok: true,
-			m: { id: m.id, from: m.f, group, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk, fw: m.fw }
+			m: {
+				id: m.id,
+				from: m.f,
+				group,
+				text: m.x,
+				image: m.im,
+				file: m.fl,
+				ts: m.d,
+				rp: m.rp,
+				sk: m.sk,
+				fw: m.fw
+			}
 		});
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker, forwarded).catch((e) => {
-		console.error('[SEND] not_stored', e);
-		throw error(503, 'not_stored');
-	});
+	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker, forwarded).catch(
+		(e) => {
+			console.error('[SEND] not_stored', e);
+			throw error(503, 'not_stored');
+		}
+	);
 
 	locals.bg(
 		Promise.all([
@@ -148,7 +176,6 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 				},
 				locals.x2_ws
 			),
-			backfill_vector(env, m.id, text),
 			hub_conv(
 				env,
 				locals.x2_ws,
@@ -163,6 +190,17 @@ export const POST: RequestHandler = async ({ request, locals, platform, cookies,
 
 	return json({
 		ok: true,
-		m: { id: m.id, from: m.f, to: m.t, text: m.x, image: m.im, file: m.fl, ts: m.d, rp: m.rp, sk: m.sk, fw: m.fw }
+		m: {
+			id: m.id,
+			from: m.f,
+			to: m.t,
+			text: m.x,
+			image: m.im,
+			file: m.fl,
+			ts: m.d,
+			rp: m.rp,
+			sk: m.sk,
+			fw: m.fw
+		}
 	});
 };

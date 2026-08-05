@@ -50,10 +50,9 @@ import {
 	get_group_messages,
 	get_message,
 	get_user_name,
-	search_messages,
 	toggle_reaction
 } from '../chat';
-import { ZV, f, f_or, eq } from '../qdrant';
+import { ZV, f, eq } from '../qdrant';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
 
@@ -131,7 +130,17 @@ describe('send_msg', () => {
 	});
 
 	it('stores a forwarded flag as fw on the message', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', 'hi', undefined, undefined, undefined, undefined, true);
+		const m = await send_msg(
+			ENV,
+			'alice',
+			'bob',
+			'hi',
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			true
+		);
 		expect(m.fw).toBe(true);
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi' } }
@@ -161,7 +170,16 @@ describe('send_group_msg', () => {
 	});
 
 	it('stores a sticker id as sk on a group message too', async () => {
-		const m = await send_group_msg(ENV, 'alice', 'g1', '', undefined, undefined, undefined, 'heart-eyes');
+		const m = await send_group_msg(
+			ENV,
+			'alice',
+			'g1',
+			'',
+			undefined,
+			undefined,
+			undefined,
+			'heart-eyes'
+		);
 		expect(m.sk).toBe('heart-eyes');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:' } }
@@ -169,7 +187,17 @@ describe('send_group_msg', () => {
 	});
 
 	it('stores a forwarded flag as fw on a group message too', async () => {
-		const m = await send_group_msg(ENV, 'alice', 'g1', 'hi', undefined, undefined, undefined, undefined, true);
+		const m = await send_group_msg(
+			ENV,
+			'alice',
+			'g1',
+			'hi',
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			true
+		);
 		expect(m.fw).toBe(true);
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi' } }
@@ -196,27 +224,6 @@ describe('edit_msg', () => {
 		});
 		await edit_msg(ENV, 'alice', 'm1', 'new text');
 		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ t: [1, 2, 3] });
-	});
-});
-
-describe('search_messages', () => {
-	it('searches by embedding, restricted to sender-or-recipient when no conv given', async () => {
-		embedMock.mockResolvedValue([9, 9, 9]);
-		searchMock.mockResolvedValue([{ id: '1', payload: { s: 'm', x: 'found it' } }]);
-		const r = await search_messages(ENV, 'ada', 'query text');
-		expect(embedMock).toHaveBeenCalledWith(ENV, 'query text');
-		expect(searchMock).toHaveBeenCalledWith(
-			ENV,
-			[9, 9, 9],
-			f_or([eq('s', 'm')], [eq('f', 'ada'), eq('t', 'ada')]),
-			20
-		);
-		expect(r.map((m) => m.x)).toEqual(['found it']);
-	});
-
-	it('scopes to a single conversation when `conv` is given', async () => {
-		await search_messages(ENV, 'ada', 'query', 'ada|bob');
-		expect(searchMock).toHaveBeenCalledWith(ENV, ZV, f(eq('s', 'm'), eq('c', 'ada|bob')), 20);
 	});
 });
 
@@ -248,7 +255,10 @@ describe('get_messages', () => {
 describe('get_group_messages', () => {
 	it('fetches the newest 50 ordered desc by `d`, then re-sorts ascending', async () => {
 		scrollMock.mockResolvedValue([
-			{ id: '2', payload: { s: 'm', c: group_conv_id('g1'), gr: 'g1', f: 'b', x: 'second', d: 200 } },
+			{
+				id: '2',
+				payload: { s: 'm', c: group_conv_id('g1'), gr: 'g1', f: 'b', x: 'second', d: 200 }
+			},
 			{ id: '1', payload: { s: 'm', c: group_conv_id('g1'), gr: 'g1', f: 'a', x: 'first', d: 100 } }
 		]);
 		const msgs = await get_group_messages(ENV, 'g1');
@@ -294,8 +304,6 @@ describe('get_message', () => {
 		expect(await get_message(ENV, 'm1')).toMatchObject({ id: 'm1', x: 'hello', d: 100 });
 	});
 });
-
-
 
 describe('get_user_name', () => {
 	it('returns the username (not full name)', async () => {

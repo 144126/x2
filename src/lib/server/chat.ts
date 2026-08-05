@@ -1,6 +1,16 @@
 import type { Message } from '../types';
-import { ensure, upsert, retrieve_one, remove, new_id, type QEnv, f, f_or, eq, scroll, search, ZV, update_vectors, set_payload } from './qdrant';
-import { embed } from './or';
+import {
+	ensure,
+	upsert,
+	retrieve_one,
+	remove,
+	new_id,
+	type QEnv,
+	f,
+	eq,
+	scroll,
+	set_payload
+} from './qdrant';
 import { get_group } from './group';
 import { encrypt_text, decrypt_text } from './msg_crypto';
 export { get_user_name, get_user_names } from './user';
@@ -9,21 +19,6 @@ export { ensure };
 
 export function conv_id(a: string, b: string): string {
 	return [a, b].sort().join('|');
-}
-
-// The embedding call is ~900ms (measured 660-1195ms against api.voxell.ai), so messages are
-// inserted with no vector at all (vector: {} — see named_vector_migration) and get one patched
-// in afterwards, only if the text is long enough to be worth searching. Callers hand this to
-// locals.bg so it runs after the response.
-//
-// updateVectors, not upsert: it writes the vector only. An upsert here would restore the
-// payload snapshot taken before the embedding call and so undo an edit or delete that
-// landed in the ~900ms window.
-export async function backfill_vector(env: QEnv, id: string, text: string): Promise<void> {
-	if (text.trim().length < 3) return;
-	const vector = await embed(env, text);
-	if (vector === ZV) return;
-	await update_vectors(env, id, vector);
 }
 
 export async function send_msg(
@@ -102,27 +97,6 @@ export async function send_group_msg(
 	return m;
 }
 
-export async function search_messages(
-	env: QEnv,
-	uid: string,
-	q: string,
-	conv?: string,
-	limit = 20
-): Promise<Message[]> {
-	await ensure(env);
-	const vector = await embed(env, q);
-	const filter = conv
-		? f(eq('s', 'm'), eq('c', conv))
-		: f_or([eq('s', 'm')], [eq('f', uid), eq('t', uid)]);
-	const pts = await search(env, vector, filter, limit);
-	return Promise.all(
-		pts.map(async (p) => {
-			const m = p.payload as unknown as Message;
-			return { ...m, x: await decrypt_text(env, m.x) };
-		})
-	);
-}
-
 export const PAGE = 50;
 
 async function page_msgs(env: QEnv, conv: string, before?: number): Promise<Message[]> {
@@ -182,7 +156,10 @@ export async function edit_msg(
 		{
 			id: msg_id,
 			vector: pt.vector ?? {},
-			payload: { ...next, x: await encrypt_text(env, new_text) } as unknown as Record<string, unknown>
+			payload: { ...next, x: await encrypt_text(env, new_text) } as unknown as Record<
+				string,
+				unknown
+			>
 		}
 	]);
 	return next;
@@ -225,5 +202,3 @@ export async function delete_msg(
 	await remove(env, [msg_id]);
 	return { media_key: m.im, c: m.c, gr: m.gr, f: m.f, t: m.t };
 }
-
-

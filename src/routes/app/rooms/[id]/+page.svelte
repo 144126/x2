@@ -299,7 +299,8 @@
 				gr: g.id,
 				x: body,
 				im: image,
-				d: Date.now()
+				d: Date.now(),
+				rp: replyTo?.id
 			};
 			messages = [...messages, row];
 			scroll_down();
@@ -318,7 +319,14 @@
 		mark_first_send();
 		replyTo = null;
 		const { m } = await res.json();
-		if (row?.cid && m) messages = confirm_sent(messages, row.cid, { id: m.id, d: m.ts });
+		if (row?.cid && m)
+			messages = confirm_sent(messages, row.cid, {
+				id: m.id,
+				d: m.ts,
+				rp: m.rp,
+				sk: m.sk,
+				fw: m.fw
+			});
 	}
 
 	async function membership(action: 'join' | 'leave') {
@@ -641,7 +649,11 @@
 					{:else}
 						{#if m.rp}
 							<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
-								{quoted[m.rp]?.x || 'original message'}
+								<span class="font-medium"
+									>{names[quoted[m.rp]?.f ?? ''] ??
+										(quoted[m.rp]?.f === me ? 'You' : 'someone')}</span
+								>
+								<span class="opacity-80"> · {quoted[m.rp]?.x || 'original message'}</span>
 							</div>
 						{/if}
 						{#if m.im}
@@ -766,7 +778,10 @@
 				class="flex items-center gap-2 border-t border-line px-1 py-2 text-[12.5px] text-ink-soft"
 			>
 				<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">
-					{replyTo.x || '(attachment)'}
+					<span class="font-medium"
+						>{names[replyTo.f] ?? (replyTo.f === me ? 'You' : 'someone')}</span
+					>
+					<span class="opacity-80"> · {replyTo.x || '(attachment)'}</span>
 				</div>
 				<button
 					type="button"

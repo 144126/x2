@@ -9,7 +9,11 @@ const { wsOnMock, wsSendMock, wsDropMock } = vi.hoisted(() => ({
 	wsDropMock: vi.fn()
 }));
 const { pageStore } = vi.hoisted(() => {
-	let value = { data: { user: { id: 'me' } }, state: {}, url: new URL('http://localhost/app/chat/bob') };
+	let value = {
+		data: { user: { id: 'me' } },
+		state: {},
+		url: new URL('http://localhost/app/chat/bob')
+	};
 	const subs = new Set<(v: unknown) => void>();
 	return {
 		pageStore: {
@@ -54,7 +58,11 @@ const data = {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	pageStore.set({ data: { user: { id: 'me' } }, state: {}, url: new URL('http://localhost/app/chat/bob') });
+	pageStore.set({
+		data: { user: { id: 'me' } },
+		state: {},
+		url: new URL('http://localhost/app/chat/bob')
+	});
 	Element.prototype.scrollTo = vi.fn();
 });
 
@@ -64,20 +72,18 @@ describe('replying', () => {
 	}
 
 	it('clicking reply on a message shows the quote-preview strip', async () => {
-		renderWith([
-			{ id: 'm1', f: 'bob', x: 'original text', d: 100 }
-		]);
+		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
 		const strip = screen.getByLabelText('cancel reply').parentElement!;
 		expect(strip).toHaveTextContent('original text');
 	});
 
 	it('sending while replying includes reply_to in the POST body, then clears the reply state', async () => {
-		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
 		globalThis.fetch = mockFetch;
-		renderWith([
-			{ id: 'm1', f: 'bob', x: 'original text', d: 100 }
-		]);
+		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
 		const input = screen.getByPlaceholderText('write something considered…');
 		await fireEvent.input(input, { target: { value: 'my reply' } });
@@ -90,12 +96,30 @@ describe('replying', () => {
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
 	});
 
+	it('shows the reply quote on the sent message immediately, without a reload', async () => {
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ m: { id: 'm2', rp: 'm1' } })
+		});
+		globalThis.fetch = mockFetch;
+		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
+		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		const input = screen.getByPlaceholderText('write something considered…');
+		await fireEvent.input(input, { target: { value: 'my reply' } });
+		await fireEvent.submit(input.closest('form')!);
+		await vi.waitFor(() =>
+			expect(
+				screen.getByText(
+					(_, el) => el?.tagName === 'SPAN' && !!el.textContent?.includes('original text')
+				)
+			).toBeInTheDocument()
+		);
+	});
+
 	it('cancel button clears the reply-preview strip without sending', async () => {
 		const mockFetch = vi.fn();
 		globalThis.fetch = mockFetch;
-		renderWith([
-			{ id: 'm1', f: 'bob', x: 'original text', d: 100 }
-		]);
+		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
 		await fireEvent.click(screen.getByLabelText('cancel reply'));
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
@@ -113,13 +137,15 @@ describe('replying', () => {
 			return Promise.resolve({ ok: true, json: () => Promise.resolve({ m: null }) });
 		});
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
-		renderWith([
-			{ id: 'm1', f: 'bob', x: 'replying', d: 100, rp: 'orig-1' }
-		]);
+		renderWith([{ id: 'm1', f: 'bob', x: 'replying', d: 100, rp: 'orig-1' }]);
+		await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1'));
 		await vi.waitFor(() =>
-			expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1')
+			expect(
+				screen.getByText(
+					(_, el) => !!el && el.children.length === 0 && el.textContent?.includes('quoted old text')
+				)
+			).toBeInTheDocument()
 		);
-		await vi.waitFor(() => expect(screen.getByText('quoted old text')).toBeInTheDocument());
 	});
 });
 
@@ -138,7 +164,9 @@ describe('reply privately', () => {
 		globalThis.fetch = mockFetch;
 		renderWith([{ id: 'm1', f: 'bob', x: 'private quote', d: 100 }], 'm1');
 		await vi.waitFor(() =>
-			expect(screen.getByLabelText('cancel reply').parentElement!).toHaveTextContent('private quote')
+			expect(screen.getByLabelText('cancel reply').parentElement!).toHaveTextContent(
+				'private quote'
+			)
 		);
 		expect(mockFetch).not.toHaveBeenCalled();
 	});
@@ -155,11 +183,11 @@ describe('reply privately', () => {
 		});
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 		renderWith([], 'orig-1');
+		await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1'));
 		await vi.waitFor(() =>
-			expect(mockFetch).toHaveBeenCalledWith('/api/messages/orig-1')
-		);
-		await vi.waitFor(() =>
-			expect(screen.getByLabelText('cancel reply').parentElement!).toHaveTextContent('quoted elsewhere')
+			expect(screen.getByLabelText('cancel reply').parentElement!).toHaveTextContent(
+				'quoted elsewhere'
+			)
 		);
 	});
 });
@@ -232,7 +260,9 @@ describe('stickers', () => {
 	}
 
 	it('clicking the sticker button opens the picker and selecting a sticker sends it', async () => {
-		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
 		globalThis.fetch = mockFetch;
 		renderWith([]);
 		await fireEvent.click(screen.getByRole('button', { name: 'sticker' }));

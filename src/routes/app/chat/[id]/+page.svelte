@@ -25,11 +25,11 @@
 		MicOff,
 		Paperclip,
 		Clock,
-		Search,
+		// Search,
 		Send as SendIcon,
 		LoaderCircle,
 		FileText,
-		X,
+		// X,
 		Smile
 	} from '@lucide/svelte';
 
@@ -193,6 +193,8 @@
 	}
 
 	let pendingFile: File | null = $state(null);
+	/* thread search removed — the /api/search/messages endpoint and its backend are gone too,
+	   so restoring this markup alone will not work; a backend has to come back with it.
 	let searchQ = $state('');
 	let searchResults = $state<{ id: string; x: string; d: number }[] | null>(null);
 	let searching = $state(false);
@@ -210,6 +212,7 @@
 		searching = false;
 		if (res.ok) searchResults = (await res.json()).messages;
 	}
+	*/
 	let busy = $state(false);
 	let text = $state('');
 	let scheduleAt = $state('');
@@ -293,7 +296,8 @@
 					x: body,
 					im: image,
 					fl: file,
-					d: Date.now()
+					d: Date.now(),
+					rp: replyTo?.id
 				};
 				add_msg(row);
 			}
@@ -312,7 +316,14 @@
 		mark_first_send();
 		replyTo = null;
 		const { m } = await res.json();
-		if (row?.cid && m) messages = confirm_sent(messages, row.cid, { id: m.id, d: m.ts });
+		if (row?.cid && m)
+			messages = confirm_sent(messages, row.cid, {
+				id: m.id,
+				d: m.ts,
+				rp: m.rp,
+				sk: m.sk,
+				fw: m.fw
+			});
 	}
 
 	const watch = { type: 'watch', peer: data.peer };
@@ -515,6 +526,7 @@
 		</div>
 	{/if}
 
+	<!-- thread search removed
 	<div class="flex items-center gap-2 border-b border-line py-3">
 		<div class="relative min-w-0 flex-1">
 			<Search
@@ -558,128 +570,128 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7" bind:this={threadEl}>
-			{#if !no_more && messages.length}
-				<button
-					class="btn btn-ghost mx-auto text-[12px]"
-					onclick={load_older}
-					disabled={loading_older}
-				>
-					{loading_older ? 'loading…' : 'load older messages'}
-				</button>
-			{/if}
-			{#each messages as m (m.cid ?? m.id)}
+	-->
+
+	<div class="thread flex flex-1 flex-col gap-3 overflow-y-auto py-7" bind:this={threadEl}>
+		{#if !no_more && messages.length}
+			<button
+				class="btn btn-ghost mx-auto text-[12px]"
+				onclick={load_older}
+				disabled={loading_older}
+			>
+				{loading_older ? 'loading…' : 'load older messages'}
+			</button>
+		{/if}
+		{#each messages as m (m.cid ?? m.id)}
+			<div
+				class="group flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
+					? 'self-end items-end'
+					: 'self-start'}"
+			>
 				<div
-					class="group flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
-						? 'self-end items-end'
-						: 'self-start'}"
+					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
+						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
+						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+					class:border-0={m.sk}
+					class:bg-transparent={m.sk}
+					class:p-0={m.sk}
+					class:opacity-60={m.id === '' && !m.err}
 				>
-					<div
-						class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
-							? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
-							: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
-						class:border-0={m.sk}
-						class:bg-transparent={m.sk}
-						class:p-0={m.sk}
-						class:opacity-60={m.id === '' && !m.err}
-					>
-						{#if m.fw}
-							<div class="mb-1 text-[10.5px] uppercase tracking-[0.12em] text-faint">forwarded</div>
-						{/if}
-						{#if m.sk}
-							<img
-								src={sticker_src(m.sk)}
-								alt={m.sk + ' sticker'}
-								class="h-[120px] w-[120px] object-contain"
-							/>
-						{:else}
-							{#if m.rp}
-								<div
-									class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70"
-								>
-									{quoted[m.rp]?.x || 'original message'}
-								</div>
-							{/if}
-							{#if m.im}
-								<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
-									<img
-										src={media_src(m.im)}
-										alt=""
-										class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
-									/>
-								</a>
-							{/if}
-							{#if m.fl}
-								<a
-									href={media_src(m.fl.key)}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
-								>
-									<FileText size={15} class="shrink-0" />
-									<span class="truncate">{m.fl.name}</span>
-									<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
-								</a>
-							{/if}
-							{#if m.x}{m.x}{/if}
-							{#if m.rx && Object.keys(m.rx).length}
-								<div class="mt-1 flex flex-wrap gap-1">
-									{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
-										<button
-											type="button"
-											class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
-											class:border-accent={uids.includes(me)}
-											onclick={() => react(m.id, emoji)}
-										>
-											{emoji}
-											{uids.length}
-										</button>
-									{/each}
-									{#if Object.keys(m.rx).length > 3}
-										<button
-											type="button"
-											class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
-											onclick={() => (reactionListFor = m.id)}
-											>+{Object.keys(m.rx).length - 3}</button
-										>
-									{/if}
-								</div>
-							{/if}
-						{/if}
-					</div>
-					{#if m.err}
-						<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
-							not sent — retry
-						</button>
+					{#if m.fw}
+						<div class="mb-1 text-[10.5px] uppercase tracking-[0.12em] text-faint">forwarded</div>
 					{/if}
-					<div
-						class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-					>
-						<button
-							type="button"
-							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => startReply(m)}>reply</button
-						>
-						<button
-							type="button"
-							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => (reactingTo = m.id)}>react</button
-						>
-						<button
-							type="button"
-							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => openForward(m)}>forward</button
-						>
-					</div>
+					{#if m.sk}
+						<img
+							src={sticker_src(m.sk)}
+							alt={m.sk + ' sticker'}
+							class="h-[120px] w-[120px] object-contain"
+						/>
+					{:else}
+						{#if m.rp}
+							<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
+								<span class="font-medium">{quoted[m.rp]?.f === me ? 'You' : data.peer_name}</span>
+								<span class="opacity-80"> · {quoted[m.rp]?.x || 'original message'}</span>
+							</div>
+						{/if}
+						{#if m.im}
+							<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
+								<img
+									src={media_src(m.im)}
+									alt=""
+									class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
+								/>
+							</a>
+						{/if}
+						{#if m.fl}
+							<a
+								href={media_src(m.fl.key)}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="mb-2 flex items-center gap-2 rounded-[10px] border border-line bg-panel px-3 py-2 text-[13px] no-underline"
+							>
+								<FileText size={15} class="shrink-0" />
+								<span class="truncate">{m.fl.name}</span>
+								<span class="text-faint">{(m.fl.size / 1024).toFixed(0)}kb</span>
+							</a>
+						{/if}
+						{#if m.x}{m.x}{/if}
+						{#if m.rx && Object.keys(m.rx).length}
+							<div class="mt-1 flex flex-wrap gap-1">
+								{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
+									<button
+										type="button"
+										class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
+										class:border-accent={uids.includes(me)}
+										onclick={() => react(m.id, emoji)}
+									>
+										{emoji}
+										{uids.length}
+									</button>
+								{/each}
+								{#if Object.keys(m.rx).length > 3}
+									<button
+										type="button"
+										class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
+										onclick={() => (reactionListFor = m.id)}>+{Object.keys(m.rx).length - 3}</button
+									>
+								{/if}
+							</div>
+						{/if}
+					{/if}
 				</div>
-			{/each}
-		</div>
-	{/if}
+				{#if m.err}
+					<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
+						not sent — retry
+					</button>
+				{/if}
+				<div
+					class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+				>
+					<button
+						type="button"
+						class="text-[11px] text-faint hover:text-accent"
+						onclick={() => startReply(m)}>reply</button
+					>
+					<button
+						type="button"
+						class="text-[11px] text-faint hover:text-accent"
+						onclick={() => (reactingTo = m.id)}>react</button
+					>
+					<button
+						type="button"
+						class="text-[11px] text-faint hover:text-accent"
+						onclick={() => openForward(m)}>forward</button
+					>
+				</div>
+			</div>
+		{/each}
+	</div>
 
 	{#if replyTo}
 		<div class="flex items-center gap-2 border-t border-line px-1 py-2 text-[12.5px] text-ink-soft">
 			<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">
-				{replyTo.x || '(attachment)'}
+				<span class="font-medium">{replyTo.f === me ? 'You' : data.peer_name}</span>
+				<span class="opacity-80"> · {replyTo.x || '(attachment)'}</span>
 			</div>
 			<button
 				type="button"
