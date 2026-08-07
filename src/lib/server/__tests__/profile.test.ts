@@ -16,7 +16,7 @@ vi.mock('../user', () => ({ get_user: getUserMock }));
 vi.mock('../or', () => ({ embed: embedMock }));
 
 import { save_profile } from '../profile';
-import { ZV, V } from '../qdrant';
+import { V } from '../qdrant';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
 const BASE_USER = { s: 'u' as const, g: 'sub', n: 'Ada', d: 1000, o: 'google' as const };
@@ -62,10 +62,10 @@ describe('save_profile', () => {
 		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: [0.5, 0.6] });
 	});
 
-	it('writes a named placeholder vector when about+interests are both empty', async () => {
+	it('writes no vector when about+interests are both empty', async () => {
 		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada' });
 		await save_profile(ENV, 'uid', {});
-		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: ZV });
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
 	});
 });
 

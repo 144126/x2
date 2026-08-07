@@ -1,5 +1,5 @@
 import type { User } from '../types';
-import { ZV, V, ensure, upsert, type QEnv } from './qdrant';
+import { V, ensure, upsert, type QEnv } from './qdrant';
 import { get_user } from './user';
 import { embed as embed_text } from './or';
 import { normalize_username, validate_username, username_free } from './username';
@@ -61,9 +61,13 @@ export async function save_profile(
 	]
 		.filter(Boolean)
 		.join(' | ');
-	const vec = text ? await embed_text(env, text) : ZV;
+	const vec = text ? await embed_text(env, text) : null;
 	await upsert(env, [
-		{ id: uid, vector: { [V]: vec }, payload: merged as unknown as Record<string, unknown> }
+		{
+			id: uid,
+			vector: vec && vec.some((n) => n !== 0) ? { [V]: vec } : {},
+			payload: merged as unknown as Record<string, unknown>
+		}
 	]);
 }
 

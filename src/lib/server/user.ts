@@ -1,6 +1,17 @@
 import type { User } from '../types';
 export type { User }; // re-export so device.ts can type its returns
-import { ensure, upsert, retrieve_one, retrieve_many, uuid_from, scroll, f, f_or, eq, ZV, V, type QEnv } from './qdrant';
+import {
+	ensure,
+	upsert,
+	retrieve_one,
+	retrieve_many,
+	uuid_from,
+	scroll,
+	f,
+	f_or,
+	eq,
+	type QEnv
+} from './qdrant';
 import { validate_username, available_username } from './username';
 import { hash_pw, verify_pw } from './pw';
 
@@ -25,7 +36,9 @@ export async function save_user(
 ): Promise<string> {
 	await ensure(env);
 	const id = await uuid_from(sub);
-	const existing = (await get_user(env, id)) ?? undefined;
+	const pt = await retrieve_one(env, id, true);
+	const prev = pt?.payload as unknown as User | undefined;
+	const existing = prev?.s === 'u' ? prev : undefined;
 	const u: User = {
 		...existing,
 		s: 'u',
@@ -37,7 +50,9 @@ export async function save_user(
 		o: existing?.o ?? provider,
 		h: existing?.h
 	};
-	await upsert(env, [{ id, vector: { [V]: ZV }, payload: u as unknown as Record<string, unknown> }]);
+	await upsert(env, [
+		{ id, vector: pt?.vector ?? {}, payload: u as unknown as Record<string, unknown> }
+	]);
 	return id;
 }
 
@@ -50,7 +65,10 @@ export function is_device_only(u: Pick<User, 'h' | 'o'>): boolean {
 	return !u.h && u.o !== 'google';
 }
 
-export async function find_user_by_email(env: QEnv, email: string): Promise<(User & { id: string }) | null> {
+export async function find_user_by_email(
+	env: QEnv,
+	email: string
+): Promise<(User & { id: string }) | null> {
 	await ensure(env);
 	const pts = await scroll(env, f(eq('s', 'u'), eq('m', email)), 1);
 	const p = pts[0];
@@ -81,7 +99,7 @@ export async function patch_user(
 	await upsert(env, [
 		{
 			id: uid,
-			vector: pt!.vector ?? { [V]: ZV },
+			vector: pt!.vector ?? {},
 			payload: merged as unknown as Record<string, unknown>
 		}
 	]);
@@ -91,7 +109,9 @@ export async function patch_user(
 export async function create_pw_user(env: QEnv, email: string, password: string): Promise<string> {
 	await ensure(env);
 	const id = await uuid_from(email);
-	const existing = (await get_user(env, id)) ?? undefined;
+	const pt = await retrieve_one(env, id, true);
+	const prev = pt?.payload as unknown as User | undefined;
+	const existing = prev?.s === 'u' ? prev : undefined;
 	const u: User = {
 		...existing,
 		s: 'u',
@@ -102,7 +122,9 @@ export async function create_pw_user(env: QEnv, email: string, password: string)
 		o: 'local',
 		h: await hash_pw(password)
 	};
-	await upsert(env, [{ id, vector: { [V]: ZV }, payload: u as unknown as Record<string, unknown> }]);
+	await upsert(env, [
+		{ id, vector: pt?.vector ?? {}, payload: u as unknown as Record<string, unknown> }
+	]);
 	return id;
 }
 

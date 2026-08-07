@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, retrieveManyMock, scrollMock } = vi.hoisted(() => ({
-	ensureMock: vi.fn(),
-	upsertMock: vi.fn(),
-	retrieveOneMock: vi.fn(),
-	retrieveManyMock: vi.fn(),
-	scrollMock: vi.fn()
-}));
+const { ensureMock, upsertMock, retrieveOneMock, retrieveManyMock, scrollMock } = vi.hoisted(
+	() => ({
+		ensureMock: vi.fn(),
+		upsertMock: vi.fn(),
+		retrieveOneMock: vi.fn(),
+		retrieveManyMock: vi.fn(),
+		scrollMock: vi.fn()
+	})
+);
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
@@ -20,8 +22,17 @@ vi.mock('../qdrant', async () => {
 	};
 });
 
-import { save_user, get_user, create_pw_user, verify_user_pw, patch_user, get_user_names, find_user_by_email, find_user_by_google_sub } from '../user';
-import { uuid_from, ZV, V } from '../qdrant';
+import {
+	save_user,
+	get_user,
+	create_pw_user,
+	verify_user_pw,
+	patch_user,
+	get_user_names,
+	find_user_by_email,
+	find_user_by_google_sub
+} from '../user';
+import { uuid_from, V } from '../qdrant';
 import { hash_pw } from '../pw';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' };
@@ -41,7 +52,7 @@ describe('save_user', () => {
 		expect(ensureMock).toHaveBeenCalledWith(ENV);
 		const [, points] = upsertMock.mock.calls[0];
 		expect(points[0].id).toBe(id);
-		expect(points[0].vector).toEqual({ [V]: ZV });
+		expect(points[0].vector).toEqual({});
 		expect(points[0].payload).toMatchObject({
 			s: 'u',
 			g: 'google-sub-1',
@@ -101,9 +112,9 @@ describe('create_pw_user', () => {
 		expect(payload.h.split('.')).toHaveLength(2);
 	});
 
-	it('writes a named placeholder vector too — a fresh account has no content yet', async () => {
+	it('writes no vector — a fresh account has no content yet', async () => {
 		await create_pw_user(ENV, 'e@x.com', 'hunter22');
-		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: ZV });
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
 	});
 });
 
@@ -134,7 +145,9 @@ describe('find_user_by_google_sub', () => {
 	});
 
 	it('finds a linked account by its gl field', async () => {
-		scrollMock.mockResolvedValue([{ id: 'dev-uid', payload: { s: 'u', g: 'device-xyz', gl: 'sub-2', u: 'ada' } }]);
+		scrollMock.mockResolvedValue([
+			{ id: 'dev-uid', payload: { s: 'u', g: 'device-xyz', gl: 'sub-2', u: 'ada' } }
+		]);
 		const found = await find_user_by_google_sub(ENV, 'sub-2');
 		expect(found?.id).toBe('dev-uid');
 	});
@@ -210,14 +223,14 @@ describe('patch_user', () => {
 		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: [1, 2, 3] });
 	});
 
-	it('falls back to a named placeholder vector when the point had none', async () => {
+	it('writes no vector when the point had none', async () => {
 		retrieveOneMock.mockResolvedValue({
 			id: 'x',
 			vector: undefined,
 			payload: { s: 'u', u: 'ada', d: 1 }
 		});
 		await patch_user(ENV, 'x', { ac: 'CODE1' });
-		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({ [V]: ZV });
+		expect(upsertMock.mock.calls[0][1][0].vector).toEqual({});
 	});
 
 	it('returns null for a user that does not exist', async () => {
@@ -244,25 +257,19 @@ describe('get_user_names', () => {
 	});
 
 	it('maps id to username', async () => {
-		retrieveManyMock.mockResolvedValue([
-			{ id: 'bob', payload: { s: 'u', u: 'bobby' } }
-		]);
+		retrieveManyMock.mockResolvedValue([{ id: 'bob', payload: { s: 'u', u: 'bobby' } }]);
 		const names = await get_user_names(ENV, ['bob']);
 		expect(names).toEqual({ bob: 'bobby' });
 	});
 
 	it('falls back to the raw id for a point that does not exist in the response', async () => {
-		retrieveManyMock.mockResolvedValue([
-			{ id: 'bob', payload: { s: 'u', u: 'bobby' } }
-		]);
+		retrieveManyMock.mockResolvedValue([{ id: 'bob', payload: { s: 'u', u: 'bobby' } }]);
 		const names = await get_user_names(ENV, ['bob', 'ghost']);
 		expect(names).toEqual({ bob: 'bobby', ghost: 'ghost' });
 	});
 
 	it('falls back to the raw id for a point whose payload is not s: "u"', async () => {
-		retrieveManyMock.mockResolvedValue([
-			{ id: 'msg1', payload: { s: 'm', x: 'hello' } }
-		]);
+		retrieveManyMock.mockResolvedValue([{ id: 'msg1', payload: { s: 'm', x: 'hello' } }]);
 		const names = await get_user_names(ENV, ['msg1']);
 		expect(names).toEqual({ msg1: 'msg1' });
 	});
