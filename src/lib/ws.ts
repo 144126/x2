@@ -43,7 +43,12 @@ async function open() {
 	}
 	const r = await fetch('/api/wstoken');
 	if (!r.ok) return retry();
-	const { ws, t, uid, exp } = (await r.json()) as { ws: string; t: string; uid: string; exp: number };
+	const { ws, t, uid, exp } = (await r.json()) as {
+		ws: string;
+		t: string;
+		uid: string;
+		exp: number;
+	};
 	const proto = `x2.${uid}.${exp}.${t}`;
 	const s = new WebSocket(ws, [proto]);
 	sock = s;
@@ -103,7 +108,8 @@ async function open() {
 
 function retry() {
 	if (intentionallyClosed || timer || !subs.size) return;
-	const delay = Math.min(30_000, 500 * 2 ** tries++);
+	const base = Math.min(30_000, 500 * 2 ** tries++);
+	const delay = base / 2 + Math.random() * (base / 2);
 	console.log('[WS-CLIENT] scheduling reconnect in', delay, 'ms (attempt', tries, ')');
 	timer = setTimeout(() => {
 		timer = null;
