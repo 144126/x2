@@ -4,9 +4,11 @@ import { env } from '$env/dynamic/private';
 import { find_user_by_email, patch_user } from '$lib/server/user';
 import { hash_pw } from '$lib/server/pw';
 import { encode_session } from '$lib/server/session';
+import { assert_session_current } from '$lib/server/hub_client';
 
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	if (!locals.user) throw error(401, 'auth');
+	await assert_session_current(env, locals.x2_ws, locals.user, locals.session_v ?? 0);
 	const body = (await request.json().catch(() => null)) as { email?: string; password?: string };
 	const email = body?.email?.trim().toLowerCase();
 	const password = body?.password ?? '';

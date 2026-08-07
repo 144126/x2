@@ -22,18 +22,25 @@ declare global {
 			modal?: 'create-room' | 'edit-room';
 		}
 
-interface Locals {
-		user?: { id: string; username: string; picture?: string; email?: string; is_device?: boolean } | null;
-		device_id?: string;
-		x2_ws: Fetcher;
-		geo: Geo | null;
-		/**
-		 * Keep a promise alive past the response. Backed by ExecutionContext.waitUntil in
-		 * production; falls back to a floating promise (dev/test/prerender) where the isolate
-		 * is not torn down at response time.
-		 */
-		bg: (p: Promise<unknown>) => void;
-	}
+		interface Locals {
+			user?: {
+				id: string;
+				username: string;
+				picture?: string;
+				email?: string;
+				is_device?: boolean;
+			} | null;
+			session_v?: number;
+			device_id?: string;
+			x2_ws: Fetcher;
+			geo: Geo | null;
+			/**
+			 * Keep a promise alive past the response. Backed by ExecutionContext.waitUntil in
+			 * production; falls back to a floating promise (dev/test/prerender) where the isolate
+			 * is not torn down at response time.
+			 */
+			bg: (p: Promise<unknown>) => void;
+		}
 	}
 }
 

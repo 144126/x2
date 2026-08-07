@@ -2,6 +2,7 @@
 // (`/hub/:uid/*`, see ws/src/index.ts). ChatHub owns unread counts, read markers, mutes
 // and push subscriptions for its uid — see plan/scale.plan.json -> hub_owns_delivery.
 import { get_secret, type QEnv } from './qdrant';
+import { error } from '@sveltejs/kit';
 
 // Typed failure for hub reads so a dead/mismatched/older ws worker is distinguishable
 // from "genuinely no conversations" — reason: 'network' | 'http_<status>' | 'bad_shape'.
@@ -44,7 +45,13 @@ export async function hub_convs(
 	if (!res.ok) throw new ChatHubError(`http_${res.status}`);
 	const body = (await res.json().catch(() => null)) as { convs?: unknown } | null;
 	if (!body || !Array.isArray(body.convs)) throw new ChatHubError('bad_shape');
-	return body.convs as { peer?: string; group?: string; last: number; preview: string; unread: number }[];
+	return body.convs as {
+		peer?: string;
+		group?: string;
+		last: number;
+		preview: string;
+		unread: number;
+	}[];
 }
 
 export async function hub_conv(
@@ -101,7 +108,12 @@ export async function hub_mute(
 	});
 }
 
-export async function hub_unmute(env: QEnv, ws: Fetcher, uid: string, target: string): Promise<void> {
+export async function hub_unmute(
+	env: QEnv,
+	ws: Fetcher,
+	uid: string,
+	target: string
+): Promise<void> {
 	await call(env, ws, uid, '/unmute', { method: 'POST', body: JSON.stringify({ target }) });
 }
 
@@ -142,7 +154,12 @@ async function room_call(
 	});
 }
 
-export async function room_join(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<string[]> {
+export async function room_join(
+	env: QEnv,
+	ws: Fetcher,
+	id: string,
+	uid: string
+): Promise<string[]> {
 	const res = await room_call(env, ws, id, '/join', {
 		method: 'POST',
 		body: JSON.stringify({ uid })
@@ -151,7 +168,12 @@ export async function room_join(env: QEnv, ws: Fetcher, id: string, uid: string)
 	return (await res.json()).members;
 }
 
-export async function room_leave(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<string[]> {
+export async function room_leave(
+	env: QEnv,
+	ws: Fetcher,
+	id: string,
+	uid: string
+): Promise<string[]> {
 	const res = await room_call(env, ws, id, '/leave', {
 		method: 'POST',
 		body: JSON.stringify({ uid })
@@ -166,7 +188,12 @@ export async function room_members(env: QEnv, ws: Fetcher, id: string): Promise<
 	return (await res.json()).members;
 }
 
-export async function room_is_member(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<boolean> {
+export async function room_is_member(
+	env: QEnv,
+	ws: Fetcher,
+	id: string,
+	uid: string
+): Promise<boolean> {
 	const res = await room_call(env, ws, id, `/is-member?uid=${uid}`).catch(() => null);
 	if (!res?.ok) return false;
 	return (await res.json()).ok;
@@ -180,6 +207,18 @@ export async function hub_sv_get(env: QEnv, ws: Fetcher, uid: string): Promise<n
 
 export async function hub_sv_set(env: QEnv, ws: Fetcher, uid: string, sv: number): Promise<void> {
 	await call(env, ws, uid, '/sv', { method: 'POST', body: JSON.stringify({ sv }) });
+}
+
+// Only call where a stale session actually matters (ws handshake, credential changes):
+// every request is authenticated by the HMAC signature in handle, no DO round trip needed.
+export async function assert_session_current(
+	env: QEnv,
+	ws: Fetcher,
+	user: { id: string },
+	v: number
+): Promise<void> {
+	const sv = await hub_sv_get(env, ws, user.id);
+	if (sv > v) throw error(401, 'revoked');
 }
 
 export async function hub_unsub(
