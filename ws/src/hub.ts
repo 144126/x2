@@ -26,6 +26,8 @@ type SubEntry = { ep: string; k: string; au: string; ua?: string; d: number };
 
 const is_mute_active = (m: MuteEntry, now = Date.now()): boolean => m.until === 0 || m.until > now;
 
+export const MAX_WATCHERS = 200;
+
 export class ChatHub implements DurableObject {
 	private state: DurableObjectState;
 	private env: Env;
@@ -62,7 +64,11 @@ export class ChatHub implements DurableObject {
 			this.state.acceptWebSocket(server, [uid]);
 			this.announce(uid, true);
 			await this.notify_watchers(uid, true);
-			return new Response(null, { status: 101, webSocket: client, headers: { 'sec-websocket-protocol': proto } });
+			return new Response(null, {
+				status: 101,
+				webSocket: client,
+				headers: { 'sec-websocket-protocol': proto }
+			});
 		}
 		if (url.pathname === '/relay' && request.method === 'POST') {
 			const body = (await request.json()) as Record<string, unknown>;
@@ -117,6 +123,7 @@ export class ChatHub implements DurableObject {
 			const watchers = (await this.state.storage.get<string[]>('watchers')) ?? [];
 			if (!watchers.includes(uid)) {
 				watchers.push(uid);
+				if (watchers.length > MAX_WATCHERS) watchers.shift();
 				await this.state.storage.put('watchers', watchers);
 			}
 			return new Response('ok');
@@ -232,6 +239,13 @@ export class ChatHub implements DurableObject {
 		} else if (msg.type === 'watch') {
 			const id = this.env.CHAT_HUB.idFromName(msg.peer);
 			const stub = this.env.CHAT_HUB.get(id);
+			await stub.fetch('https://dummy/watch', {
+				method: 'POST',
+				body: JSON.stringify({ uid: self })
+			});
+		} else if (msg.type === 'unwatch') {
+			const id = this.env.CHAT_HUB.idFromName(msg.peer);
+			const stub = this.env.CHAT_HUB.get(id);
 			await stub.fetch('https://dummy/unwatch', {
 				method: 'POST',
 				body: JSON.stringify({ uid: self })
@@ -256,16 +270,18 @@ export class ChatHub implements DurableObject {
 
 	private async notify_watchers(uid: string, online: boolean): Promise<void> {
 		const watchers = (await this.state.storage.get<string[]>('watchers')) ?? [];
-		for (const watcher of watchers) {
-			try {
-				const id = this.env.CHAT_HUB.idFromName(watcher);
-				const stub = this.env.CHAT_HUB.get(id);
-				await stub.fetch('https://dummy/notify', {
-					method: 'POST',
-					body: JSON.stringify({ uid, online })
-				});
-			} catch {}
-		}
+		await Promise.all(
+			watchers.slice(0, MAX_WATCHERS).map(async (watcher) => {
+				try {
+					const id = this.env.CHAT_HUB.idFromName(watcher);
+					const stub = this.env.CHAT_HUB.get(id);
+					await stub.fetch('https://dummy/notify', {
+						method: 'POST',
+						body: JSON.stringify({ uid, online })
+					});
+				} catch {}
+			})
+		);
 	}
 
 	private deliver(uid: string, payload: unknown): boolean {
@@ -320,10 +336,10 @@ export class ChatHub implements DurableObject {
 	}
 
 	private async list_convs(): Promise<
-		({ peer?: string; group?: string; last: number; preview: string; unread: number })[]
+		{ peer?: string; group?: string; last: number; preview: string; unread: number }[]
 	> {
 		const raw = await this.state.storage.list<ConvEntry>({ prefix: 'conv:' });
-		const out: ({ peer?: string; group?: string; last: number; preview: string; unread: number })[] =
+		const out: { peer?: string; group?: string; last: number; preview: string; unread: number }[] =
 			[];
 		for (const [key, entry] of raw) {
 			const conv = key.slice('conv:'.length);
@@ -414,7 +430,12 @@ function build_relay_payload(type: string, body: Record<string, unknown>): Recor
 	};
 }
 
-export async function verify_token(secret: string, uid: string, exp: number, token: string): Promise<boolean> {
+export async function verify_token(
+	secret: string,
+	uid: string,
+	exp: number,
+	token: string
+): Promise<boolean> {
 	if (!secret || !token || !exp) return false;
 	if (exp < Date.now()) return false;
 	const k = await crypto.subtle.importKey(
