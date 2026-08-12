@@ -1,2 +1,46 @@
 [WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
 $ vite dev
+
+  VITE v8.1.5  ready in 4219 ms
+
+  ➜  Local:   http://localhost:7227/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+Using secrets defined in .env
+Using secrets defined in .env
+*** Fatal uncaught kj::Exception: workerd/util/sqlite.c++:844: failed: SENTRY_DO SQLite failed; NOSENTRY database is locked: SQLITE_BUSY (extended: SQLITE_BUSY_RECOVERY)
+stack: /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33af68b /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2010925 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206e2bc /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206dc76 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@202b09c /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@202aaf2 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1fe0a32 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@20680bf /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206b415 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1fb1339 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5432855 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5432d78 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@543082e /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@543062e /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f98d17 /usr/lib/libc.so.6@2abfb /usr/lib/libc.so.6@2acb4 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f98024
+
+[1;31m[404] GET /favicon.ico[0m
+12:43:50 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:43:50 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:43:50 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+12:43:50 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:44:15 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:44:15 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:44:15 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+12:44:15 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+[HUB] POST /hub/11523942/sub -> 503 95ms
+[HUB] POST /hub/11523942/sub -> 503 325ms
+[HUB] GET /hub/11523942/unread -> 503 10ms
+[HUB] GET /hub/11523942/unread -> 503 11ms
+[HUB] GET /hub/11523942/unread -> 503 7ms
+12:46:44 AM [vite-plugin-svelte] src/routes/app/+page.svelte:165:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+12:46:44 AM [vite-plugin-svelte] src/routes/app/+page.svelte:165:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:46:45 AM [vite-plugin-svelte] src/routes/app/+page.svelte:165:4 Non-interactive element `<li>` cannot have interactive role 'button'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+12:46:45 AM [vite-plugin-svelte] src/routes/app/+page.svelte:165:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+[HUB] POST /hub/e7bb811d/sub -> 503 11ms
+[HUB] GET /hub/e7bb811d/unread -> 503 4ms
+[HUB] GET /hub/e7bb811d/unread -> 503 7ms
