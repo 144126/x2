@@ -90,8 +90,9 @@
 		});
 	}
 
-	async function joinCall() {
+	async function joinCall(withVideo = false) {
 		callError = '';
+		videoOn = withVideo;
 		mesh ??= makeMesh();
 		try {
 			localStream = await mesh.open(videoOn);
@@ -120,8 +121,15 @@
 	}
 
 	async function toggleVideo() {
-		videoOn = !videoOn;
-		await mesh?.setVideo(videoOn);
+		const next = !videoOn;
+		callError = '';
+		try {
+			await mesh?.setVideo(next);
+			videoOn = next;
+		} catch (e) {
+			console.error('[ROOM-CLIENT] toggleVideo failed', e);
+			callError = 'could not access the camera — check permissions.';
+		}
 	}
 
 	let thread: HTMLDivElement | undefined = $state();
@@ -450,9 +458,15 @@
 			{#if mine && !inCall}
 				<button
 					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]"
-					onclick={joinCall}
+					onclick={() => joinCall(false)}
 				>
 					<Phone size={14} /> join call
+				</button>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]"
+					onclick={() => joinCall(true)}
+				>
+					<Video size={14} /> join with video
 				</button>
 			{/if}
 			{#if mine}

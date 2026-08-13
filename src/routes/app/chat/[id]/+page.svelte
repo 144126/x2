@@ -235,6 +235,7 @@
 		remoteStream = null;
 		callState = 'idle';
 		micOn = true;
+		videoOn = false;
 	}
 
 	function makeMesh(): CallMesh {
@@ -367,8 +368,9 @@
 		ws_send(check, true);
 	}
 
-	async function startCall() {
+	async function startCall(withVideo = false) {
 		callError = '';
+		videoOn = withVideo;
 		mesh = makeMesh();
 		try {
 			localStream = await mesh.open(videoOn);
@@ -398,8 +400,15 @@
 	}
 
 	async function toggleVideo() {
-		videoOn = !videoOn;
-		await mesh?.setVideo(videoOn);
+		const next = !videoOn;
+		callError = '';
+		try {
+			await mesh?.setVideo(next);
+			videoOn = next;
+		} catch (e) {
+			console.error('[CHAT-CLIENT] toggleVideo failed', e);
+			callError = 'could not access the camera — check permissions.';
+		}
 	}
 
 	function toggleMic() {
@@ -465,8 +474,17 @@
 			<AiThread conv={data.conv} peerName={data.peer_name} />
 			<MuteButton target={data.peer} kind="u" bind:muted label="notifications from this person" />
 			{#if callState === 'idle' && online}
-				<button class="btn btn-ghost flex items-center gap-1.5 text-[13px]" onclick={startCall}>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 text-[13px]"
+					onclick={() => startCall(false)}
+				>
 					<Phone size={15} /> call
+				</button>
+				<button
+					class="btn btn-ghost flex items-center gap-1.5 text-[13px]"
+					onclick={() => startCall(true)}
+				>
+					<Video size={15} /> video call
 				</button>
 			{/if}
 			{#if callState === 'calling'}
