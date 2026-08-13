@@ -382,3 +382,37 @@ describe('CallMesh connection-state recovery', () => {
 		expect(mesh.peers).toEqual([]);
 	});
 });
+
+describe('CallMesh.open camera fallback', () => {
+	/** a device with a working mic and no camera: any video constraint throws NotFoundError */
+	const no_camera = async (c: MediaStreamConstraints) => {
+		if (c.video) {
+			const e = new Error('Requested device not found');
+			e.name = 'NotFoundError';
+			throw e;
+		}
+		return fakeStream().stream;
+	};
+
+	it('falls back to an audio-only call when the camera is missing', async () => {
+		const { mesh } = harness('alice', { getMedia: no_camera });
+
+		const stream = await mesh.open(true);
+
+		expect(stream.getAudioTracks()).toHaveLength(1);
+		expect(stream.getVideoTracks()).toHaveLength(0);
+		expect(mesh.active).toBe(true);
+	});
+
+	it('rethrows when the mic fails too, so the page can name the cause', async () => {
+		const denied = async () => {
+			const e = new Error('denied');
+			e.name = 'NotAllowedError';
+			throw e;
+		};
+		const { mesh } = harness('alice', { getMedia: denied });
+
+		await expect(mesh.open(true)).rejects.toMatchObject({ name: 'NotAllowedError' });
+		expect(mesh.active).toBe(false);
+	});
+});

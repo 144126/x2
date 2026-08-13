@@ -6,7 +6,7 @@
 	import { confirm_sent, mark_failed } from '$lib/chat_optimistic';
 	import { upload_file, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
-	import { CallMesh, media_error, type CallSignal } from '$lib/call';
+	import { CallMesh, media_error, VIDEO_FALLBACK, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
@@ -381,6 +381,8 @@
 			callState = 'idle';
 			return;
 		}
+		videoOn = localStream.getVideoTracks().length > 0;
+		if (withVideo && !videoOn) callError = VIDEO_FALLBACK;
 		try {
 			await mesh.invite(data.peer);
 			callState = 'calling';
@@ -403,6 +405,9 @@
 			callState = 'idle';
 			return;
 		}
+		const wanted_video = videoOn;
+		videoOn = localStream.getVideoTracks().length > 0;
+		if (wanted_video && !videoOn) callError = VIDEO_FALLBACK;
 		try {
 			await mesh.accept(data.peer);
 			callState = 'connected';

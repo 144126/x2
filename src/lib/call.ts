@@ -59,6 +59,9 @@ export function media_error(e: unknown): string {
 	}
 }
 
+/** shown when a call asked for video but only the mic came up */
+export const VIDEO_FALLBACK = 'the camera did not start — you are in with audio only.';
+
 export class CallMesh {
 	private o: MeshOpts;
 	private pcs = new Map<string, RTCPeerConnection>();
@@ -97,7 +100,15 @@ export class CallMesh {
 	async open(video: boolean): Promise<MediaStream> {
 		if (this.local) return this.local;
 		const get = this.o.getMedia ?? default_media;
-		this.local = await get({ audio: true, video });
+		try {
+			this.local = await get({ audio: true, video });
+		} catch (e) {
+			// one getUserMedia for both devices fails as a unit, so a missing or busy
+			// camera costs the mic too. Retry without video: the call still works, and
+			// the caller reports the downgrade by counting video tracks on the stream.
+			if (!video) throw e;
+			this.local = await get({ audio: true, video: false });
+		}
 		return this.local;
 	}
 

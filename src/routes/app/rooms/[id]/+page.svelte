@@ -7,7 +7,7 @@
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
-	import { CallMesh, media_error, type CallSignal } from '$lib/call';
+	import { CallMesh, media_error, VIDEO_FALLBACK, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
@@ -102,6 +102,8 @@
 			mesh = null;
 			return;
 		}
+		videoOn = localStream.getVideoTracks().length > 0;
+		if (withVideo && !videoOn) callError = VIDEO_FALLBACK;
 		inCall = true;
 		mesh.announce(g.members);
 	}
