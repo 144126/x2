@@ -7,7 +7,7 @@
 	import { upload_image, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
-	import { CallMesh, type CallSignal } from '$lib/call';
+	import { CallMesh, media_error, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
@@ -96,13 +96,14 @@
 		mesh ??= makeMesh();
 		try {
 			localStream = await mesh.open(videoOn);
-			inCall = true;
-			mesh.announce(g.members);
 		} catch (e) {
-			console.error('[ROOM-CLIENT] joinCall failed', e);
-			callError = 'could not access camera/mic — check permissions.';
+			console.error('[ROOM-CLIENT] joinCall media failed', e);
+			callError = media_error(e);
 			mesh = null;
+			return;
 		}
+		inCall = true;
+		mesh.announce(g.members);
 	}
 
 	function leaveCall(silent = false) {
@@ -128,7 +129,7 @@
 			videoOn = next;
 		} catch (e) {
 			console.error('[ROOM-CLIENT] toggleVideo failed', e);
-			callError = 'could not access the camera — check permissions.';
+			callError = media_error(e);
 		}
 	}
 

@@ -6,7 +6,7 @@
 	import { confirm_sent, mark_failed } from '$lib/chat_optimistic';
 	import { upload_file, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
-	import { CallMesh, type CallSignal } from '$lib/call';
+	import { CallMesh, media_error, type CallSignal } from '$lib/call';
 	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
@@ -374,13 +374,20 @@
 		mesh = makeMesh();
 		try {
 			localStream = await mesh.open(videoOn);
+		} catch (e) {
+			console.error('[CHAT-CLIENT] startCall media failed', e);
+			callError = media_error(e);
+			mesh = null;
+			callState = 'idle';
+			return;
+		}
+		try {
 			await mesh.invite(data.peer);
 			callState = 'calling';
 		} catch (e) {
-			console.error('[CHAT-CLIENT] startCall failed', e);
-			callError = 'could not access camera/mic — check permissions.';
-			mesh = null;
-			callState = 'idle';
+			console.error('[CHAT-CLIENT] startCall connect failed', e);
+			callError = 'could not reach the other person — try again.';
+			endCall();
 		}
 	}
 
@@ -389,13 +396,20 @@
 		callError = '';
 		try {
 			localStream = await mesh.open(videoOn);
+		} catch (e) {
+			console.error('[CHAT-CLIENT] answerCall media failed', e);
+			callError = media_error(e);
+			mesh = null;
+			callState = 'idle';
+			return;
+		}
+		try {
 			await mesh.accept(data.peer);
 			callState = 'connected';
 		} catch (e) {
-			console.error('[CHAT-CLIENT] answerCall failed', e);
-			callError = 'could not access camera/mic — check permissions.';
-			mesh = null;
-			callState = 'idle';
+			console.error('[CHAT-CLIENT] answerCall connect failed', e);
+			callError = 'could not connect the call — try again.';
+			endCall();
 		}
 	}
 
@@ -407,7 +421,7 @@
 			videoOn = next;
 		} catch (e) {
 			console.error('[CHAT-CLIENT] toggleVideo failed', e);
-			callError = 'could not access the camera — check permissions.';
+			callError = media_error(e);
 		}
 	}
 

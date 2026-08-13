@@ -33,6 +33,32 @@ const STUN: RTCIceServer = { urls: 'stun:stun.l.google.com:19302' };
 /** how long a 'disconnected' peer connection gets to recover before we treat it as gone */
 export const DISCONNECT_GRACE_MS = 10_000;
 
+/** getUserMedia, but with a clear failure when the browser hides it (an insecure origin) */
+function default_media(c: MediaStreamConstraints): Promise<MediaStream> {
+	if (!navigator.mediaDevices?.getUserMedia)
+		return Promise.reject(new Error('media_unavailable'));
+	return navigator.mediaDevices.getUserMedia(c);
+}
+
+/** turn a getUserMedia failure into copy that names the real cause */
+export function media_error(e: unknown): string {
+	const name = e instanceof Error ? (e.name === 'Error' ? e.message : e.name) : '';
+	switch (name) {
+		case 'media_unavailable':
+			return 'this browser blocks camera and mic access here — open the site over https.';
+		case 'NotAllowedError':
+		case 'SecurityError':
+			return 'camera/mic permission was denied — allow it in the browser site settings.';
+		case 'NotFoundError':
+		case 'OverconstrainedError':
+			return 'no camera or mic was found on this device.';
+		case 'NotReadableError':
+			return 'the camera or mic is already in use by another app — close it and try again.';
+		default:
+			return `could not start the call (${name || 'unknown error'}).`;
+	}
+}
+
 export class CallMesh {
 	private o: MeshOpts;
 	private pcs = new Map<string, RTCPeerConnection>();
@@ -70,8 +96,7 @@ export class CallMesh {
 
 	async open(video: boolean): Promise<MediaStream> {
 		if (this.local) return this.local;
-		const get =
-			this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
+		const get = this.o.getMedia ?? default_media;
 		this.local = await get({ audio: true, video });
 		return this.local;
 	}
@@ -142,8 +167,7 @@ export class CallMesh {
 	async setVideo(on: boolean): Promise<void> {
 		if (!this.local) return;
 		if (on) {
-			const get =
-				this.o.getMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
+			const get = this.o.getMedia ?? default_media;
 			const s = await get({ video: true });
 			for (const t of s.getVideoTracks()) this.local.addTrack(t);
 		} else {
