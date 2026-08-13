@@ -9,6 +9,8 @@
 			{ "name": "CHAT_HUB", "class_name": "ChatHub" },
 			{ "name": "CREDIT_ACCOUNT", "class_name": "CreditAccount" },
 			{ "name": "ROOM", "class_name": "Room" },
+			// MatchLobby holds CHAT_HUB too: waking a parked searcher is a web push, and
+			// ChatHub owns the subscriptions and the VAPID keys that send one.
 			{ "name": "MATCH_LOBBY", "class_name": "MatchLobby" }
 		]
 	},

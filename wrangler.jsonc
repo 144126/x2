@@ -84,6 +84,12 @@
 			"binding": "MESSAGE_ENC_KEY",
 			"store_id": "45748cb1c67946df943075fa14cb8815",
 			"secret_name": "MESSAGE_ENC_KEY"
+		},
+		// groq, for the one-line reason a random voice match happened (see blurb.ts)
+		{
+			"binding": "GROQ",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "GROQ"
 		}
 	],
 	// WS_ORIGIN: the deployed x2-ws worker's public origin. Committed here (not left blank and

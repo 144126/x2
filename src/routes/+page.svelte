@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { dev } from '$app/environment';
 	import { ws_on, ws_send } from '$lib/ws';
 	import { CallMesh, media_error, type CallSignal } from '$lib/call';
+	import { enable_push, push_available } from '$lib/push-client';
 	import CallOverlay from '$lib/components/CallOverlay.svelte';
-	import { Mic, LoaderCircle, MessageSquare, Users } from '@lucide/svelte';
+	import { Mic, LoaderCircle, MessageSquare, Users, BellRing, Check } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -18,6 +20,10 @@
 	let localStream = $state<MediaStream | null>(null);
 	let remoteStream = $state<MediaStream | null>(null);
 	let me = $state('');
+	let blurb = $state('');
+	let parked = $state(false);
+	let parking = $state(false);
+	let park_err = $state('');
 
 	let lobby: WebSocket | null = null;
 	let mesh: CallMesh | null = null;
@@ -74,9 +80,11 @@
 				shared?: string[];
 			};
 			if (m.type === 'searching' || m.type === 'waiting') waiting = m.n ?? 0;
+			else if (m.type === 'parked') parked = true;
 			else if (m.type === 'matched') {
 				peer = { id: m.peer!, name: m.peer_name ?? 'someone', shared: m.shared ?? [] };
 				open_call();
+				explain(m.peer!);
 			}
 		};
 		lobby.onclose = () => {
@@ -87,6 +95,56 @@
 			}
 		};
 		lobby.onerror = () => lobby?.close();
+	}
+
+	// why these two, in a written line rather than a set intersection. Deliberately not
+	// awaited: the call is already connecting, and a slow or rate-limited model must never
+	// hold it up — the shared-interest line shows until this lands, if it lands.
+	async function explain(uid: string) {
+		blurb = '';
+		const r = await fetch(`/api/match/blurb?peer=${encodeURIComponent(uid)}`).catch(() => null);
+		if (!r?.ok) return;
+		const { t } = (await r.json()) as { t: string };
+		if (t && peer?.id === uid) blurb = t;
+	}
+
+	/** leave the queue open, but ask to be woken by a notification instead of waiting here */
+	async function park() {
+		park_err = '';
+		const avail = push_available();
+		if (!avail.ok) {
+			park_err =
+				avail.reason === 'ios-needs-install'
+					? 'add x2 to your home screen first, then notifications work.'
+					: 'this browser cannot send notifications.';
+			return;
+		}
+		parking = true;
+		try {
+			// the service worker is only registered for signed-in visitors on mount, and
+			// serviceWorker.ready never resolves without a registration
+			if (!(await navigator.serviceWorker.getRegistration()))
+				await navigator.serviceWorker.register('/service-worker.js', {
+					type: dev ? 'module' : 'classic'
+				});
+			const res = await fetch('/api/push');
+			const { key } = (await res.json()) as { key: string };
+			const ok = await enable_push(key);
+			if (!ok.ok) {
+				park_err = 'notifications are blocked — turn them on in your browser settings.';
+				return;
+			}
+			lobby?.send(
+				JSON.stringify({
+					type: 'park',
+					tz: Intl.DateTimeFormat().resolvedOptions().timeZone
+				})
+			);
+		} catch {
+			park_err = 'could not set that up — try again.';
+		} finally {
+			parking = false;
+		}
 	}
 
 	async function open_call() {
@@ -137,6 +195,12 @@
 		mesh?.setMic(micOn);
 	}
 
+	onMount(() => {
+		// arriving from the "someone wants to talk" notification: start searching straight
+		// away. Landing on a button would waste the one moment they came back for.
+		if (new URLSearchParams(location.search).get('talk')) start();
+	});
+
 	onDestroy(() => {
 		drop_call();
 		lobby?.close();
@@ -168,7 +232,18 @@
 					? `${waiting} people looking right now`
 					: 'you are first in the queue — hang on'}
 			</p>
-			<button class="btn" onclick={stop}>cancel</button>
+			{#if parked}
+				<p class="flex items-center gap-1.5 text-[12.5px] text-accent">
+					<Check size={13} /> we'll ping you when someone's around — you can close this.
+				</p>
+			{:else}
+				<button class="btn" onclick={park} disabled={parking}>
+					<BellRing size={13} />
+					{parking ? 'setting up…' : "notify me instead, i'll leave"}
+				</button>
+			{/if}
+			{#if park_err}<p class="max-w-[320px] text-[12px] text-danger">{park_err}</p>{/if}
+			<button class="btn btn-ghost text-mute" onclick={stop}>cancel</button>
 		</div>
 	{:else}
 		<div class="reveal flex max-w-[520px] flex-col items-center gap-5">
@@ -226,7 +301,7 @@
 	<CallOverlay
 		phase="connected"
 		title={peer.name}
-		subtitle={peer.shared.length ? `you both like ${peer.shared.join(', ')}` : ''}
+		subtitle={blurb || (peer.shared.length ? `you both like ${peer.shared.join(', ')}` : '')}
 		peers={call_peers}
 		local={localStream}
 		{micOn}

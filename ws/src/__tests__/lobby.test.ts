@@ -44,7 +44,26 @@ function makeStorage() {
 		}),
 		delete: vi.fn(async (key: string) => {
 			store.delete(key);
-		})
+		}),
+		setAlarm: vi.fn(async () => {}),
+		deleteAlarm: vi.fn(async () => {})
+	};
+}
+
+/** records every push the lobby asks ChatHub to send */
+function makeHub() {
+	const pushed: { uid: string; body: Record<string, unknown> }[] = [];
+	return {
+		pushed,
+		ns: {
+			idFromName: (n: string) => n,
+			get: (uid: unknown) => ({
+				fetch: async (r: Request) => {
+					pushed.push({ uid: String(uid), body: await r.json() });
+					return new Response('ok');
+				}
+			})
+		}
 	};
 }
 
@@ -99,11 +118,13 @@ function makeLobby(state: ReturnType<typeof makeState>, env: unknown) {
 	return new MatchLobby(state as any, env as any);
 }
 
-let env: { SECRET: string; QDRANT_URL: string; QDRANT_KEY: string };
+let env: { SECRET: string; QDRANT_URL: string; QDRANT_KEY: string; CHAT_HUB: unknown };
+let hub: ReturnType<typeof makeHub>;
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	env = { SECRET, QDRANT_URL: 'u', QDRANT_KEY: 'k' };
+	hub = makeHub();
+	env = { SECRET, QDRANT_URL: 'u', QDRANT_KEY: 'k', CHAT_HUB: hub.ns };
 	getUserNameMock.mockImplementation(async (_e: unknown, uid: string) => `Name-${uid}`);
 	retrieveOneMock.mockResolvedValue(null); // no stored vector by default -> FIFO fallback
 	searchMock.mockResolvedValue([]);
@@ -280,5 +301,150 @@ describe('MatchLobby — next and stop', () => {
 		// bob's "again" matched him straight back to alice, so both know a match happened
 		expect(bob.last().type).toBe('matched');
 		expect(alice.ofType('waiting').length).toBeGreaterThan(0);
+	});
+});
+
+describe('MatchLobby — parking and waking', () => {
+	async function park(lobby: MatchLobby, sock: FakeSocket, tz?: string) {
+		await lobby.webSocketMessage(
+			sock as unknown as WebSocket,
+			JSON.stringify({ type: 'park', ...(tz ? { tz } : {}) })
+		);
+	}
+
+	it('confirms a park and keeps the person in the queue', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const alice = await connect(lobby, state, 'alice');
+		await park(lobby, alice);
+		expect(alice.ofType('parked')).toHaveLength(1);
+		expect(await state.storage.get('waiting')).toHaveLength(1);
+		expect(((await state.storage.get('park')) as { uid: string }[]).map((p) => p.uid)).toEqual([
+			'alice'
+		]);
+	});
+
+	it('never pings someone who is sitting on the page', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const alice = await connect(lobby, state, 'alice');
+		await park(lobby, alice);
+		expect(hub.pushed).toEqual([]);
+	});
+
+	it('wakes two parked people at once so they can match each other', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		// both parked and both gone from the page
+		await state.storage.put('park', [
+			{ uid: 'alice', at: Date.now() },
+			{ uid: 'bob', at: Date.now() }
+		]);
+		const carol = await connect(lobby, state, 'carol');
+		await lobby.webSocketMessage(carol as unknown as WebSocket, JSON.stringify({ type: 'stop' }));
+		await lobby.alarm();
+
+		expect(hub.pushed.map((p) => p.uid).sort()).toEqual(['alice', 'bob']);
+		expect(hub.pushed[0].body).toMatchObject({ url: '/?talk=1' });
+	});
+
+	it('wakes nobody when only one person is parked and nobody is searching', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put('park', [{ uid: 'alice', at: Date.now() }]);
+		await lobby.alarm();
+		expect(hub.pushed).toEqual([]);
+	});
+
+	it('wakes a single parked person once somebody is actually searching', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put('park', [{ uid: 'alice', at: Date.now() }]);
+		await connect(lobby, state, 'carol'); // carol waits, so one arrival is enough
+		expect(hub.pushed.map((p) => p.uid)).toEqual(['alice']);
+	});
+
+	it('wakes at most two people, never the whole park', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put(
+			'park',
+			['a', 'b', 'c', 'd', 'e'].map((uid) => ({ uid, at: Date.now() }))
+		);
+		await lobby.alarm();
+		expect(hub.pushed).toHaveLength(2);
+	});
+
+	it('does not ping the same person twice inside the cooldown', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put('park', [
+			{ uid: 'alice', at: Date.now(), pinged: Date.now() },
+			{ uid: 'bob', at: Date.now(), pinged: Date.now() }
+		]);
+		await lobby.alarm();
+		expect(hub.pushed).toEqual([]);
+	});
+
+	it('stays quiet in the middle of the night where they are', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		// 03:00 in Tokyo is 18:00 UTC the previous day; pick a fixed instant to be sure
+		vi.setSystemTime(new Date('2026-08-13T18:00:00Z'));
+		await state.storage.put('park', [
+			{ uid: 'alice', at: Date.now(), tz: 'Asia/Tokyo' },
+			{ uid: 'bob', at: Date.now(), tz: 'Asia/Tokyo' }
+		]);
+		await lobby.alarm();
+		expect(hub.pushed).toEqual([]);
+		vi.useRealTimers();
+	});
+
+	it('forgets a park that is a day old', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const old = Date.now() - 25 * 3600_000;
+		await state.storage.put('park', [
+			{ uid: 'alice', at: old },
+			{ uid: 'bob', at: old }
+		]);
+		await lobby.alarm();
+		expect(hub.pushed).toEqual([]);
+		expect(await state.storage.get('park')).toEqual([]);
+	});
+
+	it('drops the park when the person comes back and connects', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put('park', [{ uid: 'alice', at: Date.now() }]);
+		await connect(lobby, state, 'alice');
+		expect(await state.storage.get('park')).toEqual([]);
+	});
+
+	it('unpark removes them without waiting for a reconnect', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const alice = await connect(lobby, state, 'alice');
+		await park(lobby, alice);
+		await lobby.webSocketMessage(alice as unknown as WebSocket, JSON.stringify({ type: 'unpark' }));
+		expect(await state.storage.get('park')).toEqual([]);
+	});
+
+	it('a failing push never breaks the sweep', async () => {
+		const state = makeState();
+		const broken = {
+			idFromName: (n: string) => n,
+			get: () => ({
+				fetch: async () => {
+					throw new Error('hub down');
+				}
+			})
+		};
+		const lobby = makeLobby(state, { ...env, CHAT_HUB: broken });
+		await state.storage.put('park', [
+			{ uid: 'alice', at: Date.now() },
+			{ uid: 'bob', at: Date.now() }
+		]);
+		await expect(lobby.alarm()).resolves.toBeUndefined();
 	});
 });

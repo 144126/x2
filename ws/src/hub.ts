@@ -140,6 +140,14 @@ export class ChatHub implements DurableObject {
 			this.announce(uid, online);
 			return new Response('ok');
 		}
+		// push that is not a message. Deliberately not reachable from ws/src/index.ts's
+		// /hub/:uid/* router — only another Durable Object in this worker may send one, so
+		// there is no endpoint anyone could use to push arbitrary text at a user.
+		if (url.pathname === '/push' && request.method === 'POST') {
+			const msg = (await request.json()) as { title?: string; body?: string; url?: string };
+			await this.send_push_notification(msg);
+			return new Response('ok');
+		}
 		if (url.pathname === '/convs' && request.method === 'GET') {
 			const convs = await this.list_convs();
 			return Response.json({ convs });
