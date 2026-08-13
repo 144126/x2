@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import LocationPicker from '$lib/LocationPicker.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { Search, MessageCircle, SlidersHorizontal } from '@lucide/svelte';
-	let { data } = $props();
 
 	let q = $state('');
 	let gender = $state('');
@@ -70,26 +68,26 @@
 </script>
 
 <section>
-	<div class="eyebrow">or match one-to-one</div>
-	<h2 class="display mt-3.5 mb-9 text-[clamp(34px,5.5vw,60px)] leading-[0.98]">
-		prefer a person over a <em class="italic text-accent">room</em>?
+	<div class="eyebrow">find people</div>
+	<h2 class="display mt-2 mb-5 text-[clamp(24px,4vw,34px)] leading-[0.98]">
+		search for <em class="italic text-accent">someone</em> specific.
 	</h2>
 
 	<div class="flex flex-row gap-2 sm:gap-3">
 		<div class="relative min-w-0 flex-1">
 			<Search
-				size={18}
-				class="pointer-events-none absolute top-1/2 left-[18px] -translate-y-1/2 text-faint"
+				size={15}
+				class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint"
 			/>
 			<input
-				class="w-full py-4 pr-[18px] pl-[46px] text-[17px]"
+				class="w-full py-2.5 pr-3 pl-9 text-[13px]"
 				placeholder="search by vibe, craft, interests…"
 				bind:value={q}
 				onkeydown={(e) => e.key === 'Enter' && search()}
 			/>
 		</div>
 		<button
-			class="btn btn-amber flex items-center justify-center py-2"
+			class="btn btn-amber flex items-center justify-center"
 			onclick={search}
 			disabled={searching}
 			aria-label="search"
@@ -98,7 +96,7 @@
 			<Search size={15} />
 		</button>
 		<button
-			class="btn relative shrink-0 !px-4 py-2"
+			class="btn btn-icon relative"
 			onclick={() => (filtersOpen = true)}
 			aria-label="search filters"
 			title="filters"
@@ -150,8 +148,8 @@
 			</label>
 		</div>
 		<div class="mt-6 flex items-center gap-3 border-t border-line pt-5">
-			<button class="btn px-4 py-2 text-[13px]" onclick={clearFilters}>clear</button>
-			<button class="btn btn-amber ml-auto px-4 py-2 text-[13px]" onclick={apply}>apply</button>
+			<button class="btn" onclick={clearFilters}>clear</button>
+			<button class="btn btn-amber ml-auto" onclick={apply}>apply</button>
 		</div>
 	</Modal>
 
@@ -160,54 +158,50 @@
 	{/if}
 
 	{#if results.length}
-		<ul class="results mt-7 grid gap-3.5">
+		<ul class="results mt-4 grid gap-2.5">
 			{#each results as u, i (u.id)}
-				<li
-					class="card person reveal"
-					style="--i:{i}"
-					onclick={() => goto(`/app/chat/${u.id}`)}
-					role="button"
-					tabindex="0"
-				>
-					<div class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2">
-							<span class="font-display text-[24px] font-medium tracking-[-0.01em]">{u.n}</span>
-							{#if u.online}<span
-									class="inline-block h-[7px] w-[7px] rounded-full bg-emerald-400"
-									aria-label="online"
-								></span>{/if}
+				<li>
+					<a class="card person reveal" style="--i:{i}" href="/app/chat/{u.id}">
+						<div class="flex flex-col gap-1">
+							<div class="flex items-center gap-2">
+								<span class="font-display text-[16px] font-medium tracking-[-0.01em]">{u.n}</span>
+								{#if u.online}<span
+										class="inline-block h-[7px] w-[7px] rounded-full bg-emerald-400"
+										aria-label="online"
+									></span>{/if}
+							</div>
+							{#if u.g || u.r || u.ci || u.st || u.co}
+								<div class="text-[12px] tracking-[0.04em] text-mute">
+									{#if u.g}{u.g}{/if}{#if u.r}
+										· {u.r}{/if}{#if u.ci}
+										· {u.ci}{/if}{#if u.st}
+										· {u.st}{/if}{#if u.co}
+										· {u.co}{/if}
+								</div>
+							{/if}
 						</div>
-						{#if u.g || u.r || u.ci || u.st || u.co}
-							<div class="text-[12px] tracking-[0.04em] text-mute">
-								{#if u.g}{u.g}{/if}{#if u.r}
-									· {u.r}{/if}{#if u.ci}
-									· {u.ci}{/if}{#if u.st}
-									· {u.st}{/if}{#if u.co}
-									· {u.co}{/if}
-							</div>
-						{/if}
-					</div>
-					{#if u.a}<p class="mt-1 max-w-[60ch] text-[14.5px] leading-[1.5] text-ink-soft">
-							{u.a}
-						</p>{/if}
-					<div class="mt-3 flex items-center gap-3 self-end">
-						{#if u.wu}
-							<a
-								href={u.wu}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="btn flex items-center gap-1.5 py-1.5 px-3 text-[12px] no-underline"
-								onclick={(e) => e.stopPropagation()}
-							>
-								<MessageCircle size={13} /> chat on whatsapp
-							</a>
-						{/if}
-						{#if u.s !== undefined}
-							<div class="font-display text-[15px] tracking-[0.02em] text-accent">
-								{(u.s * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span> match
-							</div>
-						{/if}
-					</div>
+						{#if u.a}<p class="mt-1 max-w-[60ch] text-[13px] leading-[1.5] text-ink-soft">
+								{u.a}
+							</p>{/if}
+						<div class="mt-3 flex items-center gap-3 self-end">
+							{#if u.wu}
+								<a
+									href={u.wu}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="btn no-underline"
+									onclick={(e) => e.stopPropagation()}
+								>
+									<MessageCircle size={13} /> chat on whatsapp
+								</a>
+							{/if}
+							{#if u.s !== undefined}
+								<div class="font-display text-[13px] tracking-[0.02em] text-accent">
+									{(u.s * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span> match
+								</div>
+							{/if}
+						</div>
+					</a>
 				</li>
 			{/each}
 		</ul>

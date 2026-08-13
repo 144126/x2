@@ -28,7 +28,9 @@
 
 <dialog
 	bind:this={el}
-	class="modal-dialog m-auto max-h-[85dvh] {wide ? 'h-[92dvh] w-[min(920px,96vw)]' : 'w-[min(560px,92vw)]'} rounded-[20px] border border-line bg-panel-solid p-0 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-md"
+	class="modal-dialog m-auto max-h-[86dvh] {wide
+		? 'h-[92dvh] w-[min(920px,96vw)]'
+		: 'w-[min(560px,92vw)]'} rounded-[20px] border border-line bg-panel-solid p-0 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-md"
 	onclose={() => {
 		// every close path funnels here: the X button and backdrop set `open = false`,
 		// the $effect calls el.close(), which fires this event — and Escape closes natively
@@ -41,17 +43,17 @@
 	}}
 >
 	<div class="flex max-h-[85dvh] flex-col">
-		<header class="flex items-center justify-between gap-4 border-b border-line px-6 py-5">
-			<h2 class="font-display text-[20px] font-medium tracking-[-0.01em]">{title}</h2>
+		<header class="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
+			<h2 class="font-display text-[15px] font-medium tracking-[-0.01em]">{title}</h2>
 			<button
-				class="flex h-8 w-8 items-center justify-center rounded-full bg-none leading-none text-ink-soft transition-colors duration-300 hover:bg-panel hover:text-accent"
+				class="flex h-7 w-7 items-center justify-center rounded-full bg-none leading-none text-ink-soft transition-colors duration-300 hover:bg-panel hover:text-accent"
 				onclick={() => (open = false)}
 				aria-label="close"
 			>
 				<X size={17} />
 			</button>
 		</header>
-		<div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+		<div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
 			{@render children()}
 		</div>
 	</div>

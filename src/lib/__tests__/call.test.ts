@@ -14,7 +14,9 @@ class FakePC {
 	ontrack: ((e: { streams: unknown[] }) => void) | null = null;
 	onconnectionstatechange: (() => void) | null = null;
 	connectionState = 'new';
-	constructor(config?: RTCConfiguration) { this.config = config; }
+	constructor(config?: RTCConfiguration) {
+		this.config = config;
+	}
 	async createOffer() {
 		return { type: 'offer', sdp: 'OFFER' };
 	}
@@ -283,33 +285,58 @@ describe('CallMesh video renegotiation', () => {
 });
 
 describe('CallMesh TURN credential fetch', () => {
-	const fakeMedia = async () => ({ getTracks: () => [], getAudioTracks: () => [], getVideoTracks: () => [], addTrack: () => {}, removeTrack: () => {} } as unknown as MediaStream);
+	const fakeMedia = async () =>
+		({
+			getTracks: () => [],
+			getAudioTracks: () => [],
+			getVideoTracks: () => [],
+			addTrack: () => {},
+			removeTrack: () => {}
+		}) as unknown as MediaStream;
 
 	it('fetches TURN once and merges with STUN in the default makePC', async () => {
-		const turnFetch = vi.fn().mockResolvedValue([
-			{ urls: 'turn:example.com', username: 'u', credential: 'p' }
-		]);
+		const turnFetch = vi
+			.fn()
+			.mockResolvedValue([{ urls: 'turn:example.com', username: 'u', credential: 'p' }]);
 		const pcs: FakePC[] = [];
 		const mesh = new CallMesh({
-			me: 'alice', send: () => {}, onremote: () => {}, getMedia: fakeMedia,
+			me: 'alice',
+			send: () => {},
+			onremote: () => {},
+			getMedia: fakeMedia,
 			fetchTurn: turnFetch,
-			makePC: (config) => { const pc = new FakePC(config); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
+			makePC: (config) => {
+				const pc = new FakePC(config);
+				pcs.push(pc);
+				return pc as unknown as RTCPeerConnection;
+			}
 		});
 		await mesh.open(false);
 		await mesh.handle('bob', { type: 'join' });
 
 		expect(turnFetch).toHaveBeenCalledTimes(1);
 		expect(pcs[0].config?.iceServers).toContainEqual({ urls: 'stun:stun.l.google.com:19302' });
-		expect(pcs[0].config?.iceServers).toContainEqual({ urls: 'turn:example.com', username: 'u', credential: 'p' });
+		expect(pcs[0].config?.iceServers).toContainEqual({
+			urls: 'turn:example.com',
+			username: 'u',
+			credential: 'p'
+		});
 	});
 
 	it('fetches TURN only once across multiple peers in the same call', async () => {
 		const turnFetch = vi.fn().mockResolvedValue([]);
 		const pcs: FakePC[] = [];
 		const mesh = new CallMesh({
-			me: 'alice', send: () => {}, onremote: () => {}, getMedia: fakeMedia,
+			me: 'alice',
+			send: () => {},
+			onremote: () => {},
+			getMedia: fakeMedia,
 			fetchTurn: turnFetch,
-			makePC: (config) => { const pc = new FakePC(config); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
+			makePC: (config) => {
+				const pc = new FakePC(config);
+				pcs.push(pc);
+				return pc as unknown as RTCPeerConnection;
+			}
 		});
 		await mesh.open(false);
 		await mesh.handle('bob', { type: 'join' });
@@ -321,9 +348,16 @@ describe('CallMesh TURN credential fetch', () => {
 		const turnFetch = vi.fn().mockRejectedValue(new Error('network error'));
 		const pcs: FakePC[] = [];
 		const mesh = new CallMesh({
-			me: 'alice', send: () => {}, onremote: () => {}, getMedia: fakeMedia,
+			me: 'alice',
+			send: () => {},
+			onremote: () => {},
+			getMedia: fakeMedia,
 			fetchTurn: turnFetch,
-			makePC: (config) => { const pc = new FakePC(config); pcs.push(pc); return pc as unknown as RTCPeerConnection; },
+			makePC: (config) => {
+				const pc = new FakePC(config);
+				pcs.push(pc);
+				return pc as unknown as RTCPeerConnection;
+			}
 		});
 		await mesh.open(false);
 		await mesh.handle('bob', { type: 'join' });

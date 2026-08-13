@@ -48,10 +48,7 @@
 	);
 </script>
 
-<div
-	class="flex w-full flex-col rounded-[14px] border border-line bg-panel-solid p-3 shadow-lg"
-	role="dialog"
->
+<div class="flex w-full flex-col" role="dialog">
 	<input autofocus class="mb-2 text-[13px]" placeholder="search emoji…" bind:value={q} />
 	{#if !searching && recent.length}
 		<div class="mb-2">
@@ -60,7 +57,7 @@
 				{#each recent as e (e)}
 					<button
 						type="button"
-						class="rounded-[6px] p-1 text-[22px] hover:bg-panel"
+						class="rounded-[6px] p-1 text-[20px] hover:bg-panel"
 						aria-label={'recent ' + label_of(e)}
 						onclick={() => pick(e)}>{e}</button
 					>
@@ -98,7 +95,7 @@
 					{#each s.emojis as e (e.emoji)}
 						<button
 							type="button"
-							class="rounded-[6px] p-1 text-[22px] hover:bg-panel"
+							class="rounded-[6px] p-1 text-[20px] hover:bg-panel"
 							title={e.label}
 							onclick={() => pick(e.emoji)}>{e.emoji}</button
 						>
@@ -110,7 +107,7 @@
 				{#each results as e (e.emoji)}
 					<button
 						type="button"
-						class="rounded-[6px] p-1 text-[22px] hover:bg-panel"
+						class="rounded-[6px] p-1 text-[20px] hover:bg-panel"
 						title={e.label}
 						onclick={() => pick(e.emoji)}>{e.emoji}</button
 					>

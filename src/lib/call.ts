@@ -35,8 +35,7 @@ export const DISCONNECT_GRACE_MS = 10_000;
 
 /** getUserMedia, but with a clear failure when the browser hides it (an insecure origin) */
 function default_media(c: MediaStreamConstraints): Promise<MediaStream> {
-	if (!navigator.mediaDevices?.getUserMedia)
-		return Promise.reject(new Error('media_unavailable'));
+	if (!navigator.mediaDevices?.getUserMedia) return Promise.reject(new Error('media_unavailable'));
 	return navigator.mediaDevices.getUserMedia(c);
 }
 

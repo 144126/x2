@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('$env/dynamic/private', () => ({ env: { SECRET: 'test-secret', WS_ORIGIN: 'wss://ws.example.com' } }));
+vi.mock('$env/dynamic/private', () => ({
+	env: { SECRET: 'test-secret', WS_ORIGIN: 'wss://ws.example.com' }
+}));
 vi.mock('$app/environment', () => ({ dev: false }));
 
 import { GET } from '../+server';
@@ -33,8 +35,6 @@ describe('GET /api/wstoken', () => {
 	});
 
 	it('401s when not signed in', async () => {
-		await expect(
-			GET({ locals: { user: null } } as never)
-		).rejects.toMatchObject({ status: 401 });
+		await expect(GET({ locals: { user: null } } as never)).rejects.toMatchObject({ status: 401 });
 	});
 });

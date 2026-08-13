@@ -8,8 +8,7 @@ export async function guard(
 	key: string
 ): Promise<void> {
 	const rl = (platform?.env as Record<string, unknown> | undefined)?.[binding] as
-		| Limiter
-		| undefined;
+		Limiter | undefined;
 	if (!rl) return;
 	const { success } = await rl.limit({ key });
 	if (!success) throw error(429, 'slow_down');

@@ -75,7 +75,13 @@ describe('POST /api/push — subscribe', () => {
 
 	it('stores the subscription against the signed-in user', async () => {
 		await POST(event(sub));
-		expect(saveMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'me', sub, 'Chrome/140');
+		expect(saveMock).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			'me',
+			sub,
+			'Chrome/140'
+		);
 	});
 
 	it('400s on a body that is not a subscription', async () => {
@@ -112,7 +118,12 @@ describe('DELETE /api/push — unsubscribe', () => {
 
 	it('forgets the endpoint', async () => {
 		await DELETE(event({ endpoint: sub.endpoint }));
-		expect(deleteMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'me', sub.endpoint);
+		expect(deleteMock).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			'me',
+			sub.endpoint
+		);
 	});
 
 	it('400s without an endpoint to forget', async () => {

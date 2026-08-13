@@ -3,9 +3,15 @@ import { confirm_sent, mark_failed } from '../chat_optimistic';
 
 describe('confirm_sent', () => {
 	it('patches the matching message by cid and leaves others untouched', () => {
-		const messages = [{ cid: 'a', id: '', d: 1 }, { cid: 'b', id: '', d: 2 }];
+		const messages = [
+			{ cid: 'a', id: '', d: 1 },
+			{ cid: 'b', id: '', d: 2 }
+		];
 		const next = confirm_sent(messages, 'a', { id: 'real-id', d: 99 });
-		expect(next).toEqual([{ cid: 'a', id: 'real-id', d: 99 }, { cid: 'b', id: '', d: 2 }]);
+		expect(next).toEqual([
+			{ cid: 'a', id: 'real-id', d: 99 },
+			{ cid: 'b', id: '', d: 2 }
+		]);
 		expect(next).not.toBe(messages);
 		expect(next[1]).toBe(messages[1]);
 	});

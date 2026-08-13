@@ -1,12 +1,12 @@
 {
-	"id": "/app",
+	"id": "/",
 	"name": "x2",
 	"short_name": "x2",
-	"description": "Find your people — search, join rooms, and match by what you're into, not what you look like.",
+	"description": "Talk to a stranger picked by what you are into — voice first, then rooms and threads if you click.",
 	"lang": "en",
 	"dir": "ltr",
 	"categories": ["social"],
-	"start_url": "/app",
+	"start_url": "/",
 	"scope": "/",
 	"display": "standalone",
 	"display_override": ["standalone", "minimal-ui"],
@@ -41,6 +41,7 @@
 		{ "src": "/icons/screenshot-narrow.png", "sizes": "720x1280", "type": "image/png", "form_factor": "narrow" }
 	],
 	"shortcuts": [
+		{ "name": "Talk to someone", "url": "/" },
 		{ "name": "Chats", "url": "/app/chats" },
 		{ "name": "Rooms", "url": "/app/rooms" }
 	],

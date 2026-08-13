@@ -8,7 +8,10 @@ const { toggleReactionMock, getMessageMock, isMemberMock, getGroupMock } = vi.ho
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
-vi.mock('$lib/server/chat', () => ({ toggle_reaction: toggleReactionMock, get_message: getMessageMock }));
+vi.mock('$lib/server/chat', () => ({
+	toggle_reaction: toggleReactionMock,
+	get_message: getMessageMock
+}));
 vi.mock('$lib/server/group', () => ({ is_member: isMemberMock, get_group: getGroupMock }));
 
 import { POST } from '../+server';
@@ -16,11 +19,18 @@ import { POST } from '../+server';
 let bg_tasks: Promise<unknown>[] = [];
 function ws() {
 	return {
-		fetch: vi.fn(async (_url: string, _init: { body: string }) => new Response('{}', { status: 200 }))
+		fetch: vi.fn(
+			async (_url: string, _init: { body: string }) => new Response('{}', { status: 200 })
+		)
 	};
 }
 
-function event(id: string, uid: string | null = 'me', fetcher = ws(), body: unknown = { emoji: '👍' }) {
+function event(
+	id: string,
+	uid: string | null = 'me',
+	fetcher = ws(),
+	body: unknown = { emoji: '👍' }
+) {
 	return {
 		params: { id },
 		request: new Request('https://x/api/messages/' + id + '/react', {

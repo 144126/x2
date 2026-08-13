@@ -1,18 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, scrollMock, searchMock, embedMock, setPayloadMock, roomJoinMock, roomLeaveMock, roomIsMemberMock } =
-	vi.hoisted(() => ({
-		ensureMock: vi.fn(),
-		upsertMock: vi.fn(),
-		retrieveOneMock: vi.fn(),
-		scrollMock: vi.fn(),
-		searchMock: vi.fn(),
-		embedMock: vi.fn(),
-		setPayloadMock: vi.fn(),
-		roomJoinMock: vi.fn(),
-		roomLeaveMock: vi.fn(),
-		roomIsMemberMock: vi.fn()
-	}));
+const {
+	ensureMock,
+	upsertMock,
+	retrieveOneMock,
+	scrollMock,
+	searchMock,
+	embedMock,
+	setPayloadMock,
+	roomJoinMock,
+	roomLeaveMock,
+	roomIsMemberMock
+} = vi.hoisted(() => ({
+	ensureMock: vi.fn(),
+	upsertMock: vi.fn(),
+	retrieveOneMock: vi.fn(),
+	scrollMock: vi.fn(),
+	searchMock: vi.fn(),
+	embedMock: vi.fn(),
+	setPayloadMock: vi.fn(),
+	roomJoinMock: vi.fn(),
+	roomLeaveMock: vi.fn(),
+	roomIsMemberMock: vi.fn()
+}));
 
 vi.mock('../qdrant', async () => {
 	const actual = await vi.importActual<typeof import('../qdrant')>('../qdrant');
@@ -47,7 +57,9 @@ import {
 } from '../group';
 import { V } from '../qdrant';
 
-const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' } as unknown as Parameters<typeof import('../group').join_group>[0];
+const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' } as unknown as Parameters<
+	typeof import('../group').join_group
+>[0];
 const WS = {} as Fetcher;
 const VEC = new Array(4096).fill(0.1);
 const stored = (call = 0) => upsertMock.mock.calls[call][1][0];
@@ -262,7 +274,11 @@ describe('list_groups / search_groups', () => {
 	});
 
 	it('list_groups(uid) includes paused/closed rooms the user is a member of', async () => {
-		scrollMock.mockResolvedValue([group({ rs: 'p' }), group({ id: 'g2', rs: 'c' }), group({ id: 'g3', rs: 'a' })]);
+		scrollMock.mockResolvedValue([
+			group({ rs: 'p' }),
+			group({ id: 'g2', rs: 'c' }),
+			group({ id: 'g3', rs: 'a' })
+		]);
 		const r = await list_groups(ENV, 'owner1');
 		expect(r.map((g) => g.id)).toEqual(['g1', 'g2', 'g3']);
 		const filter = scrollMock.mock.calls[0][1];
@@ -271,7 +287,11 @@ describe('list_groups / search_groups', () => {
 	});
 
 	it('list_groups() without uid excludes paused and closed rooms', async () => {
-		scrollMock.mockResolvedValue([group({ rs: 'p' }), group({ id: 'g2', rs: 'c' }), group({ id: 'g3', rs: 'a' })]);
+		scrollMock.mockResolvedValue([
+			group({ rs: 'p' }),
+			group({ id: 'g2', rs: 'c' }),
+			group({ id: 'g3', rs: 'a' })
+		]);
 		const r = await list_groups(ENV);
 		expect(r.map((g) => g.id)).toEqual(['g1', 'g2', 'g3']);
 		const filter = scrollMock.mock.calls[0][1];

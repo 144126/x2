@@ -19,7 +19,11 @@ export async function encrypt_text(env: QEnv, text: string): Promise<string> {
 	if (!text) return text;
 	const key = await aes_key(env);
 	const iv = crypto.getRandomValues(new Uint8Array(12));
-	const buf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text));
+	const buf = await crypto.subtle.encrypt(
+		{ name: 'AES-GCM', iv },
+		key,
+		new TextEncoder().encode(text)
+	);
 	const combined = new Uint8Array(iv.length + buf.byteLength);
 	combined.set(iv, 0);
 	combined.set(new Uint8Array(buf), iv.length);

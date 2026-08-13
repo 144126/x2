@@ -67,9 +67,29 @@ describe('ensure', () => {
 	it('skips all creation when every index already exists', async () => {
 		mockClient.getCollection.mockResolvedValue({
 			payload_schema: {
-				s: {}, t: {}, r: {}, c: {}, f: {}, co: {}, st: {}, ci: {}, u: {},
-			ow: {}, mb: {}, gr: {}, uid: {}, ac: {}, tg: {}, k: {}, rs: {}, m: {}, gl: {},
-			ag: {}, at: {}, sent: {}, d: {}
+				s: {},
+				t: {},
+				r: {},
+				c: {},
+				f: {},
+				co: {},
+				st: {},
+				ci: {},
+				u: {},
+				ow: {},
+				mb: {},
+				gr: {},
+				uid: {},
+				ac: {},
+				tg: {},
+				k: {},
+				rs: {},
+				m: {},
+				gl: {},
+				ag: {},
+				at: {},
+				sent: {},
+				d: {}
 			}
 		});
 

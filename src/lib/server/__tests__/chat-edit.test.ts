@@ -1,20 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const {
-	ensureMock,
-	upsertMock,
-	retrieveOneMock,
-	removeMock,
-	embedMock,
-	getGroupMock
-} = vi.hoisted(() => ({
-	ensureMock: vi.fn(),
-	upsertMock: vi.fn(),
-	retrieveOneMock: vi.fn(),
-	removeMock: vi.fn(),
-	embedMock: vi.fn(),
-	getGroupMock: vi.fn()
-}));
+const { ensureMock, upsertMock, retrieveOneMock, removeMock, embedMock, getGroupMock } = vi.hoisted(
+	() => ({
+		ensureMock: vi.fn(),
+		upsertMock: vi.fn(),
+		retrieveOneMock: vi.fn(),
+		removeMock: vi.fn(),
+		embedMock: vi.fn(),
+		getGroupMock: vi.fn()
+	})
+);
 
 vi.mock('$lib/server/qdrant', async () => {
 	const actual = await vi.importActual<typeof import('$lib/server/qdrant')>('$lib/server/qdrant');
@@ -110,7 +105,13 @@ describe('delete_msg', () => {
 
 	it('returns the media key for attachment cleanup', async () => {
 		const msg = {
-			s: 'm', id: 'm1', c: 'a|b', f: 'ada', t: 'bob', x: 'hi', d: 100,
+			s: 'm',
+			id: 'm1',
+			c: 'a|b',
+			f: 'ada',
+			t: 'bob',
+			x: 'hi',
+			d: 100,
 			im: 'ada/photo.png'
 		};
 		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });

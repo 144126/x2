@@ -1,14 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { findUserByEmailMock, patchUserMock, uuidFromMock, hashPwMock, encodeSessionMock } = vi.hoisted(
-	() => ({
+const { findUserByEmailMock, patchUserMock, uuidFromMock, hashPwMock, encodeSessionMock } =
+	vi.hoisted(() => ({
 		findUserByEmailMock: vi.fn(),
 		patchUserMock: vi.fn(),
 		uuidFromMock: vi.fn(),
 		hashPwMock: vi.fn(),
 		encodeSessionMock: vi.fn()
-	})
-);
+	}));
 
 vi.mock('$env/dynamic/private', () => ({ env: { SECRET: 's' } }));
 vi.mock('$lib/server/user', () => ({
@@ -43,7 +42,9 @@ beforeEach(() => {
 
 describe('POST /api/auth/set-password', () => {
 	it('401s when signed out', async () => {
-		await expect(POST(event({ email: 'e@x.com', password: 'hunter22' }, null))).rejects.toMatchObject({
+		await expect(
+			POST(event({ email: 'e@x.com', password: 'hunter22' }, null))
+		).rejects.toMatchObject({
 			status: 401
 		});
 	});
@@ -82,6 +83,10 @@ describe('POST /api/auth/set-password', () => {
 			email: 'e@x.com',
 			is_device: false
 		});
-		expect(ev.cookies.set).toHaveBeenCalledWith('session', 'sess', expect.objectContaining({ path: '/' }));
+		expect(ev.cookies.set).toHaveBeenCalledWith(
+			'session',
+			'sess',
+			expect.objectContaining({ path: '/' })
+		);
 	});
 });

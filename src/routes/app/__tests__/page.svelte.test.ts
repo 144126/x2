@@ -20,25 +20,25 @@ beforeEach(() => {
 });
 
 describe('search page filters modal', () => {
-	it('carries the secondary match page copy', () => {
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
-		expect(screen.getByText('or match one-to-one')).toBeInTheDocument();
+	it('carries the people-search page copy', () => {
+		render(Page);
+		expect(screen.getByText('find people')).toBeInTheDocument();
 	});
 
 	it('hides the filter controls until the filter button is clicked', () => {
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
+		render(Page);
 		const modal = screen.queryByRole('dialog');
 		expect(modal).not.toBeInTheDocument();
 	});
 
 	it('shows no badge when no filter is set', () => {
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
+		render(Page);
 		const badge = screen.queryByText(/^[0-9]+$/);
 		expect(badge).not.toBeInTheDocument();
 	});
 
 	it('closes the modal and runs the search on apply', async () => {
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
+		render(Page);
 		await fireEvent.click(screen.getByTitle('filters'));
 		await fireEvent.click(screen.getByText('apply'));
 		const modal = screen.queryByRole('dialog');

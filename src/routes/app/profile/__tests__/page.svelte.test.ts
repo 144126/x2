@@ -49,7 +49,13 @@ function data(over: Record<string, unknown> = {}) {
 		id: string;
 		p: { s: 'u'; g: string; d: number; u: string; m?: string; [k: string]: unknown };
 		partner_code: string;
-		geo: { country: string | null; region: string | null; region_name: string | null; city: string | null; tz: string | null } | null;
+		geo: {
+			country: string | null;
+			region: string | null;
+			region_name: string | null;
+			city: string | null;
+			tz: string | null;
+		} | null;
 		mutes: { target: string; kind: 'u' | 'r'; until: number; name: string }[];
 	};
 }
@@ -199,11 +205,15 @@ describe('link-account section', () => {
 	});
 
 	it('submitting the password form POSTs /api/auth/set-password with the typed credentials', async () => {
-		const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ balance: 0 }) });
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValue({ ok: true, status: 200, json: async () => ({ balance: 0 }) });
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 		renderDevice();
 		await fireEvent.input(screen.getByPlaceholderText('email'), { target: { value: 'e@x.com' } });
-		await fireEvent.input(screen.getByPlaceholderText(/password/), { target: { value: 'hunter22' } });
+		await fireEvent.input(screen.getByPlaceholderText(/password/), {
+			target: { value: 'hunter22' }
+		});
 		await fireEvent.click(screen.getByRole('button', { name: 'set password' }));
 		await waitFor(() =>
 			expect(mockFetch).toHaveBeenCalledWith('/api/auth/set-password', {
@@ -215,20 +225,32 @@ describe('link-account section', () => {
 	});
 
 	it('shows the already-in-use message on a 409 and never claims success', async () => {
-		globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 409 }) as unknown as typeof fetch;
+		globalThis.fetch = vi
+			.fn()
+			.mockResolvedValue({ ok: false, status: 409 }) as unknown as typeof fetch;
 		renderDevice();
 		await fireEvent.input(screen.getByPlaceholderText('email'), { target: { value: 'e@x.com' } });
-		await fireEvent.input(screen.getByPlaceholderText(/password/), { target: { value: 'hunter22' } });
+		await fireEvent.input(screen.getByPlaceholderText(/password/), {
+			target: { value: 'hunter22' }
+		});
 		await fireEvent.click(screen.getByRole('button', { name: 'set password' }));
 		expect(await screen.findByText(/already in use/)).toBeInTheDocument();
 		expect(screen.queryByText(/linked — you can now log in/)).toBeNull();
 	});
 
 	it('shows the success message and invalidates the load on a 200', async () => {
-		globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ balance: 0 }) }) as unknown as typeof fetch;
+		globalThis.fetch = vi
+			.fn()
+			.mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({ balance: 0 })
+			}) as unknown as typeof fetch;
 		renderDevice();
 		await fireEvent.input(screen.getByPlaceholderText('email'), { target: { value: 'e@x.com' } });
-		await fireEvent.input(screen.getByPlaceholderText(/password/), { target: { value: 'hunter22' } });
+		await fireEvent.input(screen.getByPlaceholderText(/password/), {
+			target: { value: 'hunter22' }
+		});
 		await fireEvent.click(screen.getByRole('button', { name: 'set password' }));
 		expect(await screen.findByText(/linked — you can now log in/)).toBeInTheDocument();
 		await waitFor(() => expect(invalidateAll).toHaveBeenCalledTimes(1));

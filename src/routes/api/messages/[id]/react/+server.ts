@@ -28,9 +28,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	const m = await get_message(env, params.id);
 	if (!m) throw error(404, 'not found');
 	const uid = locals.user.id;
-	const allowed = m.gr
-		? await is_member(env, locals.x2_ws, m.gr, uid)
-		: m.f === uid || m.t === uid;
+	const allowed = m.gr ? await is_member(env, locals.x2_ws, m.gr, uid) : m.f === uid || m.t === uid;
 	if (!allowed) throw error(403, 'not a participant');
 	const rx = await toggle_reaction(env, uid, params.id, emoji);
 	locals.bg(relay_reaction(env, locals.x2_ws, m, params.id, rx).catch(() => {}));

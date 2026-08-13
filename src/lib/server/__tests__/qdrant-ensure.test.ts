@@ -27,9 +27,29 @@ describe('ensure — probe-first', () => {
 	it('skips all creation when all 23 keys exist', async () => {
 		mockClient.getCollection.mockResolvedValue({
 			payload_schema: {
-				s: {}, t: {}, r: {}, c: {}, f: {}, co: {}, st: {}, ci: {}, u: {},
-				ow: {}, mb: {}, gr: {}, uid: {}, ac: {}, tg: {}, k: {}, rs: {}, m: {}, gl: {},
-				ag: {}, at: {}, sent: {}, d: {}
+				s: {},
+				t: {},
+				r: {},
+				c: {},
+				f: {},
+				co: {},
+				st: {},
+				ci: {},
+				u: {},
+				ow: {},
+				mb: {},
+				gr: {},
+				uid: {},
+				ac: {},
+				tg: {},
+				k: {},
+				rs: {},
+				m: {},
+				gl: {},
+				ag: {},
+				at: {},
+				sent: {},
+				d: {}
 			}
 		});
 		await ensure(ENV);

@@ -8,7 +8,7 @@
 	import InstallBanner from '$lib/components/InstallBanner.svelte';
 	import { sync_badge } from '$lib/badge';
 	import { sync_subscription } from '$lib/push-client';
-	import { Users, MessagesSquare, DoorOpen, UserRound, LogOut } from '@lucide/svelte';
+	import { Search, MessagesSquare, DoorOpen, UserRound, LogOut, Radio } from '@lucide/svelte';
 
 	let { children, data } = $props();
 	let vapid_key = $state('');
@@ -37,13 +37,19 @@
 	});
 
 	const nav = [
+		{ href: '/', label: 'talk', icon: Radio },
 		{ href: '/app/rooms', label: 'rooms', icon: DoorOpen },
 		{ href: '/app/chats', label: 'chats', icon: MessagesSquare },
-		{ href: '/app', label: 'match', icon: Users },
+		{ href: '/app', label: 'find', icon: Search },
 		{ href: '/app/profile', label: 'profile', icon: UserRound }
 	];
 	let here = $derived($page.url.pathname);
-	const active = (href: string) => (href === '/app' ? here === '/app' : here.startsWith(href));
+	const exact = ['/', '/app'];
+	const active = (href: string) => (exact.includes(href) ? here === href : here.startsWith(href));
+
+	// pages that own the whole viewport and scroll inside themselves — they must never
+	// hand the shell a page-level scrollbar
+	let fit = $derived(/^\/(app\/(chat|rooms)\/[^/]+)?$/.test(here));
 
 	async function sign_out() {
 		await fetch('/logout', { method: 'POST' });
@@ -51,77 +57,85 @@
 	}
 </script>
 
-{#if data.user}
-	<header class="sticky top-0 z-10 border-b border-line bg-base/80 backdrop-blur-md">
-		<nav class="wrap flex items-baseline justify-between gap-4 py-5">
-			<a href="/app/rooms" class="shrink-0">
-				<img src="/logo.svg" alt="x2" class="h-[24px] w-[24px]" />
-			</a>
-			<!-- links live in the bottom bar on phones; only the sign-out stays up here -->
-			<div class="flex items-baseline justify-end gap-6">
-				<div class="hidden items-baseline gap-6 sm:flex">
-					{#each nav as item (item.href)}
-						<a
-							href={item.href}
-							class="group relative pb-0.5 text-[11px] uppercase tracking-[0.22em] transition-colors duration-300 {active(
-								item.href
-							)
-								? 'text-ink'
-								: 'text-mute'}"
-						>
-							{item.label}
-							<span
-								class="absolute -bottom-px left-0 h-px w-full origin-left scale-x-0 bg-accent transition-transform duration-[400ms] ease-studio group-hover:scale-x-100 {active(
+<div class="flex h-[100dvh] flex-col overflow-hidden">
+	{#if data.user}
+		<header class="shrink-0 border-b border-line bg-base/80 backdrop-blur-md">
+			<nav class="wrap flex items-center justify-between gap-4 py-2.5">
+				<a href="/" class="shrink-0" aria-label="x2 home">
+					<img src="/logo.svg" alt="x2" class="h-5 w-5" />
+				</a>
+				<!-- links live in the bottom bar on phones; only the sign-out stays up here -->
+				<div class="flex items-center justify-end gap-5">
+					<div class="hidden items-center gap-5 sm:flex">
+						{#each nav as item (item.href)}
+							<a
+								href={item.href}
+								class="group relative pb-0.5 text-[10px] uppercase tracking-[0.2em] transition-colors duration-300 {active(
 									item.href
 								)
-									? 'scale-x-100'
-									: ''}"
-							></span>
-						</a>
-					{/each}
+									? 'text-ink'
+									: 'text-mute hover:text-ink'}"
+							>
+								{item.label}
+								<span
+									class="absolute -bottom-px left-0 h-px w-full origin-left scale-x-0 bg-accent transition-transform duration-300 ease-studio group-hover:scale-x-100 {active(
+										item.href
+									)
+										? 'scale-x-100'
+										: ''}"
+								></span>
+							</a>
+						{/each}
+					</div>
+					<button
+						class="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-mute transition-colors duration-300 hover:text-ink"
+						onclick={sign_out}
+					>
+						<LogOut size={12} /> sign out
+					</button>
 				</div>
-				<button
-					class="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-mute transition-colors duration-300 hover:text-ink"
-					onclick={sign_out}
-				>
-					<LogOut size={13} /> sign out
-				</button>
-			</div>
-		</nav>
-	</header>
-	{#if data.user.is_device}
-		<div class="wrap flex flex-wrap items-center gap-3 border-b border-line bg-accent-soft py-2.5 text-[12.5px] text-ink-soft">
-			<span>you're chatting without an account — link one so you don't lose access.</span>
-			<a href="/app/profile#link-account" class="btn btn-amber ml-auto px-3 py-1 text-[11.5px]">link account</a>
-		</div>
-	{/if}
-{/if}
-
-<main class="wrap pb-24 pt-14 max-sm:pb-[calc(76px+env(safe-area-inset-bottom))] max-sm:pt-8">
-	{@render children()}
-</main>
-
-{#if data.user}
-	<nav
-		class="fixed inset-x-0 bottom-0 z-20 grid border-t border-line bg-base/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
-		style="grid-template-columns: repeat({nav.length}, minmax(0, 1fr))"
-	>
-		{#each nav as item (item.href)}
-			<a
-				href={item.href}
-				class="flex flex-col items-center gap-1 py-2.5 text-center text-[10px] uppercase tracking-[0.18em] transition-colors duration-300 {active(
-					item.href
-				)
-					? 'text-accent'
-					: 'text-mute'}"
+			</nav>
+		</header>
+		{#if data.user.is_device}
+			<div
+				class="wrap flex shrink-0 flex-wrap items-center gap-2 border-b border-line bg-accent-soft py-1.5 text-[11.5px] text-ink-soft"
 			>
-				<item.icon size={19} />
-				{item.label}
-			</a>
-		{/each}
-	</nav>
-	<InstallBanner />
-	{#if vapid_key}
-		<NotifyPrompt {vapid_key} />
+				<span>you're chatting without an account — link one so you don't lose access.</span>
+				<a href="/app/profile#link-account" class="btn btn-amber ml-auto px-2.5 py-1 text-[11px]"
+					>link account</a
+				>
+			</div>
+		{/if}
 	{/if}
-{/if}
+
+	<main class="min-h-0 flex-1 {fit ? 'overflow-hidden' : 'overflow-y-auto'}">
+		<div class="wrap {fit ? 'h-full' : 'py-6'}">
+			{@render children()}
+		</div>
+	</main>
+
+	{#if data.user}
+		<nav
+			class="grid shrink-0 border-t border-line bg-base/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
+			style="grid-template-columns: repeat({nav.length}, minmax(0, 1fr))"
+		>
+			{#each nav as item (item.href)}
+				<a
+					href={item.href}
+					class="flex flex-col items-center gap-1 py-1.5 text-center text-[9px] uppercase tracking-[0.14em] transition-colors duration-300 {active(
+						item.href
+					)
+						? 'text-accent'
+						: 'text-mute'}"
+				>
+					<item.icon size={17} />
+					{item.label}
+				</a>
+			{/each}
+		</nav>
+		<InstallBanner />
+		{#if vapid_key}
+			<NotifyPrompt {vapid_key} />
+		{/if}
+	{/if}
+</div>

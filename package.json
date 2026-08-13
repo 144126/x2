@@ -3,13 +3,6 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"workerd",
-			"sharp",
-			"esbuild"
-		]
-	},
 	"scripts": {
 		"dev": "vite dev",
 		"dev:ws": "wrangler dev -c ws/wrangler.jsonc",

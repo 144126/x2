@@ -33,7 +33,10 @@ vi.mock('arctic', () => ({
 	generateState: () => 'st',
 	generateCodeVerifier: () => 'vc'
 }));
-vi.mock('$lib/server/qdrant', () => ({ get_secret: vi.fn(async () => 'x'), uuid_from: uuidFromMock }));
+vi.mock('$lib/server/qdrant', () => ({
+	get_secret: vi.fn(async () => 'x'),
+	uuid_from: uuidFromMock
+}));
 vi.mock('$lib/server/user', () => ({
 	save_user: saveUserMock,
 	get_user: getUserMock,
@@ -51,7 +54,13 @@ import { GET } from '../+server';
 const gu = { sub: 'google-sub-9', picture: 'pic.png', email: 'ada@gmail.com' };
 
 function callbackEvent(device: boolean) {
-	const cookies = { get: vi.fn((k: string) => (k === 'oauth_state' ? 'st' : k === 'oauth_verifier' ? 'vc' : undefined)), set: vi.fn(), delete: vi.fn() };
+	const cookies = {
+		get: vi.fn((k: string) =>
+			k === 'oauth_state' ? 'st' : k === 'oauth_verifier' ? 'vc' : undefined
+		),
+		set: vi.fn(),
+		delete: vi.fn()
+	};
 	return {
 		url: new URL('https://x/google?code=abc&state=st'),
 		cookies,
@@ -61,8 +70,12 @@ function callbackEvent(device: boolean) {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	globalThis.fetch = vi.fn(async () =>
-		new Response(JSON.stringify(gu), { status: 200, headers: { 'content-type': 'application/json' } })
+	globalThis.fetch = vi.fn(
+		async () =>
+			new Response(JSON.stringify(gu), {
+				status: 200,
+				headers: { 'content-type': 'application/json' }
+			})
 	) as unknown as typeof fetch;
 	uuidFromMock.mockResolvedValue('derived-uid');
 	getUserMock.mockResolvedValue(null);
@@ -107,9 +120,17 @@ describe('GET /google — fresh login/signup', () => {
 
 	it('logs a returning visitor into the account already linked to their sub, not a fresh derived id', async () => {
 		findUserByGoogleSubMock.mockResolvedValue({
-			id: 'linked-uid', s: 'u', u: 'ada', d: 1, g: 'device-xyz', gl: 'google-sub-9'
+			id: 'linked-uid',
+			s: 'u',
+			u: 'ada',
+			d: 1,
+			g: 'device-xyz',
+			gl: 'google-sub-9'
 		});
-		await expect(GET(callbackEvent(false))).rejects.toMatchObject({ status: 302, location: '/app' });
+		await expect(GET(callbackEvent(false))).rejects.toMatchObject({
+			status: 302,
+			location: '/app'
+		});
 		expect(encodeSessionMock).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ id: 'linked-uid' })
@@ -118,8 +139,17 @@ describe('GET /google — fresh login/signup', () => {
 	});
 
 	it('creates a fresh account at the derived id for a brand-new sub', async () => {
-		await expect(GET(callbackEvent(false))).rejects.toMatchObject({ status: 302, location: '/app' });
-		expect(saveUserMock).toHaveBeenCalledWith(expect.anything(), 'google-sub-9', 'pic.png', 'ada@gmail.com', 'google');
+		await expect(GET(callbackEvent(false))).rejects.toMatchObject({
+			status: 302,
+			location: '/app'
+		});
+		expect(saveUserMock).toHaveBeenCalledWith(
+			expect.anything(),
+			'google-sub-9',
+			'pic.png',
+			'ada@gmail.com',
+			'google'
+		);
 		expect(ensurePartnerCodeMock).toHaveBeenCalled();
 	});
 });

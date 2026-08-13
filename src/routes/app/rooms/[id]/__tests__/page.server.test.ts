@@ -19,7 +19,13 @@ import { load } from '../+page.server';
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	getGroupMock.mockResolvedValue({ id: 'g1', name: 'r', members: ['ada', 'lurker'], owner: 'ada', created: 1 });
+	getGroupMock.mockResolvedValue({
+		id: 'g1',
+		name: 'r',
+		members: ['ada', 'lurker'],
+		owner: 'ada',
+		created: 1
+	});
 	getGroupMessagesMock.mockResolvedValue([]);
 	getUserNamesMock.mockResolvedValue({ ada: 'Ada', lurker: 'Lurker' });
 	isMocked.mockResolvedValue(false);
@@ -42,10 +48,13 @@ describe('/app/rooms/[id] page server', () => {
 	});
 
 	it('serves an anonymous visitor the room and names but no message history', async () => {
-		getGroupMessagesMock.mockResolvedValue([
-			{ f: 'ada', x: 'secret', d: 1 }
-		]);
-		const data = (await load({ params: { id: 'g1' }, locals: { user: null } } as any)) as { g: { id: string }; names: Record<string, string>; messages: unknown[]; muted: boolean };
+		getGroupMessagesMock.mockResolvedValue([{ f: 'ada', x: 'secret', d: 1 }]);
+		const data = (await load({ params: { id: 'g1' }, locals: { user: null } } as any)) as {
+			g: { id: string };
+			names: Record<string, string>;
+			messages: unknown[];
+			muted: boolean;
+		};
 		expect(data.g.id).toBe('g1');
 		expect(data.names).toEqual({ ada: 'Ada', lurker: 'Lurker' });
 		expect(data.messages).toEqual([]);

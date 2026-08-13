@@ -96,7 +96,7 @@
 	<button
 		type="button"
 		bind:this={trigger}
-		class="flex w-full items-center justify-between gap-2 rounded-[10px] border border-line bg-panel-solid px-3.5 py-2.5 text-left text-[14px] text-ink transition-colors duration-300 focus:border-accent focus:outline-none"
+		class="flex w-full items-center justify-between gap-2 rounded-[10px] border border-line bg-panel-solid px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors duration-300 focus:border-accent focus:outline-none"
 		role="combobox"
 		aria-haspopup="listbox"
 		aria-expanded={open}
@@ -127,7 +127,7 @@
 					role="option"
 					aria-selected={o.value === value}
 					tabindex="-1"
-					class="cursor-pointer px-3.5 py-2 text-[14px] {i === highlighted
+					class="cursor-pointer px-3.5 py-2 text-[13px] {i === highlighted
 						? 'bg-accent-soft text-ink'
 						: 'text-ink-soft'}"
 					onmouseenter={() => (highlighted = i)}

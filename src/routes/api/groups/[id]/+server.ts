@@ -34,8 +34,16 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	return json({ g });
 };
 
-export const POST: RequestHandler = async ({ params, request, locals, platform, cookies, getClientAddress }) => {
-	const me = locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
+export const POST: RequestHandler = async ({
+	params,
+	request,
+	locals,
+	platform,
+	cookies,
+	getClientAddress
+}) => {
+	const me =
+		locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
 	if (!me) throw error(401, 'auth');
 	const b = (await request.json().catch(() => null)) as { action?: string };
 	const g =

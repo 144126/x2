@@ -38,7 +38,10 @@ async function location_of(p: unknown): Promise<string> {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	putImageMock.mockResolvedValue({ key: 'ada/shared.png', url: '/media/ada/shared.png?e=1800000000000&s=abcdef1234567890abcdef1234567890' });
+	putImageMock.mockResolvedValue({
+		key: 'ada/shared.png',
+		url: '/media/ada/shared.png?e=1800000000000&s=abcdef1234567890abcdef1234567890'
+	});
 });
 
 describe('POST /app/share — content shared from the OS', () => {

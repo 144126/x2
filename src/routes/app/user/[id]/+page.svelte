@@ -31,14 +31,18 @@
 	function offset(tz: string, ts: number): number {
 		try {
 			const parts = new Intl.DateTimeFormat('en', {
-				timeZone: tz, timeZoneName: 'longOffset', hour12: false
+				timeZone: tz,
+				timeZoneName: 'longOffset',
+				hour12: false
 			}).formatToParts(new Date(ts));
 			const off = parts.find((p) => p.type === 'timeZoneName')?.value;
 			if (!off) return 0;
 			const m = off.match(/UTC([+-])(\d+):?(\d+)?/);
 			if (!m) return 0;
 			return (parseInt(m[2]) * 60 + (parseInt(m[3]) || 0)) * (m[1] === '+' ? 1 : -1);
-		} catch { return 0; }
+		} catch {
+			return 0;
+		}
 	}
 
 	let commonText = $state<string | null>(null);
@@ -58,56 +62,56 @@
 
 <section class="prof reveal mx-auto max-w-[560px]">
 	<div class="eyebrow">user</div>
-	<h1 class="display mt-3 mb-10 text-[clamp(40px,6vw,64px)]">{username}</h1>
+	<h1 class="display mt-3 mb-6 text-[clamp(24px,4vw,34px)]">{username}</h1>
 
 	<div class="card mb-6 flex flex-col gap-3">
 		{#if u.co}
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">country</span>
-				<span class="text-[14px] text-ink">{u.co}</span>
+				<span class="text-[13px] text-ink">{u.co}</span>
 			</div>
 		{/if}
 		{#if u.st}
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">state</span>
-				<span class="text-[14px] text-ink">{u.st}</span>
+				<span class="text-[13px] text-ink">{u.st}</span>
 			</div>
 		{/if}
 		{#if u.ci}
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">city</span>
-				<span class="text-[14px] text-ink">{u.ci}</span>
+				<span class="text-[13px] text-ink">{u.ci}</span>
 			</div>
 		{/if}
 		{#if u.ag}
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">age</span>
-				<span class="text-[14px] text-ink">{u.ag}</span>
+				<span class="text-[13px] text-ink">{u.ag}</span>
 			</div>
 		{/if}
 		{#if u.r}
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">gender</span>
-				<span class="text-[14px] text-ink">{u.r}</span>
+				<span class="text-[13px] text-ink">{u.r}</span>
 			</div>
 		{/if}
 		{#if u.w}
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">phone</span>
-				<span class="text-[14px] text-ink">{u.w}</span>
+				<span class="text-[13px] text-ink">{u.w}</span>
 			</div>
 		{/if}
 		{#if localTime}
 			<div class="flex items-baseline gap-3">
 				<span class="eyebrow w-[100px] shrink-0">local time</span>
-				<span class="text-[14px] text-ink">{localTime}</span>
+				<span class="text-[13px] text-ink">{localTime}</span>
 			</div>
 		{/if}
 	</div>
 
 	{#if u.a}
 		<div class="card mb-6">
-			<p class="text-[14.5px] leading-[1.6] text-ink-soft">{u.a}</p>
+			<p class="text-[13px] leading-[1.6] text-ink-soft">{u.a}</p>
 		</div>
 	{/if}
 
@@ -127,7 +131,7 @@
 				class="flex w-full items-center justify-between text-left"
 				onclick={() => (showAllShared = !showAllShared)}
 			>
-				<span class="text-[14.5px] text-ink-soft">
+				<span class="text-[13px] text-ink-soft">
 					{shared.length} group{shared.length === 1 ? '' : 's'} in common
 				</span>
 				<span
@@ -142,7 +146,7 @@
 						<li>
 							<a
 								href="/app/rooms/{g.id}"
-								class="text-[14px] text-ink transition-colors duration-300 hover:text-accent"
+								class="text-[13px] text-ink transition-colors duration-300 hover:text-accent"
 							>
 								{g.name}
 							</a>
@@ -155,7 +159,7 @@
 
 	<div class="card mb-6">
 		{#if commonText}
-			<p class="text-[14px] text-ink">{commonText}</p>
+			<p class="text-[13px] text-ink">{commonText}</p>
 		{:else}
 			<button class="btn text-[13px]" disabled={commonLoading} onclick={findCommon}>
 				{commonLoading ? 'thinking…' : 'what do we have in common?'}

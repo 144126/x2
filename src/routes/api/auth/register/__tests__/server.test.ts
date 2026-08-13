@@ -83,7 +83,9 @@ describe('POST /api/auth/register', () => {
 
 	it('409s when the email is already linked to a different account id', async () => {
 		findUserByEmailMock.mockResolvedValue({ id: 'other-uid', s: 'u', u: 'other', d: 1 });
-		await expect(POST(event({ e: 'a@x.com', p: 'hunter2' }))).rejects.toMatchObject({ status: 409 });
+		await expect(POST(event({ e: 'a@x.com', p: 'hunter2' }))).rejects.toMatchObject({
+			status: 409
+		});
 		expect(createPwUserMock).not.toHaveBeenCalled();
 	});
 });

@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { searchGroupsMock, listGroupsMock, saveGroupMock, ensureDeviceSessionMock } = vi.hoisted(() => ({
-	searchGroupsMock: vi.fn(),
-	listGroupsMock: vi.fn(),
-	saveGroupMock: vi.fn(),
-	ensureDeviceSessionMock: vi.fn()
-}));
+const { searchGroupsMock, listGroupsMock, saveGroupMock, ensureDeviceSessionMock } = vi.hoisted(
+	() => ({
+		searchGroupsMock: vi.fn(),
+		listGroupsMock: vi.fn(),
+		saveGroupMock: vi.fn(),
+		ensureDeviceSessionMock: vi.fn()
+	})
+);
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/group', () => ({
@@ -72,7 +74,9 @@ describe('POST /api/groups', () => {
 	});
 
 	it('persists country, state and city on create', async () => {
-		await POST(postEvent({ name: 'testroom', country: 'US', state: 'CA', city: 'SF', description: 'desc' }));
+		await POST(
+			postEvent({ name: 'testroom', country: 'US', state: 'CA', city: 'SF', description: 'desc' })
+		);
 		expect(saveGroupMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'me', {
 			name: 'testroom',
 			description: 'desc',

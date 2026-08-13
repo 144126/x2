@@ -17,7 +17,10 @@ describe('reconnect backoff jitter', () => {
 	beforeEach(() => {
 		_reset();
 		vi.stubGlobal('window', {});
-		vi.stubGlobal('fetch', vi.fn(async () => new Response('no', { status: 500 })));
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response('no', { status: 500 }))
+		);
 	});
 
 	afterEach(() => {

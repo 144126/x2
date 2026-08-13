@@ -5,7 +5,10 @@ import { encode_session } from './session';
 import { guard } from './rl';
 import type { Cookies } from '@sveltejs/kit';
 
-export async function get_or_create_device_user(env: QEnv, device_id: string): Promise<User & { id: string }> {
+export async function get_or_create_device_user(
+	env: QEnv,
+	device_id: string
+): Promise<User & { id: string }> {
 	const id = await uuid_from(device_id);
 	const existing = await get_user(env, id);
 	if (existing) return { ...existing, id };
@@ -32,7 +35,11 @@ export async function ensure_device_session(
 	if (!device_id) return null;
 	await guard(platform, 'RL_DEVICE_CREATE', get_client_address());
 	const u = await get_or_create_device_user(env, device_id);
-	const session = await encode_session(env.SECRET, { id: u.id, username: u.u, is_device: is_device_only(u) });
+	const session = await encode_session(env.SECRET, {
+		id: u.id,
+		username: u.u,
+		is_device: is_device_only(u)
+	});
 	cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
 	locals.user = { id: u.id, username: u.u };
 	return locals.user;

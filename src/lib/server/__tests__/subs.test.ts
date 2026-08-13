@@ -12,7 +12,10 @@ import { save_sub, delete_sub } from '../subs';
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' } as unknown as QEnv;
 const WS = {} as Fetcher;
-const web = (endpoint: string) => ({ endpoint, keys: { p256dh: 'BPublicKeyBytes', auth: 'AuthSecret' } });
+const web = (endpoint: string) => ({
+	endpoint,
+	keys: { p256dh: 'BPublicKeyBytes', auth: 'AuthSecret' }
+});
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -23,7 +26,13 @@ beforeEach(() => {
 describe('save_sub', () => {
 	it('forwards the subscription and user agent to the hub, scoped to the uid', async () => {
 		await save_sub(ENV, WS, 'me', web('https://push.example.net/a'), 'Firefox/1');
-		expect(hubSubMock).toHaveBeenCalledWith(ENV, WS, 'me', web('https://push.example.net/a'), 'Firefox/1');
+		expect(hubSubMock).toHaveBeenCalledWith(
+			ENV,
+			WS,
+			'me',
+			web('https://push.example.net/a'),
+			'Firefox/1'
+		);
 	});
 
 	it('rejects a subscription missing its endpoint or keys', async () => {

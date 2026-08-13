@@ -21,7 +21,9 @@ describe('ForwardPicker', () => {
 		const checkboxes = screen.getAllByRole('checkbox');
 		expect(checkboxes.every((c) => (c as HTMLInputElement).checked)).toBe(true);
 		await fireEvent.click(screen.getByRole('button', { name: 'select all' }));
-		expect(screen.getAllByRole('checkbox').every((c) => !(c as HTMLInputElement).checked)).toBe(true);
+		expect(screen.getAllByRole('checkbox').every((c) => !(c as HTMLInputElement).checked)).toBe(
+			true
+		);
 	});
 
 	it('forward button is disabled with zero selections', () => {

@@ -8,12 +8,14 @@
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
 	import { CallMesh, media_error, VIDEO_FALLBACK, type CallSignal } from '$lib/call';
-	import RemoteVideo from '$lib/components/RemoteVideo.svelte';
+	import CallOverlay from '$lib/components/CallOverlay.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
 	import StickerPicker from '$lib/components/StickerPicker.svelte';
 	import ForwardPicker from '$lib/components/ForwardPicker.svelte';
 	import { sticker_src } from '$lib/stickers';
+	import { day_label, clock } from '$lib/time';
+	import { ctrlEnter } from '$lib/actions';
 	import AiThread from '$lib/components/AiThread.svelte';
 	import MuteButton from '$lib/components/MuteButton.svelte';
 	import LocationPicker from '$lib/LocationPicker.svelte';
@@ -22,12 +24,13 @@
 		Image,
 		Send as SendIcon,
 		Phone,
-		PhoneOff,
-		Mic,
-		MicOff,
 		Video,
-		VideoOff,
-		Smile
+		Smile,
+		Sticker,
+		CornerUpLeft,
+		SmilePlus,
+		Forward,
+		MessageSquare
 	} from '@lucide/svelte';
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
@@ -71,6 +74,9 @@
 	let micOn = $state(true);
 	let videoOn = $state(false);
 	let callError = $state('');
+	let call_peers = $derived(
+		remotes.map((r) => ({ uid: r.uid, name: names[r.uid] ?? 'someone', stream: r.stream }))
+	);
 
 	function makeMesh(): CallMesh {
 		return new CallMesh({
@@ -189,8 +195,14 @@
 	let stickerOpen = $state(false);
 
 	let emojiOpen = $state(false);
-	let composerInput: HTMLInputElement | undefined = $state();
+	let composerInput: HTMLTextAreaElement | undefined = $state();
 	let emojiCursor = $state(0);
+
+	function grow(e: Event) {
+		const t = e.currentTarget as HTMLTextAreaElement;
+		t.style.height = 'auto';
+		t.style.height = Math.min(t.scrollHeight, 132) + 'px';
+	}
 
 	function openEmoji() {
 		emojiCursor = composerInput?.selectionStart ?? text.length;
@@ -295,7 +307,10 @@
 			pending = null;
 		}
 
-		if (!retry) text = '';
+		if (!retry) {
+			text = '';
+			if (composerInput) composerInput.style.height = 'auto';
+		}
 
 		let row: Row | undefined;
 		if (retry) {
@@ -440,107 +455,65 @@
 	});
 </script>
 
-<section class="mx-auto flex h-[calc(100dvh-var(--chrome))] max-w-[760px] flex-col">
-	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
+<section class="mx-auto flex h-full max-w-[680px] flex-col">
+	<header class="flex shrink-0 items-center gap-2.5 border-b border-line py-2.5">
 		<button
-			class="bg-none leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
+			class="shrink-0 leading-none text-ink-soft transition-colors duration-300 hover:text-accent"
 			onclick={() => goto('/app/rooms')}
 			aria-label="back"
 		>
-			<ArrowLeft size={22} />
+			<ArrowLeft size={18} />
 		</button>
-		<div class="flex min-w-0 flex-col gap-0.5">
-			<button
-				class="truncate text-left font-display text-[21px] font-medium tracking-[-0.01em] transition-colors duration-300 hover:text-accent"
-				onclick={() => (aboutOpen = true)}
-				title="about this room">{g.name}</button
+		<button
+			class="flex min-w-0 flex-1 flex-col gap-0.5 text-left"
+			onclick={() => (aboutOpen = true)}
+			title="about this room"
+		>
+			<span
+				class="truncate font-display text-[15px] font-medium tracking-[-0.01em] transition-colors duration-300 hover:text-accent"
+				>{g.name}</span
 			>
-			<span class="text-[10.5px] uppercase tracking-[0.2em] text-faint"
-				>{g.members.length} member{g.members.length === 1 ? '' : 's'}</span
+			<span class="text-[9.5px] uppercase tracking-[0.18em] text-faint"
+				>{g.members.length} member{g.members.length === 1 ? '' : 's'}{inCall
+					? ` · in call`
+					: ''}</span
 			>
-		</div>
-		<div class="ml-auto flex flex-wrap items-center gap-2">
+		</button>
+		<div class="flex shrink-0 items-center gap-1.5">
 			{#if mine && !inCall}
 				<button
-					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]"
+					class="btn btn-icon"
 					onclick={() => joinCall(false)}
+					aria-label="join the call"
+					title="join the call"
 				>
-					<Phone size={14} /> join call
+					<Phone size={15} />
 				</button>
 				<button
-					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px]"
+					class="btn btn-icon"
 					onclick={() => joinCall(true)}
+					aria-label="join with video"
+					title="join with video"
 				>
-					<Video size={14} /> join with video
+					<Video size={15} />
 				</button>
 			{/if}
 			{#if mine}
 				<AiThread conv="g:{g.id}" peerName={g.name} />
 				<MuteButton target={g.id} kind="r" bind:muted label="notifications for this room" />
 			{/if}
-			{#if inCall}
-				<button
-					class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]"
-					onclick={toggleMic}
-				>
-					{#if micOn}<Mic size={14} />{:else}<MicOff size={14} />{/if}
-				</button>
-				<button
-					class="btn btn-ghost flex items-center gap-1.5 px-3 py-2 text-[12px]"
-					onclick={toggleVideo}
-				>
-					{#if videoOn}<Video size={14} />{:else}<VideoOff size={14} />{/if}
-				</button>
-				<button
-					class="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-[12px] text-red-500"
-					onclick={() => leaveCall()}
-				>
-					<PhoneOff size={14} /> leave
-				</button>
-			{/if}
 			{#if owner}
-				<button
-					class="btn px-4 py-2 text-[12px]"
-					onclick={() => pushState('', { modal: 'edit-room' })}>edit</button
-				>
+				<button class="btn" onclick={() => pushState('', { modal: 'edit-room' })}>edit</button>
 			{:else if mine}
-				<button class="btn px-4 py-2 text-[12px]" onclick={() => membership('leave')}
-					>leave room</button
-				>
+				<button class="btn" onclick={() => membership('leave')}>leave</button>
 			{:else}
-				<button class="btn btn-amber px-4 py-2 text-[12px]" onclick={() => membership('join')}
-					>join</button
-				>
+				<button class="btn btn-amber" onclick={() => membership('join')}>join</button>
 			{/if}
 		</div>
 	</header>
 
-	{#if callError}
-		<p class="border-b border-line py-2 text-[12.5px] text-[#e2674c]">{callError}</p>
-	{/if}
-
-	{#if inCall}
-		<div class="flex flex-wrap items-center gap-3 border-b border-line py-3">
-			<span class="eyebrow mr-1">in call · {remotes.length + 1}</span>
-			{#if localStream}
-				<RemoteVideo
-					stream={localStream}
-					muted
-					class="h-20 w-28 rounded-[10px] border border-accent bg-black object-cover"
-				/>
-			{/if}
-			{#each remotes as r (r.uid)}
-				<div class="flex flex-col items-center gap-1">
-					<RemoteVideo
-						stream={r.stream}
-						class="h-20 w-28 rounded-[10px] border border-line bg-black object-cover"
-					/>
-					<span class="max-w-[112px] truncate text-[10.5px] text-mute"
-						>{names[r.uid] ?? 'someone'}</span
-					>
-				</div>
-			{/each}
-		</div>
+	{#if callError && !inCall}
+		<p class="shrink-0 border-b border-line py-1.5 text-[11.5px] text-danger">{callError}</p>
 	{/if}
 
 	<Modal open={$page.state.modal === 'edit-room'} onclose={() => history.back()} title="edit room">
@@ -554,7 +527,7 @@
 				<option value="c">closed</option>
 			</select>
 			<div
-				class="flex min-h-[48px] flex-wrap items-center gap-2 rounded-[12px] border border-line bg-panel-solid px-3 py-2 transition-colors duration-300 focus-within:border-accent"
+				class="flex min-h-[38px] flex-wrap items-center gap-2 rounded-[10px] border border-line bg-panel-solid px-3 py-2 transition-colors duration-300 focus-within:border-accent"
 			>
 				{#each etags as t}
 					<span
@@ -624,53 +597,62 @@
 		</div>
 	</Modal>
 
-	<div bind:this={thread} class="flex flex-1 flex-col gap-3 overflow-y-auto py-6">
+	<div bind:this={thread} class="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto py-4">
 		{#if !no_more && messages.length}
 			<button
-				class="btn btn-ghost mx-auto text-[12px]"
+				class="btn btn-ghost mx-auto mb-2 text-[11px] text-mute"
 				onclick={load_older}
 				disabled={loading_older}
 			>
 				{loading_older ? 'loading…' : 'load older messages'}
 			</button>
 		{/if}
-		{#each messages as m (m.cid ?? m.id)}
+		{#each messages as m, i (m.cid ?? m.id)}
+			{@const first_of_day = i === 0 || day_label(messages[i - 1].d) !== day_label(m.d)}
+			{@const own = m.f === me}
+			{#if first_of_day}
+				<div class="my-2 self-center rounded-full bg-panel-solid px-2.5 py-1 text-[10px] text-mute">
+					{day_label(m.d)}
+				</div>
+			{/if}
 			<div
-				class="group flex max-w-[85%] flex-col gap-1 sm:max-w-[70%] {m.f === me
-					? 'self-end items-end'
+				class="group relative flex max-w-[80%] flex-col gap-0.5 sm:max-w-[68%] {own
+					? 'items-end self-end'
 					: 'self-start'}"
 			>
-				{#if m.f !== me}
+				{#if !own}
 					<a
 						href="/app/user/{m.f}"
-						class="text-[11px] uppercase tracking-[0.16em] text-mute hover:text-accent"
+						class="px-1 text-[10px] uppercase tracking-[0.14em] text-mute hover:text-accent"
 						>{names[m.f] ?? 'someone'}</a
 					>
 				{/if}
 				<div
-					class="overflow-hidden px-4 py-3 text-[15px] leading-[1.5] {m.f === me
-						? 'rounded-[18px_4px_18px_18px] border border-accent bg-accent text-accent-ink'
-						: 'rounded-[4px_18px_18px_18px] border border-line bg-panel-solid'}"
+					class="overflow-hidden px-3 py-2 text-[13.5px] leading-[1.45] {own
+						? 'rounded-[14px_4px_14px_14px] border border-accent bg-accent text-accent-ink'
+						: 'rounded-[4px_14px_14px_14px] border border-line bg-panel-solid'}"
 					class:border-0={m.sk}
 					class:bg-transparent={m.sk}
 					class:p-0={m.sk}
 					class:opacity-60={m.id === '' && !m.err}
 				>
 					{#if m.fw}
-						<div class="mb-1 text-[10.5px] uppercase tracking-[0.12em] text-faint">forwarded</div>
+						<div class="mb-1 text-[9.5px] uppercase tracking-[0.12em] opacity-60">forwarded</div>
 					{/if}
 					{#if m.sk}
 						<img
 							src={sticker_src(m.sk)}
 							alt={m.sk + ' sticker'}
-							class="h-[120px] w-[120px] object-contain"
+							class="h-[104px] w-[104px] object-contain"
 						/>
 					{:else}
 						{#if m.rp}
-							<div class="mb-2 truncate border-l-2 border-accent/50 pl-2 text-[12.5px] opacity-70">
+							<div
+								class="mb-1.5 truncate border-l-2 border-current/40 pl-2 text-[11.5px] opacity-70"
+							>
 								<span class="font-medium"
 									>{names[quoted[m.rp]?.f ?? ''] ??
-										(quoted[m.rp]?.f === me ? 'You' : 'someone')}</span
+										(quoted[m.rp]?.f === me ? 'you' : 'someone')}</span
 								>
 								<span class="opacity-80"> · {quoted[m.rp]?.x || 'original message'}</span>
 							</div>
@@ -680,70 +662,86 @@
 								<img
 									src={media_src(m.im)}
 									alt=""
-									class="mb-2 max-h-[320px] w-full rounded-[10px] object-cover"
+									class="mb-1.5 max-h-[260px] w-full rounded-[8px] object-cover"
 								/>
 							</a>
 						{/if}
-						{#if m.x}{m.x}{/if}
-						{#if m.rx && Object.keys(m.rx).length}
-							<div class="mt-1 flex flex-wrap gap-1">
-								{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
-									<button
-										type="button"
-										class="flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[12px]"
-										class:border-accent={uids.includes(me)}
-										onclick={() => react(m.id, emoji)}
-									>
-										{emoji}
-										{uids.length}
-									</button>
-								{/each}
-								{#if Object.keys(m.rx).length > 3}
-									<button
-										type="button"
-										class="rounded-full border border-line bg-panel px-2 py-0.5 text-[12px] text-mute"
-										onclick={() => (reactionListFor = m.id)}>+{Object.keys(m.rx).length - 3}</button
-									>
-								{/if}
-							</div>
-						{/if}
+						{#if m.x}<span class="whitespace-pre-wrap break-words">{m.x}</span>{/if}
 					{/if}
 				</div>
+
+				{#if m.rx && Object.keys(m.rx).length}
+					<div class="-mt-1 flex flex-wrap gap-1">
+						{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
+							<button
+								type="button"
+								class="flex items-center gap-1 rounded-full border border-line bg-panel-solid px-1.5 py-0.5 text-[11px]"
+								class:border-accent={uids.includes(me)}
+								onclick={() => react(m.id, emoji)}
+							>
+								{emoji}
+								{uids.length}
+							</button>
+						{/each}
+						{#if Object.keys(m.rx).length > 3}
+							<button
+								type="button"
+								class="rounded-full border border-line bg-panel-solid px-1.5 py-0.5 text-[11px] text-mute"
+								onclick={() => (reactionListFor = m.id)}>+{Object.keys(m.rx).length - 3}</button
+							>
+						{/if}
+					</div>
+				{/if}
+
 				{#if m.err}
-					<button class="self-end text-[11px] text-[#e2674c] underline" onclick={() => send(m)}>
+					<button class="text-[10.5px] text-danger underline" onclick={() => send(m)}>
 						not sent — retry
 					</button>
+				{:else}
+					<time class="px-1 text-[9.5px] tabular-nums text-mute">{clock(m.d)}</time>
 				{/if}
+
 				<div
-					class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+					class="absolute -top-2.5 z-10 flex items-center gap-0.5 rounded-full border border-line bg-panel-solid px-1 py-0.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 {own
+						? 'right-1'
+						: 'right-1 sm:left-1 sm:right-auto'}"
 				>
 					<button
 						type="button"
-						class="text-[11px] text-faint hover:text-accent"
-						onclick={() => startReply(m)}>reply</button
+						class="p-1 text-mute hover:text-accent"
+						aria-label="reply"
+						title="reply"
+						onclick={() => startReply(m)}><CornerUpLeft size={12} /></button
 					>
-					{#if m.f !== me}
+					{#if !own}
 						<button
 							type="button"
-							class="text-[11px] text-faint hover:text-accent"
-							onclick={() => goto(`/app/chat/${m.f}?reply=${m.id}`)}>reply privately</button
+							class="p-1 text-mute hover:text-accent"
+							aria-label="reply privately"
+							title="reply privately"
+							onclick={() => goto(`/app/chat/${m.f}?reply=${m.id}`)}
+							><MessageSquare size={12} /></button
 						>
 					{/if}
 					<button
 						type="button"
-						class="text-[11px] text-faint hover:text-accent"
-						onclick={() => (reactingTo = m.id)}>react</button
+						class="p-1 text-mute hover:text-accent"
+						aria-label="react"
+						title="react"
+						onclick={() => (reactingTo = m.id)}><SmilePlus size={12} /></button
 					>
 					<button
 						type="button"
-						class="text-[11px] text-faint hover:text-accent"
-						onclick={() => openForward(m)}>forward</button
+						class="p-1 text-mute hover:text-accent"
+						aria-label="forward"
+						title="forward"
+						onclick={() => openForward(m)}><Forward size={12} /></button
 					>
 				</div>
 			</div>
 		{/each}
 		{#if !messages.length}
-			<p class="text-[14.5px] text-faint">nothing here yet. say the first thing.</p>
+			<p class="text-[13px] text-faint">nothing here yet. say the first thing.</p>
 		{/if}
 	</div>
 
@@ -767,7 +765,7 @@
 
 	{#if stickerOpen}
 		<Modal open onclose={() => (stickerOpen = false)} title="sticker">
-			<StickerPicker onselect={(e) => sendSticker(e)} onclose={() => (stickerOpen = false)} />
+			<StickerPicker onselect={(e) => sendSticker(e)} />
 		</Modal>
 	{/if}
 
@@ -794,24 +792,25 @@
 	{#if mine}
 		{#if replyTo}
 			<div
-				class="flex items-center gap-2 border-t border-line px-1 py-2 text-[12.5px] text-ink-soft"
+				class="flex shrink-0 items-center gap-2 border-t border-line px-1 py-1.5 text-[11.5px] text-ink-soft"
 			>
 				<div class="min-w-0 flex-1 truncate border-l-2 border-accent pl-2">
 					<span class="font-medium"
-						>{names[replyTo.f] ?? (replyTo.f === me ? 'You' : 'someone')}</span
+						>{names[replyTo.f] ?? (replyTo.f === me ? 'you' : 'someone')}</span
 					>
 					<span class="opacity-80"> · {replyTo.x || '(attachment)'}</span>
 				</div>
 				<button
 					type="button"
-					class="text-faint hover:text-accent"
+					class="text-mute hover:text-accent"
 					onclick={cancelReply}
 					aria-label="cancel reply">&times;</button
 				>
 			</div>
 		{/if}
 		<form
-			class="flex flex-wrap items-center gap-2 border-t border-line py-4"
+			class="flex shrink-0 items-end gap-1.5 border-t border-line py-2.5"
+			use:ctrlEnter={() => send()}
 			onsubmit={(e) => (e.preventDefault(), send())}
 			ondragover={(e) => e.preventDefault()}
 			ondrop={(e) => {
@@ -823,58 +822,72 @@
 			}}
 		>
 			<label
-				class="btn shrink-0 cursor-pointer px-3 py-3"
+				class="btn btn-icon cursor-pointer {pending ? 'border-accent text-accent' : ''}"
 				aria-label="attach image"
 				title={pending ? pending.name : 'attach image'}
 			>
-				<span class="flex items-center gap-1">
-					<Image size={16} />{#if pending}<span class="text-[11px]">1</span>{/if}
-				</span>
+				<Image size={15} />
 				<input type="file" accept="image/*" class="hidden" onchange={onpick} />
 			</label>
 			<button
 				type="button"
-				class="btn shrink-0 px-3 py-3"
+				class="btn btn-icon max-sm:hidden"
 				aria-label="sticker"
 				title="send a sticker"
 				onclick={() => (stickerOpen = true)}
 			>
-				<span class="text-[15px] leading-none">🙂</span>
+				<Sticker size={15} />
 			</button>
 			<button
 				type="button"
-				class="btn shrink-0 px-3 py-3"
+				class="btn btn-icon"
 				aria-label="emoji"
 				title="insert an emoji"
 				onclick={openEmoji}
 			>
-				<Smile size={16} />
+				<Smile size={15} />
 			</button>
-			<input
-				class="min-w-0 flex-1 text-[15px]"
+			<textarea
+				class="max-h-[132px] min-w-0 flex-1 resize-none py-2 leading-[1.4]"
+				rows="1"
 				bind:this={composerInput}
 				bind:value={text}
-				placeholder="say something to the room…"
+				oninput={grow}
+				placeholder="say something to the room… ⌃⏎ to send"
 				autocomplete="off"
 				onpaste={(e) => {
 					const f = image_from_event(e);
 					if (f) pending = f;
-				}}
-			/>
+				}}></textarea>
 			<button
-				class="btn btn-amber shrink-0 !px-4"
+				class="btn btn-amber btn-icon"
 				type="submit"
 				disabled={busy}
 				aria-label="send message"
 				title="send"
 			>
-				<SendIcon size={16} />
+				<SendIcon size={15} />
 			</button>
 		</form>
 	{:else}
-		<p class="border-t border-line py-4 text-[14px] text-faint">join the room to post.</p>
+		<p class="shrink-0 border-t border-line py-3 text-[13px] text-faint">join the room to post.</p>
 	{/if}
 </section>
+
+{#if inCall}
+	<CallOverlay
+		phase="connected"
+		title={g.name}
+		peers={call_peers}
+		local={localStream}
+		{micOn}
+		{videoOn}
+		error={callError}
+		onhangup={() => leaveCall()}
+		ontogglemic={toggleMic}
+		ontogglevideo={toggleVideo}
+	/>
+{/if}
 
 <style>
 	input[type='file'] {

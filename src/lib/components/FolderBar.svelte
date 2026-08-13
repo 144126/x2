@@ -108,7 +108,7 @@
 					class:border-accent={on}
 					class:bg-accent-soft={on}
 				>
-					<span class="min-w-0 flex-1 truncate text-[14.5px] text-ink">{item.name}</span>
+					<span class="min-w-0 flex-1 truncate text-[13px] text-ink">{item.name}</span>
 					<button
 						class="btn shrink-0 px-3 py-1.5 text-[12px]"
 						class:btn-amber={on}
@@ -123,6 +123,6 @@
 			{/each}
 		</ul>
 	{:else}
-		<p class="text-[14px] text-faint">no {itemNoun} to file yet.</p>
+		<p class="text-[13px] text-faint">no {itemNoun} to file yet.</p>
 	{/if}
 </Modal>

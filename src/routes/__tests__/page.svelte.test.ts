@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import Page from '../+page.svelte';
 
 const g = {
@@ -13,34 +13,64 @@ const g = {
 	created: 100
 };
 
-describe('/ (logged-out home)', () => {
-	it('shows the room grid from load data', () => {
-		render(Page, { props: { data: { user: null, rooms: [g] } } });
-		expect(screen.getByRole('link', { name: 'Chess Club' })).toHaveAttribute('href', '/app/rooms/g1');
-		expect(screen.getByText(/openings, endgames/)).toBeInTheDocument();
-		expect(screen.getByText('2 members')).toBeInTheDocument();
+describe('/ (voice match home)', () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
 	});
 
-	it('renders a search input bound to q', async () => {
-		const { fireEvent } = await import('@testing-library/svelte');
+	it('leads with the one button that starts a match', () => {
 		render(Page, { props: { data: { user: null, rooms: [] } } });
-		const input = screen.getByPlaceholderText(/search rooms/);
-		await fireEvent.input(input, { target: { value: 'chess' } });
-		expect(input).toHaveValue('chess');
+		expect(screen.getByRole('button', { name: /start talking/ })).toBeInTheDocument();
+		expect(screen.getByText(/who gets it/)).toBeInTheDocument();
 	});
 
-	it('points every CTA at the rooms surface, reachable while logged out', () => {
+	it('offers rooms as the fallback when nobody wants to talk', () => {
 		render(Page, { props: { data: { user: null, rooms: [g] } } });
-		const links = screen.getAllByRole('link');
-		expect(links.length).toBeGreaterThan(0);
-		for (const a of links) expect(a.getAttribute('href')).toMatch(/^\/app\/rooms/);
+		expect(screen.getByRole('link', { name: 'Chess Club' })).toHaveAttribute(
+			'href',
+			'/app/rooms/g1'
+		);
 	});
 
-	it('carries the final home-page copy', () => {
-		render(Page, { props: { data: { user: null, rooms: [] } } });
-		expect(screen.getByText(/the room finds you/)).toBeInTheDocument();
-		expect(screen.getByText(/find a room\./)).toBeInTheDocument();
-		expect(screen.getByText(/every room here is built around one thing/)).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: /start free/ })).toHaveAttribute('href', '/app/rooms');
+	it('mints a session and opens the lobby socket when you press start', async () => {
+		const sockets: string[] = [];
+		vi.stubGlobal(
+			'WebSocket',
+			class {
+				onmessage: unknown;
+				onclose: unknown;
+				onerror: unknown;
+				constructor(url: string) {
+					sockets.push(url);
+				}
+				send() {}
+				close() {}
+			}
+		);
+		const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+			Response.json({ uid: 'me', match: 'ws://x/match?uid=me&t=a&exp=1' })
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, rooms: [] } } });
+		await fireEvent.click(screen.getByRole('button', { name: /start talking/ }));
+		// the signalling socket opens alongside the lobby one, so match on the lobby url
+		await vi.waitFor(() => expect(sockets).toContain('ws://x/match?uid=me&t=a&exp=1'));
+
+		expect(fetchMock.mock.calls[0][0]).toBe('/api/wstoken');
+		expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'POST' });
+		expect(screen.getByText(/finding someone/)).toBeInTheDocument();
+	});
+
+	it('says the matching service failed instead of hanging on the spinner', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response('no', { status: 503 }))
+		);
+		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, rooms: [] } } });
+		await fireEvent.click(screen.getByRole('button', { name: /start talking/ }));
+		await vi.waitFor(() =>
+			expect(screen.getByText(/could not reach the matching service/)).toBeInTheDocument()
+		);
 	});
 });

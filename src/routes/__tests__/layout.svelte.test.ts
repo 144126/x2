@@ -13,7 +13,11 @@ const { devEnv, registerMock } = vi.hoisted(() => ({
 	registerMock: vi.fn()
 }));
 
-vi.mock('$app/environment', () => ({ get dev() { return devEnv.value; } }));
+vi.mock('$app/environment', () => ({
+	get dev() {
+		return devEnv.value;
+	}
+}));
 
 import Layout from '../+layout.svelte';
 
@@ -45,47 +49,54 @@ describe('service worker registration', () => {
 });
 
 describe('bottom nav', () => {
-	it('renders four destinations for a signed-in user', () => {
+	it('renders every destination for a signed-in user', () => {
 		render(Layout, { props: { data: { user: fakeUser }, children: () => '' } });
 		const links = screen.getAllByRole('link');
 		const labels = links.map((l) => l.textContent?.toLowerCase().trim());
-		expect(labels).toEqual(expect.arrayContaining(['match', 'chats', 'rooms', 'profile']));
+		expect(labels).toEqual(expect.arrayContaining(['talk', 'chats', 'rooms', 'find', 'profile']));
 	});
 
 	it('renders no nav at all when signed out', () => {
 		render(Layout, { props: { data: { user: null }, children: () => '' } });
 		const links = screen.queryAllByRole('link');
 		const navLabels = links.filter((l) =>
-			['match', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
+			['talk', 'chats', 'rooms', 'find', 'profile'].includes(
+				l.textContent?.toLowerCase().trim() ?? ''
+			)
 		);
 		expect(navLabels.length).toBe(0);
 	});
 
-	it('renders rooms as the first nav item', () => {
+	it('renders talk as the first nav item', () => {
 		render(Layout, {
 			props: { data: { user: fakeUser }, children: (() => '') as unknown as Snippet }
 		});
 		const links = screen.getAllByRole('link').filter((l) => l.textContent?.toLowerCase().trim());
 		const navLinks = links.filter((l) =>
-			['match', 'chats', 'rooms', 'profile'].includes(l.textContent?.toLowerCase().trim() ?? '')
+			['talk', 'chats', 'rooms', 'find', 'profile'].includes(
+				l.textContent?.toLowerCase().trim() ?? ''
+			)
 		);
-		expect(navLinks[0]).toHaveTextContent('rooms');
-		expect(navLinks[0]).toHaveAttribute('href', '/app/rooms');
+		expect(navLinks[0]).toHaveTextContent('talk');
+		expect(navLinks[0]).toHaveAttribute('href', '/');
 	});
 
-	it('logo links to /app/rooms', () => {
+	it('logo links to the homepage', () => {
 		render(Layout, {
 			props: { data: { user: fakeUser }, children: (() => '') as unknown as Snippet }
 		});
-		const logo = screen.getByRole('link', { name: 'x2' });
-		expect(logo).toHaveAttribute('href', '/app/rooms');
+		const logo = screen.getByRole('link', { name: 'x2 home' });
+		expect(logo).toHaveAttribute('href', '/');
 	});
 });
 
 describe('device-account upgrade banner', () => {
 	it('shows the banner with a link-account anchor for a device-only user', () => {
 		render(Layout, {
-			props: { data: { user: { ...fakeUser, is_device: true } }, children: (() => '') as unknown as Snippet }
+			props: {
+				data: { user: { ...fakeUser, is_device: true } },
+				children: (() => '') as unknown as Snippet
+			}
 		});
 		expect(screen.getByText(/chatting without an account/)).toBeInTheDocument();
 		const link = screen.getByRole('link', { name: 'link account' });

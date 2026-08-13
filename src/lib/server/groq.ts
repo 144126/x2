@@ -16,11 +16,14 @@ export async function whats_in_common(
 	a: User,
 	b: User
 ): Promise<
-	| { ok: true; text: string }
-	| { ok: false; reason: 'insufficient_credits' | 'llm_error' }
+	{ ok: true; text: string } | { ok: false; reason: 'insufficient_credits' | 'llm_error' }
 > {
 	const gate = await deduct(ws, viewer_uid, ESTIMATE_KOBO);
-	if (!gate.ok) return { ok: false, reason: gate.reason === 'service_unavailable' ? 'llm_error' : 'insufficient_credits' };
+	if (!gate.ok)
+		return {
+			ok: false,
+			reason: gate.reason === 'service_unavailable' ? 'llm_error' : 'insufficient_credits'
+		};
 
 	try {
 		const text = await modal_complete(env, [

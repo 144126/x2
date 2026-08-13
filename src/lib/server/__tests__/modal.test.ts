@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { modal_cost_kobo, serialize_thread, MODAL_KOBO_PER_SEC, MODAL_MODEL, modal_complete } from '../modal';
+import {
+	modal_cost_kobo,
+	serialize_thread,
+	MODAL_KOBO_PER_SEC,
+	MODAL_MODEL,
+	modal_complete
+} from '../modal';
 import type { Message } from '../../types';
 
 beforeEach(() => {
@@ -65,18 +71,14 @@ describe('serialize_thread', () => {
 	const my = 'ada';
 
 	it('maps own messages to user role', () => {
-		const msgs: Message[] = [
-			{ s: 'm', id: '1', c: 'a|b', f: 'ada', t: 'bob', x: 'hello', d: 100 }
-		];
+		const msgs: Message[] = [{ s: 'm', id: '1', c: 'a|b', f: 'ada', t: 'bob', x: 'hello', d: 100 }];
 		const r = serialize_thread(msgs, my);
 		expect(r[0].role).toBe('user');
 		expect(r[0].content).toBe('hello');
 	});
 
 	it('maps peer messages to assistant role', () => {
-		const msgs: Message[] = [
-			{ s: 'm', id: '1', c: 'a|b', f: 'bob', t: 'ada', x: 'hi', d: 100 }
-		];
+		const msgs: Message[] = [{ s: 'm', id: '1', c: 'a|b', f: 'bob', t: 'ada', x: 'hi', d: 100 }];
 		const r = serialize_thread(msgs, my);
 		expect(r[0].role).toBe('assistant');
 		expect(r[0].content).toBe('hi');

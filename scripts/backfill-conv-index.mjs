@@ -54,7 +54,7 @@ const j = (body) => ({
 
 async function scroll(filter) {
 	const pts = [];
-	for (let offset = null; ; ) {
+	for (let offset = null; ;) {
 		const body = { filter, limit: 1000, with_payload: true };
 		if (offset) body.offset = offset;
 		const r = await fetch(`${QURL}/collections/${COLLECTION}/points/scroll`, j(body));
@@ -239,7 +239,9 @@ async function main() {
 			`\ndry-run complete: messages scanned=${msgSeen} would-write=${all.size} entries across ${byUid.size} uids`
 		);
 	} else {
-		console.log(`\ndone: written=${written} failed=${failed} verify checked=${checked} still-missing=${missing}`);
+		console.log(
+			`\ndone: written=${written} failed=${failed} verify checked=${checked} still-missing=${missing}`
+		);
 	}
 }
 

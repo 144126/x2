@@ -241,7 +241,7 @@ describe('replying', () => {
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
 		]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
-		const input = screen.getByPlaceholderText('say something to the room…');
+		const input = screen.getByPlaceholderText(/say something to the room/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
 		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
@@ -262,15 +262,12 @@ describe('replying', () => {
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
 		]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
-		const input = screen.getByPlaceholderText('say something to the room…');
+		const input = screen.getByPlaceholderText(/say something to the room/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
 		await vi.waitFor(() =>
-			expect(
-				screen.getByText(
-					(_, el) => el?.tagName === 'SPAN' && !!el.textContent?.includes('original text')
-				)
-			).toBeInTheDocument()
+			// the quote strip on the sent bubble, not the original message itself
+			expect(screen.getByText('· original text')).toBeInTheDocument()
 		);
 	});
 
@@ -467,7 +464,7 @@ describe('stickers', () => {
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: '', sk: 'wave', d: 100 }
 		]);
 		const img = screen.getByAltText('wave sticker');
-		expect(img).toHaveAttribute('src', '/stickers/basics/wave.webp');
+		expect(img).toHaveAttribute('src', '/stickers/basics/wave.svg');
 		const bubble = img.closest('div')!;
 		expect(bubble.className).toContain('border-0');
 		expect(bubble.className).toContain('bg-transparent');
@@ -567,7 +564,7 @@ describe('membership while anonymous', () => {
 		render(Page, { props: { data: data({ members: ['bob', 'carol'], owner: 'bob' }) } });
 		await fireEvent.click(screen.getByRole('button', { name: 'join' }));
 		await vi.waitFor(() =>
-			expect(screen.getByRole('button', { name: 'leave room' })).toBeInTheDocument()
+			expect(screen.getByRole('button', { name: 'leave' })).toBeInTheDocument()
 		);
 		expect(invalidateAll).not.toHaveBeenCalled();
 	});

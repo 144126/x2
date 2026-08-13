@@ -29,11 +29,13 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 		} else {
 			relayBody.to = targets[0];
 		}
-		await locals.x2_ws.fetch('https://x2-ws/relay', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify(relayBody)
-		}).catch(() => {});
+		await locals.x2_ws
+			.fetch('https://x2-ws/relay', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify(relayBody)
+			})
+			.catch(() => {});
 	}
 
 	return json({ ok: true });

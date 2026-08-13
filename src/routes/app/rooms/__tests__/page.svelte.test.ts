@@ -53,7 +53,9 @@ function data(over: Record<string, unknown> = {}) {
 beforeEach(() => {
 	vi.clearAllMocks();
 	pageStore.set({ state: {} });
-	globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ r: [] }) });
+	globalThis.fetch = vi
+		.fn()
+		.mockResolvedValue({ ok: true, json: () => Promise.resolve({ r: [] }) });
 });
 
 describe('/app/rooms page', () => {
@@ -100,7 +102,9 @@ describe('/app/rooms page', () => {
 
 	it('adds and removes tags as tokens and sends them on create', async () => {
 		const { fireEvent } = await import('@testing-library/svelte');
-		const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ g: { id: 'g1' } }) });
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValue({ ok: true, json: () => Promise.resolve({ g: { id: 'g1' } }) });
 		globalThis.fetch = mockFetch;
 
 		render(Page, { props: { data: data() } });

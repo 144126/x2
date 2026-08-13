@@ -41,7 +41,11 @@ const ID = '00000000-0000-4000-8000-0000000000ff';
 const ZV = new Array(4096).fill(0);
 const P = { id: ID, vector: {}, payload: { s: 'zzz_latency_probe', d: Date.now() } };
 const pts = (qs, body, method = 'PUT') =>
-	fetch(`${url}/collections/${collection}/points${qs}`, { method, headers: H, body: JSON.stringify(body) });
+	fetch(`${url}/collections/${collection}/points${qs}`, {
+		method,
+		headers: H,
+		body: JSON.stringify(body)
+	});
 
 await t('upsert wait=false', async () => (await pts('?wait=false', { points: [P] })).status);
 await t('upsert wait=true', async () => (await pts('?wait=true', { points: [P] })).status);

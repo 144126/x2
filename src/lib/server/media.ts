@@ -36,7 +36,10 @@ export async function sign_key(secret: string, key: string, exp: number): Promis
 		['sign']
 	);
 	const sig = await crypto.subtle.sign('HMAC', k, raw);
-	return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+	return [...new Uint8Array(sig)]
+		.map((b) => b.toString(16).padStart(2, '0'))
+		.join('')
+		.slice(0, 32);
 }
 
 export function signed_media_url(key: string, exp: number, sig: string): string {

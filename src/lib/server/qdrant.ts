@@ -85,7 +85,10 @@ const sqids = new Sqids({ minLength: 9 });
 // 9+ char room id: two 32-bit random numbers give ~62 bits of entropy, matching the
 // existing `available_username`-style collision-retry convention (username.ts) rather than
 // assuming zero collisions.
-export async function new_group_id(env: QEnv, exists: (id: string) => Promise<boolean>): Promise<string> {
+export async function new_group_id(
+	env: QEnv,
+	exists: (id: string) => Promise<boolean>
+): Promise<string> {
 	for (let tries = 0; tries < 5; tries += 1) {
 		const rnd = crypto.getRandomValues(new Uint32Array(2));
 		const id = sqids.encode([rnd[0], rnd[1]]);
@@ -119,7 +122,25 @@ type Pt = {
 };
 
 const KEYWORD_KEYS = [
-	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k', 'rs', 'm', 'gl'
+	's',
+	't',
+	'r',
+	'c',
+	'f',
+	'co',
+	'st',
+	'ci',
+	'u',
+	'ow',
+	'mb',
+	'gr',
+	'uid',
+	'ac',
+	'tg',
+	'k',
+	'rs',
+	'm',
+	'gl'
 ] as const;
 const INT_KEYS = ['ag', 'at', 'sent', 'd'] as const;
 
@@ -139,7 +160,9 @@ async function provision(env: QEnv): Promise<void> {
 	} catch {
 		/* collection missing — fall through and create it */
 	}
-	await c.createCollection(C, { vectors: { [V]: { size: 4096, distance: 'Cosine' } } }).catch(() => {});
+	await c
+		.createCollection(C, { vectors: { [V]: { size: 4096, distance: 'Cosine' } } })
+		.catch(() => {});
 	await Promise.all([
 		...KEYWORD_KEYS.map((k) =>
 			c.createPayloadIndex(C, { field_name: k, field_schema: 'keyword' }).catch(() => {})
@@ -209,7 +232,9 @@ export async function remove(env: QEnv, ids: string[]): Promise<void> {
 
 export async function upsert(env: QEnv, points: Pt[]): Promise<void> {
 	if (!points.length) return;
-	await (await qc(env)).upsert(C, {
+	await (
+		await qc(env)
+	).upsert(C, {
 		points: points as unknown as {
 			id: string | number;
 			vector: number[] | Record<string, number[]>;
@@ -219,7 +244,9 @@ export async function upsert(env: QEnv, points: Pt[]): Promise<void> {
 }
 
 export async function update_vectors(env: QEnv, id: string, vector: number[]): Promise<void> {
-	await (await qc(env)).updateVectors(C, {
+	await (
+		await qc(env)
+	).updateVectors(C, {
 		points: [{ id, vector: { [V]: vector } }]
 	});
 }

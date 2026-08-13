@@ -58,7 +58,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 	const result = streamText({
 		model: await modal_model(env as never),
-		system: "You are a helpful assistant in a messaging app. Answer the user's question about the conversation thread concisely.",
+		system:
+			"You are a helpful assistant in a messaging app. Answer the user's question about the conversation thread concisely.",
 		messages: thread,
 		abortSignal: controller.signal,
 		maxRetries: 0

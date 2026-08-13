@@ -1,22 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const {
-	getUserNamesMock,
-	listFoldersMock,
-	hubConvsMock,
-	listMutesMock,
-	hubChatHubError
-} = vi.hoisted(() => ({
-	getUserNamesMock: vi.fn(),
-	listFoldersMock: vi.fn(),
-	hubConvsMock: vi.fn(),
-	listMutesMock: vi.fn(),
-	hubChatHubError: class extends Error {
-		constructor(public reason: string) {
-			super(reason);
+const { getUserNamesMock, listFoldersMock, hubConvsMock, listMutesMock, hubChatHubError } =
+	vi.hoisted(() => ({
+		getUserNamesMock: vi.fn(),
+		listFoldersMock: vi.fn(),
+		hubConvsMock: vi.fn(),
+		listMutesMock: vi.fn(),
+		hubChatHubError: class extends Error {
+			constructor(public reason: string) {
+				super(reason);
+			}
 		}
-	}
-}));
+	}));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/chat', () => ({ get_user_names: getUserNamesMock }));
@@ -54,7 +49,10 @@ describe('GET /app/chats', () => {
 	});
 
 	it('returns conversations with resolved usernames', async () => {
-		hubConvsMock.mockResolvedValue([{ peer: 'bob', last: 100, preview: 'hey' }, { peer: 'carol', last: 50, preview: 'hi' }]);
+		hubConvsMock.mockResolvedValue([
+			{ peer: 'bob', last: 100, preview: 'hey' },
+			{ peer: 'carol', last: 50, preview: 'hi' }
+		]);
 		getUserNamesMock.mockResolvedValue({ bob: 'Bobby', carol: 'Carol' });
 		const data = (await load(event('me'))) as { convs: { peer: string; name: string }[] };
 		expect(getUserNamesMock).toHaveBeenCalledWith(expect.anything(), ['bob', 'carol']);

@@ -31,7 +31,9 @@ async function endpoint(
 	return endpoint_url;
 }
 
-async function auth_header(env: QEnv & { MODAL_PROXY_TOKEN_ID?: SecretVal; MODAL_PROXY_TOKEN_SECRET?: SecretVal }): Promise<string> {
+async function auth_header(
+	env: QEnv & { MODAL_PROXY_TOKEN_ID?: SecretVal; MODAL_PROXY_TOKEN_SECRET?: SecretVal }
+): Promise<string> {
 	const id = await get_secret(env.MODAL_PROXY_TOKEN_ID);
 	const secret = await get_secret(env.MODAL_PROXY_TOKEN_SECRET);
 	return `Bearer ${id}.${secret}`;
@@ -41,7 +43,10 @@ export function modal_cost_kobo(seconds: number): number {
 	return Math.round(seconds * MODAL_KOBO_PER_SEC);
 }
 
-export function serialize_thread(messages: Message[], my_uid: string): { role: 'user' | 'assistant'; content: string }[] {
+export function serialize_thread(
+	messages: Message[],
+	my_uid: string
+): { role: 'user' | 'assistant'; content: string }[] {
 	return messages.map((m) => ({
 		role: m.f === my_uid ? 'user' : 'assistant',
 		content: m.x || '(attachment)'
@@ -51,7 +56,14 @@ export function serialize_thread(messages: Message[], my_uid: string): { role: '
 let provider: OpenAICompatibleProvider | null = null;
 
 export async function modal_model(
-	env: QEnv & { MODAL_ENDPOINT_URL?: SecretVal; MODAL_WORKSPACE?: SecretVal; MODAL_ENDPOINT_NAME?: SecretVal; MODAL_ROUTING_REGION?: SecretVal; MODAL_PROXY_TOKEN_ID?: SecretVal; MODAL_PROXY_TOKEN_SECRET?: SecretVal }
+	env: QEnv & {
+		MODAL_ENDPOINT_URL?: SecretVal;
+		MODAL_WORKSPACE?: SecretVal;
+		MODAL_ENDPOINT_NAME?: SecretVal;
+		MODAL_ROUTING_REGION?: SecretVal;
+		MODAL_PROXY_TOKEN_ID?: SecretVal;
+		MODAL_PROXY_TOKEN_SECRET?: SecretVal;
+	}
 ): Promise<LanguageModel> {
 	if (!provider) {
 		provider = createOpenAICompatible({
@@ -64,7 +76,14 @@ export async function modal_model(
 }
 
 export async function modal_complete(
-	env: QEnv & { MODAL_ENDPOINT_URL?: SecretVal; MODAL_WORKSPACE?: SecretVal; MODAL_ENDPOINT_NAME?: SecretVal; MODAL_ROUTING_REGION?: SecretVal; MODAL_PROXY_TOKEN_ID?: SecretVal; MODAL_PROXY_TOKEN_SECRET?: SecretVal },
+	env: QEnv & {
+		MODAL_ENDPOINT_URL?: SecretVal;
+		MODAL_WORKSPACE?: SecretVal;
+		MODAL_ENDPOINT_NAME?: SecretVal;
+		MODAL_ROUTING_REGION?: SecretVal;
+		MODAL_PROXY_TOKEN_ID?: SecretVal;
+		MODAL_PROXY_TOKEN_SECRET?: SecretVal;
+	},
 	messages: { role: string; content: string }[]
 ): Promise<string> {
 	const url = await endpoint(env);

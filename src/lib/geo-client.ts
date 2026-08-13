@@ -11,8 +11,7 @@ export async function detect_location(): Promise<GeoResult | null> {
 		try {
 			const perm = await navigator.permissions.query({ name: 'geolocation' });
 			if (perm.state === 'denied') return null;
-		} catch {
-		}
+		} catch {}
 	}
 
 	return new Promise((resolve) => {

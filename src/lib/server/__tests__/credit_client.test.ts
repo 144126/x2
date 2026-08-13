@@ -23,13 +23,17 @@ describe('get_balance', () => {
 	});
 
 	it('returns a fallback instead of throwing when the response body is not JSON', async () => {
-		const ws = { fetch: vi.fn().mockResolvedValue(new Response('Worker x2-ws error')) } as unknown as Fetcher;
+		const ws = {
+			fetch: vi.fn().mockResolvedValue(new Response('Worker x2-ws error'))
+		} as unknown as Fetcher;
 		const r = await get_balance(ws, 'ada');
 		expect(r).toEqual({ balance: 0, granted_today: false });
 	});
 
 	it('returns a fallback instead of throwing when fetch itself rejects', async () => {
-		const ws = { fetch: vi.fn().mockRejectedValue(new Error('connection refused')) } as unknown as Fetcher;
+		const ws = {
+			fetch: vi.fn().mockRejectedValue(new Error('connection refused'))
+		} as unknown as Fetcher;
 		const r = await get_balance(ws, 'ada');
 		expect(r).toEqual({ balance: 0, granted_today: false });
 	});

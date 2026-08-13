@@ -6,7 +6,8 @@ const { svMock, decodeMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('$lib/server/hub_client', async () => {
-	const actual = await vi.importActual<typeof import('$lib/server/hub_client')>('$lib/server/hub_client');
+	const actual =
+		await vi.importActual<typeof import('$lib/server/hub_client')>('$lib/server/hub_client');
 	return { ...actual, hub_sv_get: svMock };
 });
 vi.mock('$lib/server/session', async () => {
@@ -66,7 +67,11 @@ describe('handle does no durable object round trip', () => {
 		const event = evt('tampered');
 		await handle({ event, resolve } as never);
 		expect((event as unknown as { locals: { user: unknown } }).locals.user).toBeNull();
-		expect((event as unknown as { cookies: { get: (k: string) => string | undefined } }).cookies.get('session')).toBeUndefined();
+		expect(
+			(event as unknown as { cookies: { get: (k: string) => string | undefined } }).cookies.get(
+				'session'
+			)
+		).toBeUndefined();
 	});
 
 	it('verifies the session exactly once per request', async () => {

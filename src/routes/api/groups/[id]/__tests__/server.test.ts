@@ -1,14 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { updateGroupMock, getGroupMock, deleteGroupMock, joinGroupMock, leaveGroupMock, ensureDeviceSessionMock } =
-	vi.hoisted(() => ({
-		updateGroupMock: vi.fn(),
-		getGroupMock: vi.fn(),
-		deleteGroupMock: vi.fn(),
-		joinGroupMock: vi.fn(),
-		leaveGroupMock: vi.fn(),
-		ensureDeviceSessionMock: vi.fn()
-	}));
+const {
+	updateGroupMock,
+	getGroupMock,
+	deleteGroupMock,
+	joinGroupMock,
+	leaveGroupMock,
+	ensureDeviceSessionMock
+} = vi.hoisted(() => ({
+	updateGroupMock: vi.fn(),
+	getGroupMock: vi.fn(),
+	deleteGroupMock: vi.fn(),
+	joinGroupMock: vi.fn(),
+	leaveGroupMock: vi.fn(),
+	ensureDeviceSessionMock: vi.fn()
+}));
 
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/group', () => ({

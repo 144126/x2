@@ -1,5 +1,9 @@
 <script lang="ts">
-	let { data, onforward, onclose }: {
+	let {
+		data,
+		onforward,
+		onclose
+	}: {
 		data: { conversations: { peer: string }[]; rooms: { id: string; name: string }[] };
 		onforward: (targets: { to?: string; group?: string }[]) => void;
 		onclose: () => void;
@@ -23,13 +27,13 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<button type="button" class="btn px-2 py-1 text-[11px]" onclick={toggleAll}>
-		select all
-	</button>
+	<button type="button" class="btn px-2 py-1 text-[11px]" onclick={toggleAll}> select all </button>
 	<ul class="flex max-h-[320px] flex-col gap-1 overflow-y-auto">
 		{#each all as item (item.key)}
 			<li>
-				<label class="flex items-center gap-2 rounded-[8px] px-2 py-1.5 text-[13.5px] hover:bg-panel">
+				<label
+					class="flex items-center gap-2 rounded-[8px] px-2 py-1.5 text-[13.5px] hover:bg-panel"
+				>
 					<input
 						type="checkbox"
 						class="accent-accent"
@@ -46,8 +50,9 @@
 		disabled={!selected.size}
 		onclick={() =>
 			onforward(
-				all.filter((a) => selected.has(a.key)).map((a) => ('to' in a ? { to: a.to } : { group: a.group }))
-			)
-		}>forward to {selected.size || ''}</button
+				all
+					.filter((a) => selected.has(a.key))
+					.map((a) => ('to' in a ? { to: a.to } : { group: a.group }))
+			)}>forward to {selected.size || ''}</button
 	>
 </div>

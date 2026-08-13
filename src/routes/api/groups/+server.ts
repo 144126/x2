@@ -18,8 +18,15 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	return json({ r: await search_groups(env, q, { country, state, city }) });
 };
 
-export const POST: RequestHandler = async ({ request, locals, platform, cookies, getClientAddress }) => {
-	const me = locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
+export const POST: RequestHandler = async ({
+	request,
+	locals,
+	platform,
+	cookies,
+	getClientAddress
+}) => {
+	const me =
+		locals.user ?? (await ensure_device_session(env, platform, locals, cookies, getClientAddress));
 	if (!me) throw error(401, 'auth');
 	await guard(platform, 'RL_SEARCH', me.id);
 	const b = (await request.json().catch(() => null)) as {

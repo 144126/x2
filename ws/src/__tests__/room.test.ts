@@ -6,8 +6,12 @@ function makeState() {
 	return {
 		storage: {
 			get: vi.fn(async (k: string) => store.get(k)),
-			put: vi.fn(async (k: string, v: unknown) => { store.set(k, v); }),
-			delete: vi.fn(async (k: string) => { store.delete(k); }),
+			put: vi.fn(async (k: string, v: unknown) => {
+				store.set(k, v);
+			}),
+			delete: vi.fn(async (k: string) => {
+				store.delete(k);
+			}),
 			list: vi.fn(async (opts?: { prefix?: string }) => {
 				const prefix = opts?.prefix ?? '';
 				const entries = [...store.entries()].filter(([k]) => k.startsWith(prefix));
@@ -22,7 +26,9 @@ function req(path: string, init?: RequestInit) {
 }
 
 describe('Room', () => {
-	beforeEach(() => { vi.clearAllMocks(); });
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
 
 	it('starts with an empty member list', async () => {
 		const room = new Room(makeState() as any, {} as any);
@@ -32,14 +38,18 @@ describe('Room', () => {
 
 	it('adds a joiner', async () => {
 		const room = new Room(makeState() as any, {} as any);
-		const res = await room.fetch(req('/join', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) }));
+		const res = await room.fetch(
+			req('/join', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) })
+		);
 		expect(await res.json()).toEqual({ members: ['alice'] });
 	});
 
 	it('join is idempotent', async () => {
 		const room = new Room(makeState() as any, {} as any);
 		await room.fetch(req('/join', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) }));
-		const res = await room.fetch(req('/join', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) }));
+		const res = await room.fetch(
+			req('/join', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) })
+		);
 		expect(await res.json()).toEqual({ members: ['alice'] });
 	});
 
@@ -55,14 +65,18 @@ describe('Room', () => {
 		const room = new Room(makeState() as any, {} as any);
 		await room.fetch(req('/join', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) }));
 		await room.fetch(req('/join', { method: 'POST', body: JSON.stringify({ uid: 'bob' }) }));
-		const res = await room.fetch(req('/leave', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) }));
+		const res = await room.fetch(
+			req('/leave', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) })
+		);
 		expect(await res.json()).toEqual({ members: ['bob'] });
 	});
 
 	it('leave of a non-member is a no-op', async () => {
 		const room = new Room(makeState() as any, {} as any);
 		await room.fetch(req('/join', { method: 'POST', body: JSON.stringify({ uid: 'alice' }) }));
-		const res = await room.fetch(req('/leave', { method: 'POST', body: JSON.stringify({ uid: 'bob' }) }));
+		const res = await room.fetch(
+			req('/leave', { method: 'POST', body: JSON.stringify({ uid: 'bob' }) })
+		);
 		expect(await res.json()).toEqual({ members: ['alice'] });
 	});
 

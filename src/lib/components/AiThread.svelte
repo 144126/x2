@@ -75,8 +75,14 @@
 
 	function partsOf(m: UIMessage): { text: string; reason: string } {
 		return {
-			text: m.parts.filter((p) => p.type === 'text').map((p) => p.text).join(''),
-			reason: m.parts.filter((p) => p.type === 'reasoning').map((p) => p.text).join('')
+			text: m.parts
+				.filter((p) => p.type === 'text')
+				.map((p) => p.text)
+				.join(''),
+			reason: m.parts
+				.filter((p) => p.type === 'reasoning')
+				.map((p) => p.text)
+				.join('')
 		};
 	}
 
@@ -123,16 +129,15 @@
 			{#each chat.messages as m (m.id)}
 				{@const { text, reason } = partsOf(m)}
 				<div
-					class="max-w-[85%] rounded-[12px] px-4 py-3 text-[14px] leading-[1.5] {m.role ===
-					'user'
+					class="max-w-[85%] rounded-[12px] px-4 py-3 text-[13px] leading-[1.5] {m.role === 'user'
 						? 'self-end bg-accent text-accent-ink'
 						: 'self-start border border-line bg-panel-solid'}"
 				>
 					{#if m.role === 'assistant' && reason}
 						<button
 							class="mb-2.5 flex items-center gap-1.5 text-[12px] text-mute transition-colors duration-300 hover:text-ink"
-						onclick={() => toggleReason(m.id)}
-						aria-expanded={!!showReason[m.id]}
+							onclick={() => toggleReason(m.id)}
+							aria-expanded={!!showReason[m.id]}
 						>
 							<Brain size={13} />
 							<span>thoughts</span>
@@ -154,7 +159,7 @@
 			{/each}
 			{#if chat.status === 'error'}
 				<div
-					class="max-w-[85%] self-start rounded-[12px] border border-line bg-panel-solid px-4 py-3 text-[14px] leading-[1.5]"
+					class="max-w-[85%] self-start rounded-[12px] border border-line bg-panel-solid px-4 py-3 text-[13px] leading-[1.5]"
 				>
 					(service unavailable — try again)
 				</div>
@@ -175,7 +180,7 @@
 
 		<div class="flex items-center gap-2 border-t border-line pt-4">
 			<input
-				class="min-w-0 flex-1 text-[14px]"
+				class="min-w-0 flex-1 text-[13px]"
 				bind:value={question}
 				placeholder="ask about this thread…"
 				disabled={busy}

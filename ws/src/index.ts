@@ -6,6 +6,7 @@ interface Env {
 	CHAT_HUB: DurableObjectNamespace;
 	CREDIT_ACCOUNT: DurableObjectNamespace;
 	ROOM: DurableObjectNamespace;
+	MATCH_LOBBY: DurableObjectNamespace;
 	SECRET: SecretVal;
 	DEV_SECRET?: SecretVal;
 	QDRANT_URL: string | { get?: () => Promise<string> };
@@ -27,6 +28,12 @@ const worker: ExportedHandler<Env> = {
 			const uid = parts[1];
 			const id = env.CHAT_HUB.idFromName(uid);
 			const stub = env.CHAT_HUB.get(id);
+			return stub.fetch(request);
+		}
+
+		if (url.pathname === '/match') {
+			// one global queue: every searcher must land on the same instance
+			const stub = env.MATCH_LOBBY.get(env.MATCH_LOBBY.idFromName('lobby'));
 			return stub.fetch(request);
 		}
 
@@ -126,3 +133,4 @@ export default worker;
 export { ChatHub } from './hub';
 export { CreditAccount } from './credit_account';
 export { Room } from './room';
+export { MatchLobby } from './lobby';

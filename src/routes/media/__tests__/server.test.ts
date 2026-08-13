@@ -16,13 +16,23 @@ const bucket = {
 
 function obj(body = 'image-data') {
 	return {
-		body: new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(body)); c.close(); } }),
+		body: new ReadableStream({
+			start(c) {
+				c.enqueue(new TextEncoder().encode(body));
+				c.close();
+			}
+		}),
 		httpEtag: '"abc123"',
-		writeHttpMetadata(h: Headers) { h.set('content-type', 'image/jpeg'); }
+		writeHttpMetadata(h: Headers) {
+			h.set('content-type', 'image/jpeg');
+		}
 	};
 }
 
-function event(url: string, user: { id: string; username: string } | null = { id: 'u', username: 'u' }) {
+function event(
+	url: string,
+	user: { id: string; username: string } | null = { id: 'u', username: 'u' }
+) {
 	const u = new URL(`https://x${url}`);
 	return {
 		params: { key: u.pathname.replace('/media/', '') },
@@ -32,7 +42,9 @@ function event(url: string, user: { id: string; username: string } | null = { id
 	} as unknown as Parameters<typeof GET>[0];
 }
 
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => {
+	vi.clearAllMocks();
+});
 
 describe('GET /media/[...key] — signed URL path', () => {
 	it('200s with public cache-control when the signature is valid', async () => {
@@ -49,11 +61,15 @@ describe('GET /media/[...key] — signed URL path', () => {
 		const { sign_key } = await import('$lib/server/media');
 		const exp = Date.now() - 1000;
 		const sig = await sign_key('test-secret', 'u/img.jpg', exp);
-		await expect(GET(event(`/media/u/img.jpg?e=${exp}&s=${sig}`))).rejects.toMatchObject({ status: 403 });
+		await expect(GET(event(`/media/u/img.jpg?e=${exp}&s=${sig}`))).rejects.toMatchObject({
+			status: 403
+		});
 	});
 
 	it('403s when the signature is tampered', async () => {
-		await expect(GET(event('/media/u/img.jpg?e=1800000000000&s=bad'))).rejects.toMatchObject({ status: 403 });
+		await expect(GET(event('/media/u/img.jpg?e=1800000000000&s=bad'))).rejects.toMatchObject({
+			status: 403
+		});
 	});
 
 	it('403s when the key does not match the signature', async () => {
@@ -61,7 +77,9 @@ describe('GET /media/[...key] — signed URL path', () => {
 		const exp = Date.now() + 86_400_000;
 		const sig = await sign_key('test-secret', 'u/different.jpg', exp);
 		// same sig but different key in the URL
-		await expect(GET(event(`/media/u/img.jpg?e=${exp}&s=${sig}`))).rejects.toMatchObject({ status: 403 });
+		await expect(GET(event(`/media/u/img.jpg?e=${exp}&s=${sig}`))).rejects.toMatchObject({
+			status: 403
+		});
 	});
 });
 

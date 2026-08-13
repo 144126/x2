@@ -44,9 +44,7 @@
 	let region = $state('');
 	let city = $state('');
 	let filtersOpen = $state(false);
-	let activeFilterCount = $derived(
-		[country, region, city].filter(Boolean).length
-	);
+	let activeFilterCount = $derived([country, region, city].filter(Boolean).length);
 
 	async function search() {
 		searching = true;
@@ -78,7 +76,14 @@
 		const res = await fetch('/api/groups', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ name, description, tags, country: country || undefined, state: region || undefined, city: city || undefined })
+			body: JSON.stringify({
+				name,
+				description,
+				tags,
+				country: country || undefined,
+				state: region || undefined,
+				city: city || undefined
+			})
 		});
 		creating = false;
 		if (!res.ok) {
@@ -102,27 +107,27 @@
 	}
 </script>
 
-<section class="mb-[64px]">
+<section class="mb-8">
 	<div class="eyebrow">your rooms</div>
-	<h2 class="display mt-3.5 mb-9 text-[clamp(30px,5.5vw,60px)] leading-[0.98]">
+	<h2 class="display mt-2 mb-5 text-[clamp(24px,4vw,34px)] leading-[0.98]">
 		find a <em class="italic text-accent">room</em><br />or start one.
 	</h2>
 
 	<div class="flex flex-col gap-3 sm:flex-row">
 		<div class="relative min-w-0 flex-1">
 			<Search
-				size={18}
-				class="pointer-events-none absolute top-1/2 left-[18px] -translate-y-1/2 text-faint"
+				size={15}
+				class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint"
 			/>
 			<input
-				class="w-full py-4 pr-[18px] pl-[46px] text-[17px]"
+				class="w-full py-2.5 pr-3 pl-9 text-[13px]"
 				placeholder="search rooms by what they're about…"
 				bind:value={q}
 				onkeydown={(e) => e.key === 'Enter' && search()}
 			/>
 		</div>
 		<button
-			class="btn btn-amber flex items-center justify-center py-2"
+			class="btn btn-amber flex items-center justify-center"
 			onclick={search}
 			disabled={searching}
 			aria-label="search rooms"
@@ -131,7 +136,7 @@
 			<Search size={15} />
 		</button>
 		<button
-			class="btn relative shrink-0 !px-4 py-2"
+			class="btn btn-icon relative"
 			onclick={() => (filtersOpen = true)}
 			aria-label="room filters"
 			title="location filters"
@@ -151,20 +156,20 @@
 			<LocationPicker bind:country bind:region bind:city anyLabel="any country" />
 		</div>
 		<div class="mt-6 flex items-center gap-3 border-t border-line pt-5">
-			<button class="btn px-4 py-2 text-[13px]" onclick={clearLocation}>clear</button>
-			<button class="btn btn-amber ml-auto px-4 py-2 text-[13px]" onclick={applyLocation}>apply</button>
+			<button class="btn" onclick={clearLocation}>clear</button>
+			<button class="btn btn-amber ml-auto" onclick={applyLocation}>apply</button>
 		</div>
 	</Modal>
 
 	{#if results.length}
-		<ul class="mt-7 grid gap-3.5">
+		<ul class="mt-4 grid gap-2.5">
 			{#each results as g, i (g.id)}
 				{@const joined = mine.some((m) => m.id === g.id)}
 				<li class="card reveal" style="--i:{i}">
 					<div class="flex flex-wrap items-baseline justify-between gap-2">
 						<a
 							href="/app/rooms/{g.id}"
-							class="font-display text-[22px] font-medium tracking-[-0.01em] hover:text-accent"
+							class="font-display text-[16px] font-medium tracking-[-0.01em] hover:text-accent"
 							>{g.name}</a
 						>
 						{#if g.country || g.state || g.city}
@@ -173,7 +178,7 @@
 							</div>
 						{/if}
 						{#if g.score !== undefined}
-							<span class="font-display text-[14px] text-accent"
+							<span class="font-display text-[13px] text-accent"
 								>{(g.score * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span></span
 							>
 						{/if}
@@ -184,7 +189,7 @@
 							{g.members.length} member{g.members.length === 1 ? '' : 's'}
 						</span>
 						<button
-							class="btn ml-auto px-4 py-2 text-[12px]"
+							class="btn ml-auto"
 							onclick={() => (joined ? goto(`/app/rooms/${g.id}`) : join(g))}
 						>
 							{joined ? 'open' : 'join'}
@@ -194,11 +199,11 @@
 			{/each}
 		</ul>
 	{:else if searching === false && q}
-		<p class="mt-6 text-[14.5px] text-faint">nothing matched. start the room yourself.</p>
+		<p class="mt-6 text-[13px] text-faint">nothing matched. start the room yourself.</p>
 	{/if}
 </section>
 
-<section class="mb-[64px]">
+<section class="mb-8">
 	<button
 		class="btn btn-amber flex items-center gap-1.5"
 		onclick={() => pushState('', { modal: 'create-room' })}
@@ -219,7 +224,7 @@
 			rows="3"
 			placeholder="what is this room about? this is what people search against."></textarea>
 		<div
-			class="flex min-h-[48px] flex-wrap items-center gap-2 rounded-[12px] border border-line bg-panel-solid px-3 py-2 transition-colors duration-300 focus-within:border-accent"
+			class="flex min-h-[38px] flex-wrap items-center gap-2 rounded-[10px] border border-line bg-panel-solid px-3 py-2 transition-colors duration-300 focus-within:border-accent"
 		>
 			{#each tags as t}
 				<span
@@ -229,13 +234,13 @@
 					<button
 						type="button"
 						onclick={() => removeTag(t)}
-						class="text-[15px] leading-none text-faint transition-colors hover:text-accent"
+						class="text-[13.5px] leading-none text-faint transition-colors hover:text-accent"
 						aria-label="remove {t}">&times;</button
 					>
 				</span>
 			{/each}
 			<input
-				class="min-w-[100px] flex-1 border-none bg-transparent px-1 py-1 text-[14px] text-ink outline-none placeholder:text-mute"
+				class="min-w-[100px] flex-1 border-none bg-transparent px-1 py-1 text-[13px] text-ink outline-none placeholder:text-mute"
 				bind:value={tagInput}
 				onkeydown={(e) => {
 					if (e.key === 'Enter') (e.preventDefault(), addTag());
@@ -272,25 +277,21 @@
 		/>
 	</div>
 	{#if visibleGroups.length}
-		<ul class="results mt-5 grid gap-3.5">
+		<ul class="results mt-5 grid gap-2.5">
 			{#each visibleGroups as g, i (g.id)}
-				<li
-					class="card person reveal"
-					style="--i:{i}"
-					onclick={() => goto(`/app/rooms/${g.id}`)}
-					role="button"
-					tabindex="0"
-				>
-					<div class="font-display text-[22px] font-medium tracking-[-0.01em]">{g.name}</div>
-					{#if g.country || g.state || g.city}
-						<div class="text-[12px] tracking-[0.04em] text-mute mt-1">
-							{[g.city, g.state, g.country].filter(Boolean).join(' · ')}
-						</div>
-					{/if}
+				<li>
+					<a class="card person reveal" style="--i:{i}" href="/app/rooms/{g.id}">
+						<span class="font-display text-[15px] font-medium tracking-[-0.01em]">{g.name}</span>
+						{#if g.country || g.state || g.city}
+							<span class="text-[11.5px] tracking-[0.04em] text-mute">
+								{[g.city, g.state, g.country].filter(Boolean).join(' · ')}
+							</span>
+						{/if}
+					</a>
 				</li>
 			{/each}
 		</ul>
 	{:else}
-		<p class="mt-4 text-[14.5px] text-faint">nothing yet — search above, or start your own.</p>
+		<p class="mt-4 text-[13px] text-faint">nothing yet — search above, or start your own.</p>
 	{/if}
 </section>

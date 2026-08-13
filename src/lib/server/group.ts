@@ -176,7 +176,12 @@ export async function delete_group(env: QEnv, id: string, uid: string): Promise<
 	return true;
 }
 
-export async function join_group(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<GroupView | null> {
+export async function join_group(
+	env: QEnv,
+	ws: Fetcher,
+	id: string,
+	uid: string
+): Promise<GroupView | null> {
 	await ensure(env);
 	const cur = await raw_group(env, id);
 	if (!cur) return null;
@@ -188,7 +193,12 @@ export async function join_group(env: QEnv, ws: Fetcher, id: string, uid: string
 }
 
 /** the owner cannot leave — deleting is the way out, so a group always has an owner */
-export async function leave_group(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<GroupView | null> {
+export async function leave_group(
+	env: QEnv,
+	ws: Fetcher,
+	id: string,
+	uid: string
+): Promise<GroupView | null> {
 	await ensure(env);
 	const cur = await raw_group(env, id);
 	if (!cur || cur.ow === uid) return null;
@@ -201,7 +211,11 @@ export async function leave_group(env: QEnv, ws: Fetcher, id: string, uid: strin
 export async function list_groups(env: QEnv, uid?: string, limit = 50): Promise<GroupView[]> {
 	await ensure(env);
 	const clauses = uid ? [eq('s', 'g'), eq('mb', uid)] : [eq('s', 'g')];
-	const pts = await scroll(env, uid ? f(...clauses) : f_not(clauses, [eq('rs', 'p'), eq('rs', 'c')]), limit);
+	const pts = await scroll(
+		env,
+		uid ? f(...clauses) : f_not(clauses, [eq('rs', 'p'), eq('rs', 'c')]),
+		limit
+	);
 	return pts.map((p) => view(p.payload as unknown as Group)).sort((a, b) => b.created - a.created);
 }
 

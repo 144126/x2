@@ -19,6 +19,9 @@
 	--color-accent-soft: rgba(217, 139, 95, 0.14);
 	--color-accent-ink: #1a110b;
 
+	/* one alarm colour, for hang up and failures */
+	--color-danger: #e2674c;
+
 	/* hairlines */
 	--color-line: rgba(236, 231, 221, 0.1);
 	--color-line-2: rgba(236, 231, 221, 0.18);
@@ -34,15 +37,10 @@
 	--animate-reveal: reveal 0.9s var(--ease-studio) both;
 }
 
-:root {
-	/* header + main padding; the bottom bar's own height is added on phones */
-	--chrome: 110px;
-}
-
 @keyframes reveal {
 	from {
 		opacity: 0;
-		transform: translateY(14px);
+		transform: translateY(10px);
 	}
 	to {
 		opacity: 1;
@@ -53,24 +51,33 @@
 /* ===== Reusable design-system classes (components layer) ===== */
 @layer components {
 	.wrap {
-		@apply mx-auto w-full max-w-[1080px] px-8;
+		@apply mx-auto w-full max-w-[900px] px-5;
 	}
 
 	.eyebrow {
-		@apply text-[10.5px] font-medium uppercase tracking-[0.32em] text-mute;
+		@apply text-[9.5px] font-medium uppercase tracking-[0.3em] text-mute;
 	}
 
 	.display {
-		@apply font-display font-normal leading-[0.98] tracking-[-0.02em];
+		@apply font-display font-normal leading-[1] tracking-[-0.02em];
+		font-optical-sizing: auto;
+	}
+
+	/* page title — every section heading uses this one size */
+	.h1 {
+		@apply font-display text-[clamp(24px,3.6vw,34px)] font-normal leading-[1] tracking-[-0.02em];
 		font-optical-sizing: auto;
 	}
 
 	/* outline / ghost premium button */
 	.btn {
-		@apply inline-flex items-center justify-center gap-2.5 rounded-full border border-line-2 bg-transparent px-6 py-3.5 text-[13.5px] text-ink transition-all duration-[400ms] ease-studio;
+		@apply inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-line-2 bg-transparent px-3.5 py-2 text-[12.5px] text-ink transition-all duration-300 ease-studio;
 	}
 	.btn:hover {
-		@apply -translate-y-px border-ink;
+		@apply border-ink;
+	}
+	.btn:disabled {
+		@apply cursor-not-allowed opacity-50;
 	}
 
 	.btn-ghost {
@@ -78,19 +85,44 @@
 	}
 
 	.btn-amber {
-		@apply border-accent bg-accent font-semibold text-accent-ink;
+		@apply border-accent bg-accent font-medium text-accent-ink;
 	}
 	.btn-amber:hover {
 		@apply border-[#e79a6c] bg-[#e79a6c] text-accent-ink;
 	}
 
+	/* square-ish icon-only button, sized to match .btn's height */
+	.btn-icon {
+		@apply h-[34px] w-[34px] px-0 py-0;
+	}
+
+	/* big round call control */
+	.ctl {
+		@apply flex h-[52px] w-[52px] items-center justify-center rounded-full border border-line-2 bg-white/10 text-ink backdrop-blur transition-colors duration-200;
+	}
+	.ctl:hover {
+		@apply bg-white/20;
+	}
+	.ctl-off {
+		@apply border-transparent bg-ink text-base;
+	}
+	.ctl-off:hover {
+		@apply bg-ink/85;
+	}
+	.ctl-end {
+		@apply border-transparent bg-danger text-white;
+	}
+	.ctl-end:hover {
+		@apply bg-danger/85;
+	}
+
 	.card {
-		@apply rounded-[18px] border border-line bg-panel p-5.5 transition-all duration-[400ms] ease-studio;
+		@apply rounded-[14px] border border-line bg-panel p-3.5 transition-all duration-300 ease-studio;
 	}
 
 	/* clickable person/thread cards */
 	.person {
-		@apply flex cursor-pointer flex-col gap-1.5;
+		@apply flex w-full cursor-pointer flex-col gap-1 text-left;
 	}
 	.person:hover {
 		@apply border-accent bg-accent-soft;
@@ -99,21 +131,30 @@
 	/* form fields */
 	input,
 	textarea {
-		@apply w-full rounded-[12px] border border-line bg-panel-solid px-4 py-3.5 text-[14px] text-ink outline-none transition-colors duration-300 placeholder:text-mute;
+		@apply w-full rounded-[10px] border border-line bg-panel-solid px-3 py-2 text-[13.5px] text-ink outline-none transition-colors duration-300 placeholder:text-mute;
 	}
 	input:focus,
 	textarea:focus {
 		@apply border-accent;
 	}
+	input[type='checkbox'] {
+		@apply h-auto py-0;
+	}
+
 	/* staggered reveal (use style="--i:N") */
 	.reveal {
 		@apply opacity-0;
-		animation: reveal 0.9s var(--ease-studio) forwards;
-		animation-delay: calc((var(--i, 0)) * 90ms);
+		animation: reveal 0.7s var(--ease-studio) forwards;
+		animation-delay: calc((var(--i, 0)) * 60ms);
 	}
 }
 
 /* base canvas */
+html,
+body {
+	height: 100%;
+}
+
 body {
 	background-color: var(--color-base);
 	background-image: linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
@@ -121,10 +162,11 @@ body {
 	background-attachment: fixed;
 	color: var(--color-ink);
 	font-family: var(--font-ui);
+	font-size: 13.5px;
 	-webkit-font-smoothing: antialiased;
 	letter-spacing: -0.01em;
 	font-feature-settings: 'ss01';
-	overflow-x: hidden;
+	overflow: hidden;
 }
 
 ::selection {
@@ -138,8 +180,8 @@ body {
 	scrollbar-color: var(--color-line-2) transparent;
 }
 *::-webkit-scrollbar {
-	width: 10px;
-	height: 10px;
+	width: 8px;
+	height: 8px;
 }
 *::-webkit-scrollbar-track,
 *::-webkit-scrollbar-corner {
@@ -148,7 +190,7 @@ body {
 /* transparent border + content-box clip inset the thumb without painting a track */
 *::-webkit-scrollbar-thumb {
 	background-color: var(--color-line-2);
-	border: 3px solid transparent;
+	border: 2px solid transparent;
 	background-clip: content-box;
 	border-radius: 99px;
 }
@@ -157,41 +199,25 @@ body {
 }
 
 @media (max-width: 640px) {
-	:root {
-		--chrome: calc(140px + env(safe-area-inset-bottom));
-	}
 	@layer components {
 		body {
 			background-size: 50vw 100%;
 		}
 		.wrap {
-			@apply px-4;
+			@apply px-3.5;
 		}
 		input,
 		textarea {
-			/* 15px keeps iOS from zooming the viewport on focus */
-			@apply text-[15px];
+			/* 16px keeps iOS from zooming the viewport on focus */
+			@apply text-[16px];
 		}
-		/* filter rows and chat headers were flex rows of fixed-width children, which pushed the
-		   page wider than the viewport — the source of the horizontal scroll on phones */
+		/* filter rows were flex rows of fixed-width children, which pushed the page wider
+		   than the viewport — the source of the horizontal scroll on phones */
 		.filters {
-			@apply grid grid-cols-2 gap-2.5;
+			@apply grid grid-cols-2 gap-2;
 		}
 		.filters > * {
 			@apply w-full min-w-0;
-		}
-	}
-}
-@media (max-width: 480px) {
-	@layer components {
-		.wrap {
-			@apply px-3;
-		}
-		.btn {
-			@apply px-4 py-3 text-[13px];
-		}
-		section.prof {
-			@apply max-w-full;
 		}
 	}
 }

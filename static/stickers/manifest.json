@@ -4,9 +4,20 @@
 			"id": "basics",
 			"label": "basics",
 			"stickers": [
-				{ "id": "wave", "file": "basics/wave.webp", "keywords": ["hi", "hello", "wave"] },
-				{ "id": "thumbs-up", "file": "basics/thumbs-up.webp", "keywords": ["yes", "good", "agree"] },
-				{ "id": "heart-eyes", "file": "basics/heart-eyes.webp", "keywords": ["love", "adore"] }
+				{ "id": "wave", "file": "basics/wave.svg", "keywords": ["hi", "hello", "wave", "bye"] },
+				{
+					"id": "thumbs-up",
+					"file": "basics/thumbs-up.svg",
+					"keywords": ["yes", "good", "agree", "ok"]
+				},
+				{
+					"id": "heart-eyes",
+					"file": "basics/heart-eyes.svg",
+					"keywords": ["love", "adore", "cute"]
+				},
+				{ "id": "laugh", "file": "basics/laugh.svg", "keywords": ["lol", "haha", "funny"] },
+				{ "id": "cry", "file": "basics/cry.svg", "keywords": ["sad", "cry", "sorry"] },
+				{ "id": "fire", "file": "basics/fire.svg", "keywords": ["fire", "hot", "lit", "great"] }
 			]
 		}
 	]

@@ -85,7 +85,7 @@ describe('replying', () => {
 		globalThis.fetch = mockFetch;
 		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
-		const input = screen.getByPlaceholderText('write something considered…');
+		const input = screen.getByPlaceholderText(/write something considered/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
 		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
@@ -104,15 +104,12 @@ describe('replying', () => {
 		globalThis.fetch = mockFetch;
 		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
-		const input = screen.getByPlaceholderText('write something considered…');
+		const input = screen.getByPlaceholderText(/write something considered/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
 		await vi.waitFor(() =>
-			expect(
-				screen.getByText(
-					(_, el) => el?.tagName === 'SPAN' && !!el.textContent?.includes('original text')
-				)
-			).toBeInTheDocument()
+			// the quote strip on the sent bubble, not the original message itself
+			expect(screen.getByText('· original text')).toBeInTheDocument()
 		);
 	});
 
@@ -123,7 +120,8 @@ describe('replying', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
 		await fireEvent.click(screen.getByLabelText('cancel reply'));
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
-		expect(mockFetch).not.toHaveBeenCalled();
+		// opening a thread marks it read, so only assert nothing was sent
+		expect(mockFetch.mock.calls.filter((c) => c[0] === '/api/send')).toHaveLength(0);
 	});
 
 	it('a message with rp set to an id not in the loaded window fetches it via /api/messages/[id]', async () => {
@@ -168,7 +166,10 @@ describe('reply privately', () => {
 				'private quote'
 			)
 		);
-		expect(mockFetch).not.toHaveBeenCalled();
+		// the quoted message is already loaded, so nothing is fetched for it
+		expect(
+			mockFetch.mock.calls.filter((c) => String(c[0]).startsWith('/api/messages'))
+		).toHaveLength(0);
 	});
 
 	it('fetches /api/messages/[id] when the quoted message is not in the window', async () => {
@@ -277,7 +278,7 @@ describe('stickers', () => {
 	it('renders a message with sk borderless as a sticker image', () => {
 		renderWith([{ id: 'm1', f: 'bob', x: '', sk: 'wave', d: 100 }]);
 		const img = screen.getByAltText('wave sticker');
-		expect(img).toHaveAttribute('src', '/stickers/basics/wave.webp');
+		expect(img).toHaveAttribute('src', '/stickers/basics/wave.svg');
 		const bubble = img.closest('div')!;
 		expect(bubble.className).toContain('border-0');
 		expect(bubble.className).toContain('bg-transparent');

@@ -37,7 +37,22 @@ const call = async (method, path, body) => {
 };
 
 const KEYWORD_KEYS = [
-	's', 't', 'r', 'c', 'f', 'co', 'st', 'ci', 'u', 'ow', 'mb', 'gr', 'uid', 'ac', 'tg', 'k'
+	's',
+	't',
+	'r',
+	'c',
+	'f',
+	'co',
+	'st',
+	'ci',
+	'u',
+	'ow',
+	'mb',
+	'gr',
+	'uid',
+	'ac',
+	'tg',
+	'k'
 ];
 const INT_KEYS = ['ag', 'at', 'sent', 'd'];
 
@@ -58,7 +73,11 @@ console.log(`  points: ${src_count}`);
 
 if (!apply) {
 	const dst_info = await call('GET', `/collections/${DST}`).catch(() => null);
-	console.log(dst_info ? `${DST} already exists, points: ${dst_info.result.points_count}` : `${DST} does not exist yet`);
+	console.log(
+		dst_info
+			? `${DST} already exists, points: ${dst_info.result.points_count}`
+			: `${DST} does not exist yet`
+	);
 	console.log('\ndry run — pass --apply to create the collection and copy data');
 	process.exit(0);
 }
@@ -68,10 +87,16 @@ await call('PUT', `/collections/${DST}`, { vectors: { [V]: { size: 4096, distanc
 
 console.log('creating payload indexes...');
 for (const k of KEYWORD_KEYS) {
-	await call('PUT', `/collections/${DST}/index?wait=true`, { field_name: k, field_schema: 'keyword' });
+	await call('PUT', `/collections/${DST}/index?wait=true`, {
+		field_name: k,
+		field_schema: 'keyword'
+	});
 }
 for (const k of INT_KEYS) {
-	await call('PUT', `/collections/${DST}/index?wait=true`, { field_name: k, field_schema: 'integer' });
+	await call('PUT', `/collections/${DST}/index?wait=true`, {
+		field_name: k,
+		field_schema: 'integer'
+	});
 }
 console.log(`  ${KEYWORD_KEYS.length + INT_KEYS.length} indexes created`);
 
@@ -114,4 +139,6 @@ if (dst_count !== src_count) {
 }
 console.log('  OK — counts match.');
 console.log(`\nNext: node --env-file=.env scripts/migrate-named-vectors.mjs --alias`);
-console.log(`Then: set C = '${ALIAS}' in src/lib/server/qdrant.ts, deploy, verify, THEN drop ${SRC}.`);
+console.log(
+	`Then: set C = '${ALIAS}' in src/lib/server/qdrant.ts, deploy, verify, THEN drop ${SRC}.`
+);
