@@ -64,7 +64,13 @@ export async function match_blurb(env: BlurbEnv, conv: string, a: User, b: User)
 		const { text } = await generateText({
 			model: groq(BLURB_MODEL),
 			temperature: 0.4,
-			maxOutputTokens: 60,
+			// gpt-oss thinks before it answers, and the thinking is billed against the same
+			// budget: at 60 tokens it spends every one reasoning and returns an EMPTY string
+			// (finish_reason "length"). Low effort plus generous room is what reliably
+			// produces a line — the thinking still runs long now and then, and an empty
+			// answer is deliberately never cached, so the next pairing just tries again.
+			maxOutputTokens: 400,
+			providerOptions: { groq: { reasoning_effort: 'low' } },
 			system: `You introduce two strangers who are about to talk. Reply with ONE line of at most ${MAX_WORDS} words, lowercase, no greeting, no quotes, no emoji. Name the real thing they share, in plain words. If they share nothing obvious, name the one thing that would make their conversation interesting anyway. Never invent a fact that is not in the profiles.`,
 			prompt: `person a: ${pa}\nperson b: ${pb}`
 		});

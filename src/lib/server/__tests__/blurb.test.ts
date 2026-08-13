@@ -46,6 +46,16 @@ describe('match_blurb', () => {
 		});
 	});
 
+	// gpt-oss reasons before it answers and bills the thinking against the same budget.
+	// At 60 tokens it spent all of them thinking and returned '' — mocking hid that, so
+	// pin the two settings that make a line come out at all.
+	it('leaves the model room to think and still answer', async () => {
+		await match_blurb(env, 'a|b', ada, bo);
+		const args = generateTextMock.mock.calls[0][0];
+		expect(args.maxOutputTokens).toBeGreaterThanOrEqual(200);
+		expect(args.providerOptions).toEqual({ groq: { reasoning_effort: 'low' } });
+	});
+
 	it('serves the cached line without calling the model again', async () => {
 		retrieveOneMock.mockResolvedValue({ id: 'x', payload: { s: 'mb', t: 'cached line' } });
 		expect(await match_blurb(env, 'a|b', ada, bo)).toBe('cached line');
