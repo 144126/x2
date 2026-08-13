@@ -44,3 +44,9 @@ https://svelte.dev/e/a11y_click_events_have_key_events
 [HUB] POST /hub/e7bb811d/sub -> 503 11ms
 [HUB] GET /hub/e7bb811d/unread -> 503 4ms
 [HUB] GET /hub/e7bb811d/unread -> 503 7ms
+[HUB] GET /hub/e7bb811d/unread -> 503 7ms
+[HUB] POST /hub/e7bb811d/sub -> 503 11ms
+[HUB] GET /hub/e7bb811d/unread -> 503 1646ms
+[HUB] GET /hub/e7bb811d/unread -> 503 311ms
+[HUB] GET /hub/e7bb811d/unread -> 503 53ms
+[HUB] GET /hub/e7bb811d/unread -> 503 17ms

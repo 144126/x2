@@ -19,12 +19,10 @@ describe('root layout redirect', () => {
 	it('still redirects a logged-out user to /login for a protected route (unchanged)', async () => {
 		await expect(load(event('/app/chats'))).rejects.toMatchObject({ status: 302, location: '/login' });
 	});
-	it('does not redirect a logged-out visitor from /app/rooms', async () => {
-		const result = await load(event('/app/rooms'));
-		expect(result).toEqual({ user: null });
+	it('redirects a logged-out visitor from /app/rooms to /login', async () => {
+		await expect(load(event('/app/rooms'))).rejects.toMatchObject({ status: 302, location: '/login' });
 	});
-	it('does not redirect a logged-out visitor from a specific room page', async () => {
-		const result = await load(event('/app/rooms/abc123'));
-		expect(result).toEqual({ user: null });
+	it('redirects a logged-out visitor from a specific room page to /login', async () => {
+		await expect(load(event('/app/rooms/abc123'))).rejects.toMatchObject({ status: 302, location: '/login' });
 	});
 });
