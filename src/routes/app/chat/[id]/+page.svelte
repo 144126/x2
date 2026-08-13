@@ -364,6 +364,11 @@
 
 	async function startCall(withVideo = false) {
 		callError = '';
+		if (!online) {
+			// a call to someone with no socket open rings nowhere and sits on "calling…" forever
+			callError = `${data.peer_name} is offline — send a message instead.`;
+			return;
+		}
 		videoOn = withVideo;
 		mesh = makeMesh();
 		try {

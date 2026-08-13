@@ -239,13 +239,11 @@ describe('link-account section', () => {
 	});
 
 	it('shows the success message and invalidates the load on a 200', async () => {
-		globalThis.fetch = vi
-			.fn()
-			.mockResolvedValue({
-				ok: true,
-				status: 200,
-				json: async () => ({ balance: 0 })
-			}) as unknown as typeof fetch;
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			json: async () => ({ balance: 0 })
+		}) as unknown as typeof fetch;
 		renderDevice();
 		await fireEvent.input(screen.getByPlaceholderText('email'), { target: { value: 'e@x.com' } });
 		await fireEvent.input(screen.getByPlaceholderText(/password/), {

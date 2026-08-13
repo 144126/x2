@@ -214,7 +214,8 @@
 			{/if}
 		</div>
 
-		{#if local}
+		<!-- a self-preview with no camera on is just a black box with your initial in it -->
+		{#if local && videoOn}
 			<div
 				class="absolute right-3 top-16 h-[132px] w-[99px] cursor-grab touch-none overflow-hidden rounded-[14px] border border-line-2 shadow-xl active:cursor-grabbing"
 				style="transform: translate({dx}px, {dy}px)"
