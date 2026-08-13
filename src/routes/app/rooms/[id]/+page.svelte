@@ -84,8 +84,10 @@
 			fetchTurn: async () => {
 				const r = await fetch('/api/turn', { method: 'POST' }).catch(() => null);
 				if (!r?.ok) return [];
-				const { iceServers } = (await r.json()) as { iceServers: RTCIceServer[] };
-				return iceServers;
+				const { iceServers } = (await r.json()) as {
+					iceServers: RTCIceServer | RTCIceServer[];
+				};
+				return Array.isArray(iceServers) ? iceServers : [iceServers];
 			}
 		});
 	}

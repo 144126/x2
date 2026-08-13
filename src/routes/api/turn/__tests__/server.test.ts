@@ -37,6 +37,18 @@ describe('POST /api/turn', () => {
 		expect(body.iceServers).toEqual(expected);
 	});
 
+	it('wraps a single iceServers object from upstream in an array', async () => {
+		const single = { urls: ['turn:example.com'], username: 'u', credential: 'p' };
+		turnFetchMock.mockResolvedValue({
+			ok: true,
+			json: async () => ({ iceServers: single })
+		});
+		const res = await POST(event({ id: 'u1' }));
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.iceServers).toEqual([single]);
+	});
+
 	it('POSTs to the correct TURN endpoint with a 600s TTL', async () => {
 		turnFetchMock.mockResolvedValue({
 			ok: true,

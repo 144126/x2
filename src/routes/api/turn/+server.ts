@@ -22,6 +22,8 @@ export const POST: RequestHandler = async ({ locals, platform }) => {
 	).catch(() => null);
 	if (!res || !res.ok) return json({ error: 'turn_unavailable' }, { status: 503 });
 
-	const body = (await res.json()) as { iceServers: RTCIceServer[] };
-	return json(body);
+	const body = (await res.json()) as { iceServers: RTCIceServer | RTCIceServer[] };
+	const raw = body.iceServers;
+	const iceServers = Array.isArray(raw) ? raw : raw ? [raw] : [];
+	return json({ iceServers });
 };
