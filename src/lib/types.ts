@@ -12,7 +12,6 @@ export interface User {
 	u: string; // username (the only user-facing identity)
 	a?: string; // about text
 	i?: string[]; // interests (tokens)
-	si?: boolean; // show interests on your public profile (default false)
 	ag?: number; // age
 	r?: string; // gender
 	co?: string; // country iso code

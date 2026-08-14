@@ -14,7 +14,7 @@
 	},
 	"interests_toggle_gone": {
 		"s": "OUTCOME: nothing anywhere offers to publish interests, and the `si` field is gone end to end.\n\n1. src/routes/profile/+page.svelte: remove the `Checkbox` bound to `showInterests`, the `showInterests` `$state`, and `show_interests` from the save body. In its place put one short lowercase line under the interests field saying interests are private and used only for matching.\n2. src/lib/server/profile.ts: drop `show_interests` from the input type and the `si` write.\n3. src/routes/api/profile/+server.ts: drop `show_interests` from the body type and from the save_profile call.\n4. src/lib/types.ts: drop `si?: boolean` from the User type. Old points keep the key in Qdrant and nothing reads it, so there is no migration.\n5. src/lib/server/__tests__/profile.test.ts: the whole `describe('show_interests flag')` block tests behaviour that no longer exists. Delete the block.\n\nFENCE: leave the interests input itself, and leave `i` on the User type. Interests are still collected and still drive matching.",
-		"d": 0,
+		"d": 1,
 		"v": "grep -q 'show_interests' src/lib/server/profile.ts",
 		"t": "bash plan/verify_tests.sh && ! grep -rq 'show_interests' src/ && ! grep -rq 'u\\.si' src/ && bash plan/check_budget.sh && pnpm test"
 	},

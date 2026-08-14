@@ -18,7 +18,6 @@ export async function save_profile(
 		state?: string;
 		city?: string;
 		whatsapp?: string;
-		show_interests?: boolean;
 	}
 ): Promise<void> {
 	await ensure(env);
@@ -43,7 +42,6 @@ export async function save_profile(
 		co: data.country ?? cur.co,
 		st: data.state ?? cur.st,
 		ci: data.city ?? cur.ci,
-		si: data.show_interests ?? cur.si,
 		w:
 			data.whatsapp !== undefined
 				? data.whatsapp

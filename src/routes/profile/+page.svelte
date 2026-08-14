@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Checkbox from '$lib/components/Checkbox.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import type { User } from '$lib/types';
@@ -56,7 +55,6 @@
 	let username = $state(p.u ?? '');
 	let interests = $state<string[]>(p.i ?? []);
 	let interestInput = $state('');
-	let showInterests = $state(p.si ?? false);
 	let age = $state(p.ag ?? '');
 	let gender = $state(p.r ?? '');
 	let country = $state(p.co ?? '');
@@ -167,7 +165,6 @@
 				about,
 				username,
 				interests,
-				show_interests: showInterests,
 				age: age ? Number(age) : undefined,
 				gender,
 				country,
@@ -223,11 +220,9 @@
 				placeholder={interests.length ? '' : 'add an interest…'}
 			/>
 		</div>
-		<Checkbox
-			bind:checked={showInterests}
-			label="show interests on my public profile"
-			class="mt-3 text-[13.5px] text-ink-soft"
-		/>
+		<p class="mt-2 text-[12px] text-mute">
+			nobody sees these. they only decide who you get matched with.
+		</p>
 
 		<label class="eyebrow mt-4" for="p-about">more about me</label>
 		<textarea

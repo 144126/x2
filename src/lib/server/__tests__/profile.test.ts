@@ -69,28 +69,16 @@ describe('save_profile', () => {
 	});
 });
 
-describe('show_interests flag', () => {
-	it('persists the flag when explicitly turned on', async () => {
-		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada' });
-		await save_profile(ENV, 'uid', { show_interests: true });
-		expect(upsertMock.mock.calls[0][1][0].payload.si).toBe(true);
-	});
-
-	it('persists an explicit false rather than falling back to the stored value', async () => {
-		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada', si: true });
-		await save_profile(ENV, 'uid', { show_interests: false });
-		expect(upsertMock.mock.calls[0][1][0].payload.si).toBe(false);
-	});
-
-	it('leaves the stored flag alone when the field is omitted', async () => {
-		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada', si: true });
-		await save_profile(ENV, 'uid', { about: 'hello' });
-		expect(upsertMock.mock.calls[0][1][0].payload.si).toBe(true);
-	});
-
-	it('keeps interests in the search embedding even when the flag is off', async () => {
+describe('interests are private but still match', () => {
+	it('feeds them to the search embedding, which is the only thing they are for', async () => {
 		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada', i: ['jazz'] });
-		await save_profile(ENV, 'uid', { show_interests: false });
+		await save_profile(ENV, 'uid', { about: 'hello' });
 		expect(embedMock).toHaveBeenCalledWith(ENV, expect.stringContaining('user_interests: jazz'));
+	});
+
+	it('never writes a flag that could publish them', async () => {
+		getUserMock.mockResolvedValue({ ...BASE_USER, u: 'ada', i: ['jazz'] });
+		await save_profile(ENV, 'uid', { interests: ['techno'] });
+		expect(upsertMock.mock.calls[0][1][0].payload.si).toBeUndefined();
 	});
 });

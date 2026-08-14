@@ -25,7 +25,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		state?: string;
 		city?: string;
 		whatsapp?: string;
-		show_interests?: boolean;
 	};
 	const phoneErr = b.whatsapp ? phone_length_error(b.whatsapp, b.country ?? null) : null;
 	if (phoneErr) throw error(400, phoneErr);
@@ -39,8 +38,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		country: b.country,
 		state: b.state,
 		city: b.city,
-		whatsapp: b.whatsapp,
-		show_interests: typeof b.show_interests === 'boolean' ? b.show_interests : undefined
+		whatsapp: b.whatsapp
 	});
 	return json({ ok: true });
 };
