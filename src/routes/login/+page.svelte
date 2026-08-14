@@ -41,7 +41,7 @@
 		});
 		if (res.ok) {
 			if (mode === 'register') localStorage.removeItem(REF_KEY);
-			goto('/app');
+			goto('/find');
 		} else
 			msg =
 				(await res.json().catch(() => ({}))).message ??

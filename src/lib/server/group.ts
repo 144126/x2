@@ -4,7 +4,6 @@ import {
 	ensure,
 	upsert,
 	retrieve_one,
-	new_group_id,
 	search,
 	scroll,
 	set_payload,
@@ -14,6 +13,7 @@ import {
 	uuid_from,
 	type QEnv
 } from './qdrant';
+import { available_handle } from './room_handle';
 import { embed } from './or';
 import { room_join, room_leave, room_is_member } from './hub_client';
 
@@ -68,9 +68,9 @@ const group_text = (name: string, description: string, tags?: string[]) =>
 		tags?.length ? ` | room_tags: ${tags.join(', ')}` : ''
 	}`;
 
-// a room's public id is a sqids string, which qdrant rejects as a point id (uuid or uint
-// only), so every point touch maps it. Rooms created before sqids already have a uuid id —
-// that is its own point id, so it keeps resolving.
+// a room's public id is its handle, which qdrant rejects as a point id (uuid or uint only),
+// so every point touch maps it. Rooms made before handles carry a sqids id or a raw uuid —
+// both still map through here, so every old room keeps resolving.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const point_id = (id: string): Promise<string> =>
 	UUID.test(id) ? Promise.resolve(id) : uuid_from(`g:${id}`);
@@ -109,7 +109,7 @@ export async function save_group(
 	if (!name) throw new Error('name_required');
 	const g: Group = {
 		s: 'g',
-		id: await new_group_id(env, async (id) => (await raw_group(env, id)) !== null),
+		id: await available_handle(name, async (h) => (await raw_group(env, h)) !== null),
 		nm: name,
 		ds: (data.description ?? '').trim(),
 		...(data.tags?.length ? { tgs: data.tags } : {}),

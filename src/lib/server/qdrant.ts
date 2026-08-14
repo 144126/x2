@@ -1,5 +1,4 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
-import Sqids from 'sqids';
 
 export type SecretVal = string | { get?: () => Promise<string> } | undefined;
 
@@ -79,23 +78,6 @@ export async function uuid_from(s: string): Promise<string> {
 }
 
 export const new_id = (): string => crypto.randomUUID();
-
-const sqids = new Sqids({ minLength: 9 });
-
-// 9+ char room id: two 32-bit random numbers give ~62 bits of entropy, matching the
-// existing `available_username`-style collision-retry convention (username.ts) rather than
-// assuming zero collisions.
-export async function new_group_id(
-	env: QEnv,
-	exists: (id: string) => Promise<boolean>
-): Promise<string> {
-	for (let tries = 0; tries < 5; tries += 1) {
-		const rnd = crypto.getRandomValues(new Uint32Array(2));
-		const id = sqids.encode([rnd[0], rnd[1]]);
-		if (!(await exists(id))) return id;
-	}
-	throw new Error('id_unavailable');
-}
 
 // filter helpers: eq('s','o'), f(eq('s','o'), eq('j', id))
 export type Cond =

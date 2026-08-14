@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Checkbox from '$lib/components/Checkbox.svelte';
 	let {
 		data,
 		onforward,
@@ -31,17 +32,12 @@
 	<ul class="flex max-h-[320px] flex-col gap-1 overflow-y-auto">
 		{#each all as item (item.key)}
 			<li>
-				<label
-					class="flex items-center gap-2 rounded-[8px] px-2 py-1.5 text-[13.5px] hover:bg-panel"
-				>
-					<input
-						type="checkbox"
-						class="accent-accent"
-						checked={selected.has(item.key)}
-						onclick={() => toggle(item.key)}
-					/>
-					{item.label}
-				</label>
+				<Checkbox
+					checked={selected.has(item.key)}
+					label={item.label}
+					class="w-full rounded-[8px] px-2 py-1.5 text-[13.5px] hover:bg-panel"
+					onchange={() => toggle(item.key)}
+				/>
 			</li>
 		{/each}
 	</ul>

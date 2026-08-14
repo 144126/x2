@@ -108,7 +108,7 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 						mute_key: sm.group,
 						title: g.name,
 						push_body: sm.file ? `📎 ${sm.file.name}` : sm.text,
-						url: `/app/rooms/${sm.group}`,
+						url: `/~${sm.group}`,
 						kind: 'r',
 						reply_to: sm.group
 					});
@@ -127,7 +127,7 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 					mute_key: sm.f,
 					title: sm.f,
 					push_body: sm.file ? `📎 ${sm.file.name}` : sm.text,
-					url: `/app/chat/${sm.f}`,
+					url: `/chat/${sm.f}`,
 					kind: 'u',
 					reply_to: sm.f
 				});

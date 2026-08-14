@@ -25,7 +25,7 @@ const req = (url: string, o: Partial<{ method: string; mode: string; range: bool
 describe('cache_mode', () => {
 	it('bypasses anything that is not a GET — a send must never be replayed from cache', () => {
 		expect(cache_mode(req('https://x2.studio/api/send', { method: 'POST' }), ctx)).toBe('bypass');
-		expect(cache_mode(req('https://x2.studio/app', { method: 'HEAD' }), ctx)).toBe('bypass');
+		expect(cache_mode(req('https://x2.studio/find', { method: 'HEAD' }), ctx)).toBe('bypass');
 	});
 
 	it('bypasses the API entirely — chat data is never stale-served', () => {
@@ -66,7 +66,7 @@ describe('cache_mode', () => {
 	});
 
 	it('goes to the network first for a page navigation, so messages are fresh', () => {
-		expect(cache_mode(req('https://x2.studio/app/chat/abc', { mode: 'navigate' }), ctx)).toBe(
+		expect(cache_mode(req('https://x2.studio/chat/abc', { mode: 'navigate' }), ctx)).toBe(
 			'network-first'
 		);
 	});
@@ -120,7 +120,7 @@ describe('notification_from', () => {
 	const p = {
 		title: 'ada',
 		body: 'are you around?',
-		url: '/app/chat/ada-id',
+		url: '/chat/ada-id',
 		conv: 'ada-id|me',
 		id: 'msg-1',
 		ts: 1_700_000_000_000,
@@ -156,7 +156,7 @@ describe('notification_from', () => {
 
 	it('carries the click target and message identity in data', () => {
 		expect(notification_from(p).options.data).toMatchObject({
-			url: '/app/chat/ada-id',
+			url: '/chat/ada-id',
 			conv: 'ada-id|me',
 			id: 'msg-1'
 		});
@@ -207,17 +207,17 @@ describe('notification_from', () => {
 
 describe('target_url', () => {
 	it('uses the url the server sent', () => {
-		expect(target_url({ url: '/app/chat/abc' })).toBe('/app/chat/abc');
+		expect(target_url({ url: '/chat/abc' })).toBe('/chat/abc');
 	});
 
 	it('falls back to the app home when the payload carries no url', () => {
-		expect(target_url({})).toBe('/app');
-		expect(target_url(null)).toBe('/app');
+		expect(target_url({})).toBe('/find');
+		expect(target_url(null)).toBe('/find');
 	});
 
 	it('refuses an off-origin url — a push payload must not be an open redirect', () => {
-		expect(target_url({ url: 'https://evil.example.com/x' })).toBe('/app');
-		expect(target_url({ url: '//evil.example.com' })).toBe('/app');
+		expect(target_url({ url: 'https://evil.example.com/x' })).toBe('/find');
+		expect(target_url({ url: '//evil.example.com' })).toBe('/find');
 	});
 });
 
@@ -226,51 +226,51 @@ const client = (url: string, o: Partial<SwClient> = {}): SwClient =>
 
 describe('pick_client', () => {
 	it('prefers a window already on that conversation', () => {
-		const want = client('https://x2.studio/app/chat/abc');
-		expect(pick_client([client('https://x2.studio/app'), want], '/app/chat/abc')).toBe(want);
+		const want = client('https://x2.studio/chat/abc');
+		expect(pick_client([client('https://x2.studio/find'), want], '/chat/abc')).toBe(want);
 	});
 
 	it('falls back to any open window rather than opening a second one', () => {
-		const other = client('https://x2.studio/app');
-		expect(pick_client([other], '/app/chat/abc')).toBe(other);
+		const other = client('https://x2.studio/find');
+		expect(pick_client([other], '/chat/abc')).toBe(other);
 	});
 
 	it('returns nothing when the app is not open at all', () => {
-		expect(pick_client([], '/app/chat/abc')).toBeNull();
+		expect(pick_client([], '/chat/abc')).toBeNull();
 	});
 
 	it('ignores query strings when matching the conversation', () => {
-		const want = client('https://x2.studio/app/chat/abc?auto=text');
-		expect(pick_client([want], '/app/chat/abc')).toBe(want);
+		const want = client('https://x2.studio/chat/abc?auto=text');
+		expect(pick_client([want], '/chat/abc')).toBe(want);
 	});
 });
 
 describe('should_notify', () => {
 	it('stays quiet when the user is already looking at that conversation', () => {
-		const focused = client('https://x2.studio/app/chat/abc', {
+		const focused = client('https://x2.studio/chat/abc', {
 			focused: true,
 			visibilityState: 'visible'
 		});
-		expect(should_notify([focused], '/app/chat/abc')).toBe(false);
+		expect(should_notify([focused], '/chat/abc')).toBe(false);
 	});
 
 	it('notifies when that conversation is open but the window is in the background', () => {
-		const hidden = client('https://x2.studio/app/chat/abc', {
+		const hidden = client('https://x2.studio/chat/abc', {
 			focused: false,
 			visibilityState: 'hidden'
 		});
-		expect(should_notify([hidden], '/app/chat/abc')).toBe(true);
+		expect(should_notify([hidden], '/chat/abc')).toBe(true);
 	});
 
 	it('notifies when the focused window is on a different conversation', () => {
-		const elsewhere = client('https://x2.studio/app/chat/zzz', {
+		const elsewhere = client('https://x2.studio/chat/zzz', {
 			focused: true,
 			visibilityState: 'visible'
 		});
-		expect(should_notify([elsewhere], '/app/chat/abc')).toBe(true);
+		expect(should_notify([elsewhere], '/chat/abc')).toBe(true);
 	});
 
 	it('notifies when nothing is open', () => {
-		expect(should_notify([], '/app/chat/abc')).toBe(true);
+		expect(should_notify([], '/chat/abc')).toBe(true);
 	});
 });

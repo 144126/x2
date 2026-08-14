@@ -19,17 +19,19 @@ describe('/ (voice match home)', () => {
 	});
 
 	it('leads with the one button that starts a match', () => {
-		render(Page, { props: { data: { user: null, rooms: [] } } });
+		render(Page, { props: { data: { user: null, q: '', rooms: [] } } });
 		expect(screen.getByRole('button', { name: /start talking/ })).toBeInTheDocument();
 		expect(screen.getByText(/who gets it/)).toBeInTheDocument();
 	});
 
-	it('offers rooms as the fallback when nobody wants to talk', () => {
-		render(Page, { props: { data: { user: null, rooms: [g] } } });
-		expect(screen.getByRole('link', { name: 'Chess Club' })).toHaveAttribute(
-			'href',
-			'/app/rooms/g1'
-		);
+	it('offers rooms under the voice match, at their handle url', () => {
+		render(Page, { props: { data: { user: null, q: '', rooms: [g] } } });
+		expect(screen.getByRole('link', { name: 'Chess Club' })).toHaveAttribute('href', '/~g1');
+	});
+
+	it('sends a signed-out visitor to sign in rather than showing an empty people list', () => {
+		render(Page, { props: { data: { user: null, q: 'chess', rooms: [g] } } });
+		expect(screen.getByText(/then you can search people too/)).toBeInTheDocument();
 	});
 
 	it('mints a session and opens the lobby socket when you press start', async () => {
@@ -52,7 +54,7 @@ describe('/ (voice match home)', () => {
 		);
 		vi.stubGlobal('fetch', fetchMock);
 
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, rooms: [] } } });
+		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, q: '', rooms: [] } } });
 		await fireEvent.click(screen.getByRole('button', { name: /start talking/ }));
 		// the signalling socket opens alongside the lobby one, so match on the lobby url
 		await vi.waitFor(() => expect(sockets).toContain('ws://x/match?uid=me&t=a&exp=1'));
@@ -67,7 +69,7 @@ describe('/ (voice match home)', () => {
 			'fetch',
 			vi.fn(async () => new Response('no', { status: 503 }))
 		);
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, rooms: [] } } });
+		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, q: '', rooms: [] } } });
 		await fireEvent.click(screen.getByRole('button', { name: /start talking/ }));
 		await vi.waitFor(() =>
 			expect(screen.getByText(/could not reach the matching service/)).toBeInTheDocument()

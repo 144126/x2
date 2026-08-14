@@ -246,15 +246,15 @@ describe('vapid_auth — RFC 8292', () => {
 
 describe('clamp_payload', () => {
 	it('leaves a small payload intact', () => {
-		const out = clamp_payload({ title: 'ada', body: 'hi', url: '/app/chat/x' });
-		expect(JSON.parse(out)).toEqual({ title: 'ada', body: 'hi', url: '/app/chat/x' });
+		const out = clamp_payload({ title: 'ada', body: 'hi', url: '/chat/x' });
+		expect(JSON.parse(out)).toEqual({ title: 'ada', body: 'hi', url: '/chat/x' });
 	});
 
 	it('truncates an oversized body so the payload still fits one record', () => {
-		const out = clamp_payload({ title: 'ada', body: 'x'.repeat(9000), url: '/app/chat/x' });
+		const out = clamp_payload({ title: 'ada', body: 'x'.repeat(9000), url: '/chat/x' });
 		expect(out.length).toBeLessThanOrEqual(MAX_PLAINTEXT);
 		expect(JSON.parse(out).title).toBe('ada');
-		expect(JSON.parse(out).url).toBe('/app/chat/x');
+		expect(JSON.parse(out).url).toBe('/chat/x');
 	});
 
 	it('marks a truncated body with an ellipsis', () => {

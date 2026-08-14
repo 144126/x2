@@ -107,7 +107,7 @@ export const POST: RequestHandler = async ({
 							: sticker
 								? `${me.username}: sent a sticker`
 								: `${me.username}: ${text}`,
-						url: `/app/rooms/${group}`,
+						url: `/~${group}`,
 						kind: 'r',
 						reply_to: group,
 						reply_msg: reply_to,
@@ -170,7 +170,7 @@ export const POST: RequestHandler = async ({
 					mute_key: me.id,
 					title: me.username,
 					push_body: file ? `📎 ${file.name}` : sticker ? 'sent a sticker' : text,
-					url: `/app/chat/${me.id}`,
+					url: `/chat/${me.id}`,
 					kind: 'u',
 					reply_to: me.id,
 					reply_msg: reply_to,

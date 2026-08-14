@@ -15,15 +15,12 @@ describe('ForwardPicker', () => {
 		expect(screen.getByText('Design Club')).toBeInTheDocument();
 	});
 
-	it('select all toggles every checkbox', async () => {
+	it('select all toggles every row', async () => {
 		render(ForwardPicker, { props: { data, onforward: vi.fn(), onclose: vi.fn() } });
 		await fireEvent.click(screen.getByRole('button', { name: 'select all' }));
-		const checkboxes = screen.getAllByRole('checkbox');
-		expect(checkboxes.every((c) => (c as HTMLInputElement).checked)).toBe(true);
+		expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(2);
 		await fireEvent.click(screen.getByRole('button', { name: 'select all' }));
-		expect(screen.getAllByRole('checkbox').every((c) => !(c as HTMLInputElement).checked)).toBe(
-			true
-		);
+		expect(screen.queryAllByRole('button', { pressed: true })).toHaveLength(0);
 	});
 
 	it('forward button is disabled with zero selections', () => {
@@ -34,8 +31,8 @@ describe('ForwardPicker', () => {
 	it('calls onforward with {to}/{group} shaped targets for the selections', async () => {
 		const onforward = vi.fn();
 		render(ForwardPicker, { props: { data, onforward, onclose: vi.fn() } });
-		await fireEvent.click(screen.getByLabelText('bob'));
-		await fireEvent.click(screen.getByLabelText('Design Club'));
+		await fireEvent.click(screen.getByRole('button', { name: 'bob' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Design Club' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'forward to 2' }));
 		expect(onforward).toHaveBeenCalledWith([{ to: 'bob' }, { group: 'g2' }]);
 	});

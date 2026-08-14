@@ -15,26 +15,26 @@ describe('root layout redirect', () => {
 		const result = await load(event('/'));
 		expect(result).toEqual({ user: null });
 	});
-	it('still redirects a logged-in user away from /login to /app (unchanged)', async () => {
+	it('still redirects a logged-in user away from /login to /find (unchanged)', async () => {
 		await expect(load(event('/login', { id: 'u1' }))).rejects.toMatchObject({
 			status: 302,
-			location: '/app'
+			location: '/find'
 		});
 	});
 	it('still redirects a logged-out user to /login for a protected route (unchanged)', async () => {
-		await expect(load(event('/app/chats'))).rejects.toMatchObject({
+		await expect(load(event('/chats'))).rejects.toMatchObject({
 			status: 302,
 			location: '/login'
 		});
 	});
-	it('redirects a logged-out visitor from /app/rooms to /login', async () => {
-		await expect(load(event('/app/rooms'))).rejects.toMatchObject({
+	it('redirects a logged-out visitor from /rooms to /login', async () => {
+		await expect(load(event('/rooms'))).rejects.toMatchObject({
 			status: 302,
 			location: '/login'
 		});
 	});
 	it('redirects a logged-out visitor from a specific room page to /login', async () => {
-		await expect(load(event('/app/rooms/abc123'))).rejects.toMatchObject({
+		await expect(load(event('/rooms/abc123'))).rejects.toMatchObject({
 			status: 302,
 			location: '/login'
 		});

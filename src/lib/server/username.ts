@@ -36,3 +36,9 @@ export async function available_username(env: QEnv, base: string, self?: string)
 	// ponytail: 500 collisions on one base is not a real scenario; uid suffix ends it
 	return `${b.slice(0, 12)}_${(self ?? 'x').slice(0, 6)}`;
 }
+
+/** the uid behind a username, or null. usernames are unique, so at most one point comes back. */
+export async function uid_by_username(env: QEnv, name: string): Promise<string | null> {
+	const held = await scroll(env, f(eq('s', 'u'), eq('u', name)), 1);
+	return held[0] ? String(held[0].id) : null;
+}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { dev } from '$app/environment';
 	import { ws_on, ws_send } from '$lib/ws';
 	import { CallMesh, media_error, type CallSignal } from '$lib/call';
@@ -8,7 +8,7 @@
 	import { questions_for } from '$lib/prompts';
 	import CallOverlay from '$lib/components/CallOverlay.svelte';
 	import NotePool from '$lib/components/NotePool.svelte';
-	import { Mic, LoaderCircle, MessageSquare, Users, BellRing, Check } from '@lucide/svelte';
+	import { Mic, LoaderCircle, MessageSquare, Users, BellRing, Check, Search } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -26,6 +26,27 @@
 	let parked = $state(false);
 	let parking = $state(false);
 	let park_err = $state('');
+
+	let q = $state(data.q ?? '');
+	let people = $state<{ id: string; n: string; a?: string }[]>([]);
+
+	// rooms come back with the page itself; people need an account, so they are fetched
+	// only once there is one to fetch with
+	async function load_people(term: string) {
+		if (!data.user || !term) return (people = []);
+		const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`).catch(() => null);
+		people = res?.ok ? (((await res.json()) as { r: typeof people }).r ?? []).slice(0, 4) : [];
+	}
+
+	async function run_search() {
+		const term = q.trim();
+		await goto(term ? `/?q=${encodeURIComponent(term)}` : '/', {
+			keepFocus: true,
+			noScroll: true,
+			replaceState: true
+		});
+		load_people(term);
+	}
 
 	let lobby: WebSocket | null = null;
 	let mesh: CallMesh | null = null;
@@ -218,6 +239,8 @@
 		// arriving from the "someone wants to talk" notification: start searching straight
 		// away. Landing on a button would waste the one moment they came back for.
 		if (new URLSearchParams(location.search).get('talk')) start();
+		// a shared /?q=… link arrives with its rooms already rendered, so only people are left
+		load_people(data.q);
 	});
 
 	onDestroy(() => {
@@ -285,7 +308,7 @@
 						<p class="text-[13px] text-ink">you talked to {peer.name}</p>
 						<p class="text-[11.5px] text-mute">keep it going in a thread?</p>
 					</div>
-					<a class="btn shrink-0" href="/app/chat/{peer.id}"><MessageSquare size={13} /> message</a>
+					<a class="btn shrink-0" href="/chat/{peer.id}"><MessageSquare size={13} /> message</a>
 				</div>
 			{/if}
 			<button class="btn btn-amber px-6 py-3 text-[14px]" onclick={start}>
@@ -298,15 +321,30 @@
 			</p>
 		</div>
 
-		{#if data.rooms.length}
-			<div class="mt-10 w-full max-w-[620px]">
-				<div class="eyebrow mb-3">or drop into a room instead</div>
-				<ul class="grid gap-2 sm:grid-cols-2">
-					{#each data.rooms.slice(0, 4) as g, i (g.id)}
-						<li class="card reveal text-left" style="--i:{i}">
-							<a
-								href="/app/rooms/{g.id}"
-								class="font-display text-[15px] font-medium hover:text-accent">{g.name}</a
+		<div class="reveal mt-10 w-full max-w-[620px] text-left">
+			<div class="eyebrow mb-2">or find your own</div>
+			<div class="flex gap-2">
+				<input
+					bind:value={q}
+					placeholder="search rooms and people…"
+					aria-label="search rooms and people"
+					onkeydown={(e) => e.key === 'Enter' && run_search()}
+				/>
+				<button class="btn btn-icon" onclick={run_search} aria-label="search" title="search">
+					<Search size={15} />
+				</button>
+			</div>
+
+			<div class="mt-5 flex items-baseline gap-2">
+				<span class="eyebrow">rooms</span>
+				<a href="/rooms" class="ml-auto text-[11px] text-mute hover:text-accent">see all</a>
+			</div>
+			{#if data.rooms.length}
+				<ul class="mt-2 grid gap-2 sm:grid-cols-2">
+					{#each data.rooms as g, i (g.id)}
+						<li class="card reveal" style="--i:{i}">
+							<a href="/~{g.id}" class="font-display text-[15px] font-medium hover:text-accent"
+								>{g.name}</a
 							>
 							<p class="mt-1 line-clamp-1 text-[12px] text-ink-soft">{g.description}</p>
 							<span class="mt-1.5 flex items-center gap-1 text-[11px] text-mute">
@@ -316,8 +354,35 @@
 						</li>
 					{/each}
 				</ul>
+			{:else}
+				<p class="mt-2 text-[12.5px] text-mute">
+					nothing yet — <a class="text-accent hover:underline" href="/rooms">start the room</a>.
+				</p>
+			{/if}
+
+			<div class="mt-6 flex items-baseline gap-2">
+				<span class="eyebrow">people</span>
+				<a href="/find" class="ml-auto text-[11px] text-mute hover:text-accent">see all</a>
 			</div>
-		{/if}
+			{#if !data.user}
+				<p class="mt-2 text-[12.5px] text-mute">
+					press start above and you have an account — then you can search people too.
+				</p>
+			{:else if people.length}
+				<ul class="mt-2 grid gap-2 sm:grid-cols-2">
+					{#each people as u, i (u.id)}
+						<li class="card reveal" style="--i:{i}">
+							<a href="/@{u.n}" class="font-display text-[15px] font-medium hover:text-accent"
+								>{u.n}</a
+							>
+							{#if u.a}<p class="mt-1 line-clamp-1 text-[12px] text-ink-soft">{u.a}</p>{/if}
+						</li>
+					{/each}
+				</ul>
+			{:else if data.q}
+				<p class="mt-2 text-[12.5px] text-mute">nobody matches that yet.</p>
+			{/if}
+		</div>
 	{/if}
 </section>
 

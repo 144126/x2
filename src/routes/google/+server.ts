@@ -16,7 +16,7 @@ const google_client = async (origin: string) =>
 	);
 
 export const GET: RequestHandler = async ({ url, cookies, locals }) => {
-	if (locals.user && !locals.user.is_device) throw redirect(302, '/app');
+	if (locals.user && !locals.user.is_device) throw redirect(302, '/find');
 
 	const code = url.searchParams.get('code');
 	const state = url.searchParams.get('state');
@@ -76,7 +76,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 		cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
 		cookies.delete('oauth_state', { path: '/' });
 		cookies.delete('oauth_verifier', { path: '/' });
-		throw redirect(302, '/app');
+		throw redirect(302, '/find');
 	}
 
 	// start leg: optional ?c= from client, else keep existing ref cookie

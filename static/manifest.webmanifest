@@ -42,11 +42,11 @@
 	],
 	"shortcuts": [
 		{ "name": "Talk to someone", "url": "/" },
-		{ "name": "Chats", "url": "/app/chats" },
-		{ "name": "Rooms", "url": "/app/rooms" }
+		{ "name": "Chats", "url": "/chats" },
+		{ "name": "Rooms", "url": "/rooms" }
 	],
 	"share_target": {
-		"action": "/app/share",
+		"action": "/share",
 		"method": "POST",
 		"enctype": "multipart/form-data",
 		"params": {

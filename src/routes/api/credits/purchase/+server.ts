@@ -15,7 +15,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const email = locals.user.email || `${locals.user.id}@x2.studio`;
 	const reference = new_id();
-	const callback_url = `${new URL(request.url).origin}/app/profile`;
+	const callback_url = `${new URL(request.url).origin}/profile`;
 
 	try {
 		const result = await paystack_init(env, email, amount_kobo, reference, callback_url, {

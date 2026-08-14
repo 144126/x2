@@ -30,7 +30,7 @@ function evt(session?: string) {
 		},
 		platform: { env: { X2_WS: { fetch: vi.fn() } } },
 		locals: {} as Record<string, unknown>,
-		url: new URL('https://x2.local/app')
+		url: new URL('https://x2.local/find')
 	} as never;
 }
 

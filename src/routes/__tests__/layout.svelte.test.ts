@@ -4,7 +4,7 @@ import { writable } from 'svelte/store';
 import type { Snippet } from 'svelte';
 
 vi.mock('$app/stores', () => ({
-	page: writable({ url: new URL('https://x/app') })
+	page: writable({ url: new URL('https://x/find') })
 }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
@@ -100,7 +100,7 @@ describe('device-account upgrade banner', () => {
 		});
 		expect(screen.getByText(/chatting without an account/)).toBeInTheDocument();
 		const link = screen.getByRole('link', { name: 'link account' });
-		expect(link).toHaveAttribute('href', '/app/profile#link-account');
+		expect(link).toHaveAttribute('href', '/profile#link-account');
 	});
 
 	it('hides the banner for a fully linked user', () => {

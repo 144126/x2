@@ -118,7 +118,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
 	const data = event.notification.data as { url?: string; conv?: string; id?: string } | undefined;
-	const url = data?.url ?? '/app';
+	const url = data?.url ?? '/find';
 
 	if (event.action === 'mark-read' && data?.conv) {
 		event.notification.close();

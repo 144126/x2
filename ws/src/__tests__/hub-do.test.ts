@@ -700,7 +700,7 @@ describe('ChatHub — unread, mute and push (hub_owns_delivery)', () => {
 			mute_key: 'bob',
 			title: 'bob',
 			push_body: 'hi',
-			url: '/app/chat/bob'
+			url: '/chat/bob'
 		});
 		expect(sendPushMock).toHaveBeenCalledTimes(2);
 	});

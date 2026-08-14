@@ -89,7 +89,10 @@ beforeEach(() => {
 
 describe('GET /google — linking a device account', () => {
 	it('patches the device account in place, keeping its id, with no referral attribution', async () => {
-		await expect(GET(callbackEvent(true))).rejects.toMatchObject({ status: 302, location: '/app' });
+		await expect(GET(callbackEvent(true))).rejects.toMatchObject({
+			status: 302,
+			location: '/find'
+		});
 		expect(patchUserMock).toHaveBeenCalledWith(expect.anything(), 'dev-uid', {
 			gl: 'google-sub-9',
 			p: 'pic.png',
@@ -115,7 +118,7 @@ describe('GET /google — fresh login/signup', () => {
 			cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
 			locals: { user: { id: 'real', username: 'ada' } }
 		} as unknown as Parameters<typeof GET>[0];
-		await expect(GET(event)).rejects.toMatchObject({ status: 302, location: '/app' });
+		await expect(GET(event)).rejects.toMatchObject({ status: 302, location: '/find' });
 	});
 
 	it('logs a returning visitor into the account already linked to their sub, not a fresh derived id', async () => {
@@ -129,7 +132,7 @@ describe('GET /google — fresh login/signup', () => {
 		});
 		await expect(GET(callbackEvent(false))).rejects.toMatchObject({
 			status: 302,
-			location: '/app'
+			location: '/find'
 		});
 		expect(encodeSessionMock).toHaveBeenCalledWith(
 			expect.anything(),
@@ -141,7 +144,7 @@ describe('GET /google — fresh login/signup', () => {
 	it('creates a fresh account at the derived id for a brand-new sub', async () => {
 		await expect(GET(callbackEvent(false))).rejects.toMatchObject({
 			status: 302,
-			location: '/app'
+			location: '/find'
 		});
 		expect(saveUserMock).toHaveBeenCalledWith(
 			expect.anything(),

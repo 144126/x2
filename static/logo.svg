@@ -2,19 +2,11 @@
 	<!--
 		A heart, built out of the two circles it is actually made of: a square turned 45°
 		with a semicircle on each upper edge. Kept as real geometry rather than a traced
-		path, because the construction is the point — two people, and the lens where they
-		overlap is what x2 matches on. That overlap is the only part that carries the
-		accent colour.
+		path, because the construction is the point — two people, one shape.
 	-->
-	<defs>
-		<clipPath id="x2-left">
-			<circle cx="10.5" cy="12.5" r="7.778" />
-		</clipPath>
-	</defs>
-	<g transform="translate(0 -0.86)" fill="#ece7dd">
+	<g transform="translate(0 -0.86)" fill="#d98b5f">
 		<path d="M16 7 L27 18 L16 29 L5 18 Z" />
 		<circle cx="10.5" cy="12.5" r="7.778" />
 		<circle cx="21.5" cy="12.5" r="7.778" />
-		<circle cx="21.5" cy="12.5" r="7.778" fill="#d98b5f" clip-path="url(#x2-left)" />
 	</g>
 </svg>

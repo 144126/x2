@@ -383,7 +383,7 @@ describe('POST /api/send — the relay call the recipient’s ChatHub receives',
 			mute_key: 'ada',
 			title: 'ada',
 			push_body: 'hi',
-			url: '/app/chat/ada',
+			url: '/chat/ada',
 			kind: 'u',
 			reply_to: 'ada'
 		});
@@ -399,7 +399,7 @@ describe('POST /api/send — the relay call the recipient’s ChatHub receives',
 			mute_key: 'g1',
 			title: 'design club',
 			push_body: 'ada: hi',
-			url: '/app/rooms/g1',
+			url: '/~g1',
 			kind: 'r',
 			reply_to: 'g1'
 		});

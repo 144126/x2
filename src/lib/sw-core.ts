@@ -106,7 +106,7 @@ export function notification_from(data: NotifyPayload): {
 
 export function target_url(data: { url?: string } | null): string {
 	const raw = data?.url;
-	if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/app';
+	if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/find';
 	return raw;
 }
 
