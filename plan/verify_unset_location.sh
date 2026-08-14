@@ -5,7 +5,8 @@
 fail=0
 for d in \
 	src/lib/components/__tests__/select_clear.test.ts \
-	src/lib/server/__tests__/profile_clear_location.test.ts; do
+	src/lib/server/__tests__/profile_clear_location.test.ts \
+	src/routes/app/profile/__tests__/geo_prefill.svelte.test.ts; do
 	if [ -f "$d" ] && ! cmp -s "plan/tests/$d.txt" "$d"; then
 		echo "TAMPERED: $d no longer matches plan/tests/$d.txt"
 		fail=1

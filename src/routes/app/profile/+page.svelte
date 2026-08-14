@@ -62,11 +62,13 @@
 	let city = $state(p.ci ?? '');
 
 	// runs once, at init, on purpose: as an $effect this read `country` and wrote it, so
-	// clearing a location refilled it from the IP guess on the same tick
+	// clearing a location refilled it from the IP guess on the same tick. It also guards on
+	// the stored value, not the local one — an absent key means never set, '' means the user
+	// cleared it on purpose, and only the first of those wants a guess.
 	if (data.geo) {
-		if (!country && data.geo.country) country = data.geo.country;
-		if (!region && data.geo.region) region = data.geo.region;
-		if (!city && data.geo.city) city = data.geo.city;
+		if (p.co === undefined && data.geo.country) country = data.geo.country;
+		if (p.st === undefined && data.geo.region) region = data.geo.region;
+		if (p.ci === undefined && data.geo.city) city = data.geo.city;
 	}
 
 	let whatsapp = $state(p.w ?? '');
