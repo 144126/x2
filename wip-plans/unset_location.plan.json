@@ -26,7 +26,7 @@
 	},
 	"verify_live": {
 		"s": "Prove it end to end against production, with eyes, not only the suite. Commit and push, then wait for the Cloudflare Workers Builds deploy to land on https://x2.apexlinks.workers.dev. Use the agent-browser skill, signed in as a real account. 1. On /app/profile set a country and a state, save, reload, and confirm both stuck. 2. Clear the country, save, reload, and confirm both country and state stay gone across the reload and did NOT come back from IP geo. 3. Repeat on a room you own: /app/rooms/<id> edit, set then clear, reload. 4. Check /app/user/<your id> no longer prints the country or state rows. Do NOT start a dev server. TRAP that already cost one wrong diagnosis: agent-browser refs go stale on EVERY page change, and a stale ref clicks whatever now holds it — re-snapshot before each ref click, or use `find role button click --name`. The Select list also closes on a synthetic click, so open it with focus then ArrowDown, and pick the clear row with Home then Enter. Block the step if any flow still refills or still shows the old value.",
-		"d": 0,
+		"d": 1,
 		"t": "bash plan/verify_unset_location.sh && pnpm test && pnpm build && bash plan/check_baseline.sh"
 	}
 }
