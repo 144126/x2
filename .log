@@ -1,8 +1,466 @@
 $ vite dev
 
-  VITE v8.1.5  ready in 3967 ms
+  VITE v8.1.5  ready in 10891 ms
 
   ➜  Local:   http://localhost:7227/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
 Using secrets defined in .env
+[HUB] GET /hub/29b517c3/sv -> 503 19ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 10ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 13ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+11:58:48 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+11:58:49 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+11:58:49 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+11:58:49 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/29b517c3/unread -> 503 4ms
+[HUB] GET /hub/29b517c3/unread -> 503 5ms
+
+[1;31m[404] GET /favicon.png[0m
+[HUB] GET /hub/29b517c3/convs -> 503 4ms
+[HUB] GET /hub/29b517c3/unread -> 503 7ms
+[HUB] GET /hub/29b517c3/unread -> 503 382ms
+[HUB] GET /hub/29b517c3/unread -> 503 322ms
+[HUB] GET /hub/29b517c3/unread -> 503 9ms
+[HUB] GET /hub/29b517c3/unread -> 503 79ms
+[HUB] GET /hub/29b517c3/unread -> 503 6ms
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:39:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:40:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:41:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:53:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:54:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:55:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:56:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:57:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:58:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:60:26 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:10:55 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/mutes -> 503 15ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 11ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 14ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 16ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/mutes -> 503 11ms
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:39:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:40:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:41:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:53:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:54:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:55:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:56:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:57:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:58:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:60:26 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:15:24 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/unread -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 12ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 10ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/unread -> 503 5ms
+12:19:06 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:19:06 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:19:06 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+12:19:06 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/29b517c3/mutes -> 503 14ms
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] POST /hub/29b517c3/read -> 503 15ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/unread -> 503 5ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] POST /hub/29b517c3/conv -> 503 23ms
+[HUB] GET /hub/29b517c3/sv -> 503 11ms
+[HUB] GET /hub/29b517c3/mutes -> 503 9ms
+12:19:46 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:19:46 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:19:46 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+12:19:46 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'e7bb811d-4c81-4a23-8870-63d4ba299573' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 10ms
+[HUB] POST /hub/29b517c3/read -> 503 13ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/unread -> 503 5ms
+[HUB] GET /hub/29b517c3/unread -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 2ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 13ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] POST /hub/29b517c3/conv -> 503 20ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/mutes -> 503 15ms
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'e7bb811d-4c81-4a23-8870-63d4ba299573' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 12ms
+[HUB] POST /hub/29b517c3/read -> 503 11ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/unread -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/unread -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 2ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/mutes -> 503 7ms
+[HUB] GET /hub/29b517c3/convs -> 503 4ms
+12:23:46 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:23:46 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:23:46 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+12:23:46 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:23:46 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:23:46 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/unread -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/sv -> 503 2ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 2ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/mutes -> 503 6ms
+12:27:17 PM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:13:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:27:17 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:107:0 `<div>` with a click or keydown handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:27:17 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:149:3 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+12:27:18 PM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:13:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:27:18 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:107:0 `<div>` with a click or keydown handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:27:18 PM [vite-plugin-svelte] src/lib/PhoneInput.svelte:149:3 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+[HUB] GET /hub/29b517c3/unread -> 503 2ms
+[HUB] GET /hub/29b517c3/mutes -> 503 56ms
+[HUB] GET /hub/29b517c3/unread -> 503 14ms
+[HUB] GET /hub/29b517c3/mutes -> 503 8ms
+12:30:24 PM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:8:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:30:24 PM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:9:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:30:24 PM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:8:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:30:24 PM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:9:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/29b517c3/unread -> 503 3ms
+[HUB] GET /hub/29b517c3/mutes -> 503 9ms
+[HUB] GET /hub/29b517c3/unread -> 503 15ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/mutes -> 503 6ms
+[HUB] GET /hub/29b517c3/unread -> 503 347ms
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/9.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+12:40:19 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+12:40:19 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+12:40:19 PM [vite] (client) page reload .svelte-kit/generated/root.js
+12:40:19 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+12:40:19 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+[HUB] GET /hub/cd5eb7f9/unread -> 503 110ms
+[HUB] GET /hub/29b517c3/unread -> 503 35ms
+[HUB] GET /hub/cd5eb7f9/mutes -> 503 40ms
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: '29b517c3-dbd0-482d-8a32-5ae9e2b6cedd' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/cd5eb7f9/sv -> 503 27ms
+[HUB] POST /hub/cd5eb7f9/read -> 503 36ms
+[HUB] GET /hub/cd5eb7f9/unread -> 503 9ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 35ms
+[HUB] GET /hub/cd5eb7f9/unread -> 503 34ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 7ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 16ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 8ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 18ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 5ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 16ms
+[HUB] POST /hub/cd5eb7f9/conv -> 503 23ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 89ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 12ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/mutes -> 503 8ms
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: '0446936f-2695-4942-afec-19c48f441c3b' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] POST /hub/29b517c3/read -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/unread -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/unread -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 238ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 24ms
+[HUB] GET /hub/cd5eb7f9/mutes -> 503 285ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 10ms
+[HUB] GET /hub/29b517c3/mutes -> 503 5ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'cd5eb7f9-4bda-43ae-8f14-9d4517a7bfe1' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 517ms
+[HUB] POST /hub/29b517c3/read -> 503 86ms
+[HUB] GET /hub/29b517c3/sv -> 503 93ms
+[HUB] GET /hub/29b517c3/unread -> 503 5ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/unread -> 503 4ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/sv -> 503 33ms
+[HUB] GET /hub/29b517c3/sv -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 2ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/mutes -> 503 7ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/unread -> 503 3ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 6ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 228ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 12ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 486ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 7ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 91ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 5ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 66ms
+[HUB] POST /hub/29b517c3/mute -> 503 7ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 8ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 247ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 4ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 14ms
+[HUB] GET /hub/29b517c3/mutes -> 503 19ms
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] POST /hub/29b517c3/read -> 503 31ms
+[HUB] GET /hub/29b517c3/sv -> 503 12ms
+[HUB] GET /hub/29b517c3/sv -> 503 14ms
+[HUB] GET /hub/29b517c3/unread -> 503 9ms
+[HUB] GET /hub/29b517c3/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 10ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/29b517c3/unread -> 503 5ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 7ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 8ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 10ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/unread -> 503 35ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 8ms
+[HUB] GET /hub/29b517c3/mutes -> 503 108ms
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'does-not-exist' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/29b517c3/sv -> 503 668ms
+[HUB] POST /hub/29b517c3/read -> 503 944ms
+[HUB] GET /hub/29b517c3/sv -> 503 593ms
+[HUB] GET /hub/29b517c3/sv -> 503 254ms
+[HUB] GET /hub/29b517c3/unread -> 503 60ms
+[HUB] GET /hub/29b517c3/unread -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 22ms
+[HUB] GET /hub/29b517c3/sv -> 503 92ms
+[HUB] GET /hub/29b517c3/sv -> 503 6ms
+[HUB] GET /hub/29b517c3/sv -> 503 7ms
+[HUB] GET /hub/29b517c3/mutes -> 503 99ms
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'does-not-exist' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 9ms
+[HUB] POST /hub/29b517c3/conv -> 503 10ms
+[HUB] GET /hub/29b517c3/sv -> 503 4ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/sv -> 503 5ms
+[HUB] GET /hub/29b517c3/unread -> 503 4ms
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/2.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/5.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/6.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/9.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+12:50:50 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
+12:50:50 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+12:50:50 PM [vite] (client) page reload .svelte-kit/generated/root.js
+12:50:50 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+12:50:50 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
+[HUB] GET /hub/cd5eb7f9/mutes -> 503 30ms
+[HUB] GET /hub/29b517c3/unread -> 503 4ms
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: '29b517c3-dbd0-482d-8a32-5ae9e2b6cedd' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+[HUB] GET /hub/cd5eb7f9/sv -> 503 7ms
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] GET /hub/cd5eb7f9/sv -> 503 10ms
+[HUB] POST /hub/cd5eb7f9/read -> 503 13ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 5ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 11ms
+[HUB] GET /hub/cd5eb7f9/unread -> 503 12ms
+[HUB] GET /hub/cd5eb7f9/unread -> 503 5ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 11ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 4ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 5ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 3ms
+[HUB] GET /hub/29b517c3/unread -> 503 4ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 6ms
+[HUB] GET /hub/cd5eb7f9/sv -> 503 11ms
+
+[1;31m[404] GET /no-such-page[0m
+[HUB] GET /hub/29b517c3/unread -> 503 5ms
+
+[1;31m[404] GET /no-such-page[0m
+
+[1;31m[404] GET /favicon.ico[0m
+[HUB] GET /hub/cd5eb7f9/sv -> 503 9ms
