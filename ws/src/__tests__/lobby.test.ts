@@ -19,7 +19,7 @@ vi.mock('../../../src/lib/server/chat', async () => {
 	return { ...actual, get_user_name: getUserNameMock };
 });
 
-import { MatchLobby } from '../lobby';
+import { MatchLobby, BATCH } from '../lobby';
 
 class FakeSocket {
 	sent: string[] = [];
@@ -208,7 +208,8 @@ describe('MatchLobby — queueing and matching', () => {
 			{ uid: 'bob', name: 'Name-bob', avoid: [] }
 		]);
 
-		retrieveOneMock.mockResolvedValue({ id: 'carol', payload: {}, vector: [1, 0, 0] });
+		// named vectors: this is the shape qdrant actually returns for this collection
+		retrieveOneMock.mockResolvedValue({ id: 'carol', payload: {}, vector: { t: [1, 0, 0] } });
 		searchMock.mockResolvedValue([
 			{ id: 'not-waiting', score: 0.99 },
 			{ id: 'bob', score: 0.8 },
@@ -364,15 +365,32 @@ describe('MatchLobby — parking and waking', () => {
 		expect(hub.pushed.map((p) => p.uid)).toEqual(['alice']);
 	});
 
-	it('wakes at most two people, never the whole park', async () => {
+	it('wakes a batch, never the whole park', async () => {
 		const state = makeState();
 		const lobby = makeLobby(state, env);
 		await state.storage.put(
 			'park',
-			['a', 'b', 'c', 'd', 'e'].map((uid) => ({ uid, at: Date.now() }))
+			['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].map((uid) => ({ uid, at: Date.now() }))
 		);
 		await lobby.alarm();
-		expect(hub.pushed).toHaveLength(2);
+		expect(hub.pushed).toHaveLength(BATCH);
+		expect(BATCH).toBeLessThan(9);
+	});
+
+	it('only claims someone is waiting when someone actually is', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put('park', [
+			{ uid: 'alice', at: Date.now() },
+			{ uid: 'bob', at: Date.now() }
+		]);
+		await lobby.alarm();
+		expect(hub.pushed[0].body.body).not.toMatch(/waiting/);
+
+		hub.pushed.length = 0;
+		await state.storage.put('park', [{ uid: 'carol', at: Date.now() }]);
+		await connect(lobby, state, 'dave'); // dave really is waiting
+		expect(hub.pushed[0].body.body).toMatch(/waiting/);
 	});
 
 	it('does not ping the same person twice inside the cooldown', async () => {
@@ -413,12 +431,37 @@ describe('MatchLobby — parking and waking', () => {
 		expect(await state.storage.get('park')).toEqual([]);
 	});
 
-	it('drops the park when the person comes back and connects', async () => {
+	it('keeps the park when someone shows up and finds nobody', async () => {
 		const state = makeState();
 		const lobby = makeLobby(state, env);
 		await state.storage.put('park', [{ uid: 'alice', at: Date.now() }]);
 		await connect(lobby, state, 'alice');
+		// she did the right thing and still got nothing — losing her place would punish that
+		expect(((await state.storage.get('park')) as { uid: string }[]).map((p) => p.uid)).toEqual([
+			'alice'
+		]);
+	});
+
+	it('retires the park once they actually get a conversation', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put('park', [{ uid: 'alice', at: Date.now() }]);
+		await connect(lobby, state, 'alice');
+		await connect(lobby, state, 'bob');
 		expect(await state.storage.get('park')).toEqual([]);
+	});
+
+	it('keeps the sweep alive when everyone is still in cooldown', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		await state.storage.put('park', [
+			{ uid: 'alice', at: Date.now(), pinged: Date.now() },
+			{ uid: 'bob', at: Date.now(), pinged: Date.now() }
+		]);
+		state.storage.setAlarm.mockClear();
+		await lobby.alarm();
+		// without this the alarm chain ends and the park never gets swept again
+		expect(state.storage.setAlarm).toHaveBeenCalled();
 	});
 
 	it('unpark removes them without waiting for a reconnect', async () => {
@@ -446,5 +489,65 @@ describe('MatchLobby — parking and waking', () => {
 			{ uid: 'bob', at: Date.now() }
 		]);
 		await expect(lobby.alarm()).resolves.toBeUndefined();
+	});
+});
+
+describe('MatchLobby — pairing must never fail closed', () => {
+	it('reads a NAMED vector, the shape this collection actually stores', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const alice = new FakeSocket();
+		const bob = new FakeSocket();
+		state.acceptWebSocket(alice, ['alice']);
+		state.acceptWebSocket(bob, ['bob']);
+		await state.storage.put('waiting', [
+			{ uid: 'alice', name: 'Name-alice', avoid: [] },
+			{ uid: 'bob', name: 'Name-bob', avoid: [] }
+		]);
+		retrieveOneMock.mockResolvedValue({ id: 'carol', payload: {}, vector: { t: [1, 0, 0] } });
+		searchMock.mockResolvedValue([{ id: 'bob', score: 0.9 }]);
+
+		const carol = await connect(lobby, state, 'carol');
+		expect(carol.last()).toMatchObject({ type: 'matched', peer: 'bob' });
+		expect(searchMock).toHaveBeenCalled();
+	});
+
+	it('still pairs when the vector is a bare array, as it was before the migration', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const bob = new FakeSocket();
+		state.acceptWebSocket(bob, ['bob']);
+		await state.storage.put('waiting', [{ uid: 'bob', name: 'Name-bob', avoid: [] }]);
+		retrieveOneMock.mockResolvedValue({ id: 'carol', payload: {}, vector: [1, 0, 0] });
+		searchMock.mockResolvedValue([{ id: 'bob', score: 0.9 }]);
+
+		const carol = await connect(lobby, state, 'carol');
+		expect(carol.last()).toMatchObject({ type: 'matched', peer: 'bob' });
+	});
+
+	it('pairs anyway when ranking throws — a broken ranker must not break rendezvous', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const bob = new FakeSocket();
+		state.acceptWebSocket(bob, ['bob']);
+		await state.storage.put('waiting', [{ uid: 'bob', name: 'Name-bob', avoid: [] }]);
+		// exactly the production failure: an object where an array was assumed
+		retrieveOneMock.mockResolvedValue({ id: 'carol', payload: {}, vector: { t: 'not-an-array' } });
+
+		const carol = await connect(lobby, state, 'carol');
+		expect(carol.last()).toMatchObject({ type: 'matched', peer: 'bob' });
+	});
+
+	it('pairs anyway when qdrant search itself blows up', async () => {
+		const state = makeState();
+		const lobby = makeLobby(state, env);
+		const bob = new FakeSocket();
+		state.acceptWebSocket(bob, ['bob']);
+		await state.storage.put('waiting', [{ uid: 'bob', name: 'Name-bob', avoid: [] }]);
+		retrieveOneMock.mockResolvedValue({ id: 'carol', payload: {}, vector: { t: [1, 0, 0] } });
+		searchMock.mockRejectedValue(new Error('qdrant down'));
+
+		const carol = await connect(lobby, state, 'carol');
+		expect(carol.last()).toMatchObject({ type: 'matched', peer: 'bob' });
 	});
 });

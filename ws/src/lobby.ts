@@ -5,6 +5,7 @@ import {
 	eq,
 	f,
 	get_secret,
+	V,
 	type QEnv,
 	type SecretVal
 } from '../../src/lib/server/qdrant';
@@ -35,9 +36,17 @@ export const PARK_TTL = 24 * 3600_000;
 export const PING_COOLDOWN = 3 * 3600_000;
 /** how long to wait before pinging the next pair when nobody answered */
 export const RETRY_MS = 2 * 60_000;
-/** how many people one ping wakes. Never the whole park: 20 people arriving for one
- *  match means 19 learn that the notification lies. */
-export const BATCH = 2;
+/**
+ * How many people one sweep wakes.
+ *
+ * Two was wrong. If p is the chance a woken person shows up, waking 2 leaves a ~42%
+ * chance that exactly one arrives and finds nobody, and produces the fewest
+ * conversations per ping. Waking 6 roughly triples conversations-per-ping AND cuts the
+ * arrived-alone case, because everyone woken is a candidate for everyone else. The
+ * scarce resource is how OFTEN you may ping a person, not how many you ping at once —
+ * so the cap belongs on frequency (PING_COOLDOWN), not here.
+ */
+export const BATCH = 6;
 /** local hours that count as night, when no ping is worth sending */
 export const NIGHT_FROM = 23;
 export const NIGHT_TO = 8;
@@ -93,8 +102,9 @@ export class MatchLobby implements DurableObject {
 		const pair = new WebSocketPair();
 		const [client, server] = Object.values(pair) as unknown as [WebSocket, WebSocket];
 		this.state.acceptWebSocket(server, [uid]);
-		// they are here, so they no longer need waking
-		await this.unpark(uid);
+		// deliberately NOT unparked here: someone who taps the notification, shows up and
+		// finds nobody would otherwise lose their place for doing exactly the right thing.
+		// wake() already skips anyone with an open socket, so being here is enough.
 		const name = await get_user_name(this.env, uid);
 		await this.try_match(uid, name, []);
 		return new Response(null, { status: 101, webSocket: client });
@@ -189,7 +199,8 @@ export class MatchLobby implements DurableObject {
 	 */
 	private async wake(): Promise<void> {
 		const now = Date.now();
-		const park = (await this.get_park()).filter((p) => now - p.at < PARK_TTL);
+		const stored = await this.get_park();
+		const park = stored.filter((p) => now - p.at < PARK_TTL);
 		const searching = (await this.get_waiting()).length;
 
 		const eligible = park.filter(
@@ -199,19 +210,27 @@ export class MatchLobby implements DurableObject {
 				this.state.getWebSockets(p.uid).length === 0
 		);
 
-		if (eligible.length < (searching ? 1 : 2)) {
-			// nothing to do, but still persist the expiry pass
-			if (park.length !== (await this.get_park()).length) await this.set_park(park);
-			return;
-		}
-
-		const batch = eligible.slice(0, BATCH);
-		await Promise.all(batch.map((p) => this.ping(p.uid)));
+		const batch = eligible.length >= (searching ? 1 : 2) ? eligible.slice(0, BATCH) : [];
 		const woken = new Set(batch.map((p) => p.uid));
-		await this.set_park(park.map((p) => (woken.has(p.uid) ? { ...p, pinged: now } : p)));
+		const next = park.map((p) => (woken.has(p.uid) ? { ...p, pinged: now } : p));
+
+		// Persist BEFORE sending anything. The pushes are awaited network calls, and a
+		// second wake arriving during them would otherwise read the old park and ping the
+		// same people twice.
+		if (batch.length || next.length !== stored.length) await this.set_park(next);
+		// Nothing changed, so set_park never ran — but the sweep still has to survive, or
+		// a park full of people in cooldown loses its alarm and goes silent forever.
+		else if (next.length) await this.state.storage.setAlarm(now + RETRY_MS);
+
+		// only claim someone is waiting when someone actually is; otherwise this is a
+		// small round being started, and the copy says so
+		const body = searching
+			? 'someone is waiting to talk right now'
+			: 'a few people are about to talk — join them';
+		await Promise.all(batch.map((p) => this.ping(p.uid, body)));
 	}
 
-	private async ping(uid: string): Promise<void> {
+	private async ping(uid: string, body: string): Promise<void> {
 		try {
 			const stub = this.env.CHAT_HUB.get(this.env.CHAT_HUB.idFromName(uid));
 			await stub.fetch(
@@ -219,8 +238,8 @@ export class MatchLobby implements DurableObject {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
 					body: JSON.stringify({
-						title: 'someone wants to talk',
-						body: 'tap to start a voice chat on x2',
+						title: 'x2',
+						body,
 						// deep-links straight into the search, so the moment is not spent on a button
 						url: '/?talk=1'
 					})
@@ -229,6 +248,27 @@ export class MatchLobby implements DurableObject {
 		} catch (e) {
 			console.error(`[LOBBY] ping ${uid} failed:`, e);
 		}
+	}
+
+	/**
+	 * The waiting person whose profile embedding sits closest to this one.
+	 *
+	 * Vectors in this collection are NAMED, so a retrieved point carries
+	 * `{ t: [...] }` — never a bare array. Reading it as an array is what threw
+	 * `vec.some is not a function` and broke every pairing in production.
+	 */
+	private async best_of(uid: string, others: Waiting[]): Promise<Waiting | undefined> {
+		const raw = (await retrieve_one(this.env, uid, true))?.vector;
+		const vec = Array.isArray(raw) ? raw : raw?.[V];
+		if (!vec?.some((x) => x !== 0)) return undefined;
+
+		const ranked = await search(this.env, vec, f(eq('s', 'u')), others.length + 5);
+		const by_uid = new Map(others.map((w) => [w.uid, w]));
+		for (const hit of ranked) {
+			const candidate = by_uid.get(String(hit.id));
+			if (candidate) return candidate;
+		}
+		return undefined;
 	}
 
 	/** interests both people typed, so the match can say why it happened */
@@ -249,21 +289,16 @@ export class MatchLobby implements DurableObject {
 			(w) => w.uid !== uid && this.state.getWebSockets(w.uid).length > 0 && !avoid.includes(w.uid)
 		);
 
+		// Ranking is a bonus; being paired at all is the product. Anything that goes wrong
+		// picking the BEST partner must fall through to the first person waiting, never
+		// take the rendezvous down with it — this whole block threw a TypeError in
+		// production and 500'd the websocket handshake for every second searcher.
 		let partner: Waiting | undefined;
 		if (others.length) {
-			const self = await retrieve_one(this.env, uid, true);
-			const vec = self?.vector;
-			if (vec && vec.some((x) => x !== 0)) {
-				const ranked = await search(this.env, vec, f(eq('s', 'u')), others.length + 5);
-				const by_uid = new Map(others.map((w) => [w.uid, w]));
-				for (const hit of ranked) {
-					const candidate = by_uid.get(String(hit.id));
-					if (candidate) {
-						partner = candidate;
-						break;
-					}
-				}
-			}
+			partner = await this.best_of(uid, others).catch((e) => {
+				console.error('[LOBBY] ranking failed, falling back to first waiting:', e);
+				return undefined;
+			});
 			partner ??= others[0];
 		}
 
@@ -278,6 +313,9 @@ export class MatchLobby implements DurableObject {
 		}
 
 		await this.set_waiting(queue.filter((w) => w.uid !== uid && w.uid !== partner!.uid));
+		// they got what they were waiting for, so the standing request is spent
+		await this.unpark(uid);
+		await this.unpark(partner.uid);
 		const conv = conv_id(uid, partner.uid);
 		const shared = await this.common(uid, partner.uid);
 		this.deliver(uid, {
