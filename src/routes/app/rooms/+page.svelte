@@ -248,7 +248,7 @@
 				placeholder={tags.length ? '' : 'add a tag…'}
 			/>
 		</div>
-		<LocationPicker bind:country bind:region bind:city anyLabel="country" />
+		<LocationPicker bind:country bind:region bind:city anyLabel="no country" />
 		<button
 			class="btn btn-amber flex items-center gap-1.5 self-start"
 			type="submit"

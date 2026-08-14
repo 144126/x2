@@ -376,9 +376,9 @@
 			body: JSON.stringify({
 				name: ename,
 				description: edesc,
-				country: ecountry || undefined,
-				state: eregion || undefined,
-				city: ecity || undefined,
+				country: ecountry,
+				state: eregion,
+				city: ecity,
 				tags: etags,
 				room_state: eroom_state
 			})
@@ -555,7 +555,7 @@
 				bind:country={ecountry}
 				bind:region={eregion}
 				bind:city={ecity}
-				anyLabel="country"
+				anyLabel="no country"
 			/>
 			<div class="flex gap-2">
 				<button class="btn btn-amber px-4 py-2 text-[12px]" type="submit">save</button>

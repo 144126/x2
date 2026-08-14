@@ -14,7 +14,7 @@
 	},
 	"room_clear": {
 		"s": "Fix the room half in src/routes/app/rooms/[id]/+page.svelte. `save_edits` sends `country: ecountry || undefined`, and the same for state and city; JSON.stringify drops an undefined value, so update_group sees the key as absent and keeps the old location forever. Send the raw ecountry, eregion, and ecity strings instead. Also change `anyLabel=\"country\"` to `no country` on that page's LocationPicker and on the room-create one in src/routes/app/rooms/+page.svelte, matching the profile. FENCE: leave `create()` in rooms/+page.svelte sending `|| undefined` — a brand-new room with no location should omit the key, not store ''. Leave the server alone; group.test.ts already proves update_group persists ''.",
-		"d": 0,
+		"d": 1,
 		"v": "grep -q 'country: ecountry || undefined' 'src/routes/app/rooms/[id]/+page.svelte'",
 		"t": "bash plan/verify_unset_location.sh && ! grep -q 'ecountry || undefined' 'src/routes/app/rooms/[id]/+page.svelte' && ! grep -q 'anyLabel=\"country\"' src/routes/app/rooms/+page.svelte 'src/routes/app/rooms/[id]/+page.svelte' src/routes/app/profile/+page.svelte && pnpm test && bash plan/check_baseline.sh"
 	},
