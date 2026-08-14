@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import Page from '../+page.svelte';
 
-
 describe('/ (voice match home)', () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();

@@ -20,9 +20,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// buys. Everything else about a profile is open, including to a crawler.
 	const w = me ? u.w : undefined;
 	const wu =
-		w && u.co
-			? `https://wa.me/${Country.getCountryByCode(u.co)?.phonecode ?? ''}${w}`
-			: undefined;
+		w && u.co ? `https://wa.me/${Country.getCountryByCode(u.co)?.phonecode ?? ''}${w}` : undefined;
 	const shared = me && me !== id ? await shared_groups(env, id, me) : [];
 	const muted = me ? await is_muted(env, locals.x2_ws, me, id) : false;
 	const tz = await resolve_tz({ tz: u.tz, co: u.co });
