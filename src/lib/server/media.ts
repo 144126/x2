@@ -9,8 +9,13 @@ const TYPES: Record<string, string> = {
 
 export const MAX_BYTES = 8 * 1024 * 1024;
 
-// generic (non-image) file attachments — conservative common-document allow-list
+// generic (non-image) file attachments — conservative common-document allow-list, plus the
+// recorder formats: MediaRecorder gives webm/opus on chrome and firefox, mp4/aac on safari
 const FILE_TYPES: Record<string, string> = {
+	'audio/webm': 'webm',
+	'audio/ogg': 'ogg',
+	'audio/mp4': 'm4a',
+	'audio/mpeg': 'mp3',
 	'application/pdf': 'pdf',
 	'application/zip': 'zip',
 	'text/plain': 'txt',
@@ -72,7 +77,9 @@ export async function put_file(
 	name: string,
 	secret: string
 ): Promise<{ key: string; url: string; name: string; size: number; type: string } | null> {
-	const ext = FILE_TYPES[file.type];
+	// MediaRecorder reports `audio/webm;codecs=opus`, so match on the type alone
+	const mime = file.type.split(';')[0].trim().toLowerCase();
+	const ext = FILE_TYPES[mime];
 	if (!ext || file.size === 0 || file.size > MAX_FILE_BYTES) return null;
 	const key = `${uid}/${crypto.randomUUID()}.${ext}`;
 	await bucket.put(key, await file.arrayBuffer(), {

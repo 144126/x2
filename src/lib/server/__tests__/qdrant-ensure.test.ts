@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 describe('ensure — probe-first', () => {
-	it('skips all creation when all 23 keys exist', async () => {
+	it('skips all creation when all 24 keys exist', async () => {
 		mockClient.getCollection.mockResolvedValue({
 			payload_schema: {
 				s: {},
@@ -46,6 +46,7 @@ describe('ensure — probe-first', () => {
 				rs: {},
 				m: {},
 				gl: {},
+				pr: {},
 				ag: {},
 				at: {},
 				sent: {},
@@ -61,7 +62,7 @@ describe('ensure — probe-first', () => {
 		mockClient.getCollection.mockRejectedValue(new Error('not found'));
 		await ensure(ENV);
 		expect(mockClient.createCollection).toHaveBeenCalledTimes(1);
-		expect(mockClient.createPayloadIndex).toHaveBeenCalledTimes(23);
+		expect(mockClient.createPayloadIndex).toHaveBeenCalledTimes(24);
 	});
 
 	it('creates missing indexes when some are absent (collection already exists)', async () => {
@@ -71,7 +72,7 @@ describe('ensure — probe-first', () => {
 		mockClient.createCollection.mockRejectedValue(new Error('already exists'));
 		await ensure(ENV);
 		expect(mockClient.createCollection).toHaveBeenCalledTimes(1);
-		expect(mockClient.createPayloadIndex).toHaveBeenCalledTimes(23);
+		expect(mockClient.createPayloadIndex).toHaveBeenCalledTimes(24);
 	});
 
 	it('calls getCollection only once for concurrent calls (stampede guard)', async () => {

@@ -140,7 +140,8 @@ const KEYWORD_KEYS = [
 	'k',
 	'rs',
 	'm',
-	'gl'
+	'gl',
+	'pr'
 ] as const;
 const INT_KEYS = ['ag', 'at', 'sent', 'd'] as const;
 

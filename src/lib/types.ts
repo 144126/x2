@@ -21,6 +21,7 @@ export interface User {
 	w?: string; // whatsapp number (subscriber number, stripped of country code / leading 0)
 	tz?: string; // IANA timezone
 	sp?: string[]; // own sticker pack — R2 media keys, newest first (see /api/stickers)
+	hn?: string[]; // voice notes already heard, newest first — nothing is ever replayed
 	// partner program
 	ac?: string; // this user's own referral code, as a partner
 	invited_by?: string; // uid of the partner whose code this user signed up under

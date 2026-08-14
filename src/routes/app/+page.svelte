@@ -160,8 +160,12 @@
 	{#if results.length}
 		<ul class="results mt-4 grid gap-2.5">
 			{#each results as u, i (u.id)}
-				<li>
-					<a class="card person reveal" style="--i:{i}" href="/app/chat/{u.id}">
+				<li class="card person reveal relative" style="--i:{i}">
+					<a
+						class="after:absolute after:inset-0"
+						href="/app/chat/{u.id}"
+						aria-label="open chat with {u.n}"
+					>
 						<div class="flex flex-col gap-1">
 							<div class="flex items-center gap-2">
 								<span class="font-display text-[16px] font-medium tracking-[-0.01em]">{u.n}</span>
@@ -183,25 +187,21 @@
 						{#if u.a}<p class="mt-1 max-w-[60ch] text-[13px] leading-[1.5] text-ink-soft">
 								{u.a}
 							</p>{/if}
-						<div class="mt-3 flex items-center gap-3 self-end">
-							{#if u.wu}
-								<a
-									href={u.wu}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="btn no-underline"
-									onclick={(e) => e.stopPropagation()}
-								>
-									<MessageCircle size={13} /> chat on whatsapp
-								</a>
-							{/if}
-							{#if u.s !== undefined}
-								<div class="font-display text-[13px] tracking-[0.02em] text-accent">
-									{(u.s * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span> match
-								</div>
-							{/if}
-						</div>
 					</a>
+					<!-- outside the card link: an anchor inside an anchor is invalid html and
+					     the browser moves it on hydration -->
+					<div class="relative mt-3 flex items-center gap-3 self-end">
+						{#if u.wu}
+							<a href={u.wu} target="_blank" rel="noopener noreferrer" class="btn no-underline">
+								<MessageCircle size={13} /> chat on whatsapp
+							</a>
+						{/if}
+						{#if u.s !== undefined}
+							<div class="font-display text-[13px] tracking-[0.02em] text-accent">
+								{(u.s * 100).toFixed(0)}<span class="text-[10px] opacity-70">%</span> match
+							</div>
+						{/if}
+					</div>
 				</li>
 			{/each}
 		</ul>

@@ -7,6 +7,7 @@
 	import { enable_push, push_available } from '$lib/push-client';
 	import { questions_for } from '$lib/prompts';
 	import CallOverlay from '$lib/components/CallOverlay.svelte';
+	import NotePool from '$lib/components/NotePool.svelte';
 	import { Mic, LoaderCircle, MessageSquare, Users, BellRing, Check } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -250,6 +251,11 @@
 					? `${waiting} people looking right now`
 					: 'you are first in the queue — hang on'}
 			</p>
+			<!-- the wait is the only real cost in this product, so it is never a bare
+			     spinner: a recorded human is here in seconds even when nobody else is -->
+			<div class="mt-2 w-full border-t border-line pt-5">
+				<NotePool />
+			</div>
 			{#if parked}
 				<p class="flex items-center gap-1.5 text-[12.5px] text-accent">
 					<Check size={13} /> we'll ping you when someone's around — you can close this.

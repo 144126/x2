@@ -75,3 +75,36 @@ export const WRAP_AFTER_MS = 7 * 60_000;
  * free — that is the report button, and it is never locked.
  */
 export const SKIP_LOCK_MS = 60_000;
+
+/**
+ * The question everyone answers today.
+ *
+ * One shared question is what makes a pool of recordings feel like one room rather than
+ * a pile of monologues, and it is why a stranger's note is worth hearing at all.
+ */
+const DAILY = [
+	'what have you changed your mind about recently?',
+	"what's something you're weirdly good at?",
+	'what would you do with a completely free year?',
+	'what made you laugh out loud most recently?',
+	"what's a risk you're glad you took?",
+	'what do you believe that most people you know do not?',
+	'what were you into at fourteen that you would still defend?',
+	'what is something you are quietly proud of?',
+	"what's the last thing that genuinely surprised you?",
+	'what would you want more of, if it cost nothing?',
+	'what is a small thing that reliably fixes your mood?',
+	'what would you tell someone arriving in your city for a week?',
+	"what's something you started and never finished, but still think about?",
+	'who taught you something you still use every day?'
+];
+
+/** stable id for a day, so a note can be filed under the question it answers */
+export function prompt_id(now = Date.now()): string {
+	return new Date(now).toISOString().slice(0, 10);
+}
+
+export function prompt_of_the_day(now = Date.now()): string {
+	const day = Math.floor(now / 86_400_000);
+	return DAILY[day % DAILY.length];
+}

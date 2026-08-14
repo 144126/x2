@@ -86,6 +86,7 @@ describe('ensure', () => {
 				rs: {},
 				m: {},
 				gl: {},
+				pr: {},
 				ag: {},
 				at: {},
 				sent: {},

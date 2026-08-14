@@ -581,7 +581,16 @@
 								/>
 							</a>
 						{/if}
-						{#if m.fl}
+						{#if m.fl?.type.startsWith('audio/')}
+							<!-- a voice reply is the point of the note pool: it has to be
+							     hearable in the thread, not a file to download -->
+							<audio
+								controls
+								preload="none"
+								src={media_src(m.fl.key)}
+								class="mb-1.5 h-9 w-[220px] max-w-full"
+							></audio>
+						{:else if m.fl}
 							<a
 								href={media_src(m.fl.key)}
 								target="_blank"
