@@ -66,23 +66,29 @@ describe('GET /api/stickers?q=', () => {
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
-	it('keeps the webp of every sticker klipy returns', async () => {
+	it('takes the middle rendition of every sticker klipy returns', async () => {
 		(env as Record<string, string>).KLIPY_KEY = 'kk';
 		fetchMock.mockResolvedValue(
 			klipy([
 				{
 					id: 1,
+					type: 'sticker',
 					file: {
-						hd: { gif: { url: 'https://static.klipy.com/a.gif' } },
-						sm: { webp: { url: 'https://static.klipy.com/a.webp' } }
+						hd: { webp: { url: 'https://static.klipy.com/a-hd.webp' } },
+						md: { webp: { url: 'https://static.klipy.com/a-md.webp' } },
+						sm: { webp: { url: 'https://static.klipy.com/a-sm.webp' } }
 					}
 				},
-				{ id: 2, file: { sm: { gif: { url: 'https://static2.klipy.com/b.gif' } } } }
+				{
+					id: 2,
+					type: 'sticker',
+					file: { sm: { webp: { url: 'https://static2.klipy.com/b-sm.webp' } } }
+				}
 			])
 		);
 		const res = await GET(event('GET', undefined, 'ada', 'q=cat'));
 		expect(await res.json()).toEqual({
-			r: ['https://static.klipy.com/a.webp', 'https://static2.klipy.com/b.gif']
+			r: ['https://static.klipy.com/a-md.webp', 'https://static2.klipy.com/b-sm.webp']
 		});
 		const [url] = fetchMock.mock.calls[0] as [string];
 		expect(url).toContain('/kk/stickers/search?q=cat');
@@ -92,9 +98,32 @@ describe('GET /api/stickers?q=', () => {
 	it('drops a sticker served from anywhere but klipy', async () => {
 		(env as Record<string, string>).KLIPY_KEY = 'kk';
 		fetchMock.mockResolvedValue(
-			klipy([{ id: 3, file: { sm: { webp: { url: 'https://evil.example.com/x.webp' } } } }])
+			klipy([
+				{
+					id: 3,
+					type: 'sticker',
+					file: { md: { webp: { url: 'https://evil.example.com/x.webp' } } }
+				}
+			])
 		);
 		expect(await (await GET(event('GET', undefined, 'ada', 'q=cat'))).json()).toEqual({ r: [] });
+	});
+
+	it('never offers an ad as something to send', async () => {
+		(env as Record<string, string>).KLIPY_KEY = 'kk';
+		fetchMock.mockResolvedValue(
+			klipy([
+				{ id: 4, type: 'ad', file: { md: { webp: { url: 'https://static.klipy.com/ad.webp' } } } },
+				{
+					id: 5,
+					type: 'sticker',
+					file: { md: { webp: { url: 'https://static.klipy.com/s.webp' } } }
+				}
+			])
+		);
+		expect(await (await GET(event('GET', undefined, 'ada', 'q=cat'))).json()).toEqual({
+			r: ['https://static.klipy.com/s.webp']
+		});
 	});
 
 	it('lets a signed-out visitor search, without naming them to klipy', async () => {

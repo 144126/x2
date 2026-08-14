@@ -11,9 +11,20 @@ const MAX_STICKERS = 60;
 
 const KLIPY = 'https://api.klipy.com/api/v1';
 
-// klipy documents a `files` object per sticker but not which renditions sit inside it, so read
-// every url the item carries and keep the webp — the smallest animated format they serve. no key
-// set means no search, which is why the picker falls back to the built-in pack on an empty answer.
+type KlipyItem = {
+	type?: string;
+	file?: Record<string, Record<string, { url?: string } | undefined> | undefined>;
+};
+
+// klipy serves each sticker at every size in four formats. md is the one that stays sharp in a
+// 104px bubble on a dense screen and still never passed 14kb across a live page of results
+const rendition = (it: KlipyItem): string | undefined => {
+	const f = it.file ?? {};
+	return f.md?.webp?.url ?? f.sm?.webp?.url ?? f.hd?.webp?.url;
+};
+
+// no key set means no search, which is why the picker falls back to the built-in pack whenever
+// this comes back empty
 async function search_klipy(q: string, cid?: string): Promise<string[]> {
 	const key = await get_secret(env.KLIPY_KEY);
 	if (!key) return [];
@@ -22,15 +33,15 @@ async function search_klipy(q: string, cid?: string): Promise<string[]> {
 			(cid ? `&customer_id=${encodeURIComponent(cid)}` : '')
 	).catch(() => null);
 	if (!res?.ok) return [];
-	const b = (await res.json().catch(() => null)) as { data?: { data?: unknown[] } } | null;
-	return (b?.data?.data ?? [])
-		.map((it) => {
-			const urls = (JSON.stringify(it).match(/https:\/\/[^"]+?\.(?:webp|gif)/g) ?? []).filter(
-				remote_ok
-			);
-			return urls.find((u) => u.endsWith('.webp')) ?? urls[0];
-		})
-		.filter((u): u is string => !!u);
+	const b = (await res.json().catch(() => null)) as { data?: { data?: KlipyItem[] } } | null;
+	return (
+		(b?.data?.data ?? [])
+			// klipy sells the right to drop an ad into a page of results, and an ad is not a sticker
+			// anyone should be able to send
+			.filter((it) => it.type !== 'ad')
+			.map(rendition)
+			.filter((u): u is string => !!u && remote_ok(u))
+	);
 }
 
 export const GET: RequestHandler = async ({ url, locals, platform }) => {

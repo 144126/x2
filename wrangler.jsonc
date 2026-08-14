@@ -56,6 +56,11 @@
 			"secret_name": "PAYSTACK_TEST"
 		},
 		{
+			"binding": "KLIPY_KEY",
+			"store_id": "45748cb1c67946df943075fa14cb8815",
+			"secret_name": "KLIPY_KEY"
+		},
+		{
 			"binding": "TURN_KEY_ID",
 			"store_id": "45748cb1c67946df943075fa14cb8815",
 			"secret_name": "TURN_KEY_ID"
