@@ -31,8 +31,9 @@
 	let presenceUnavailable = $state(false);
 	let filtersOpen = $state(false);
 
+	// the online toggle sits outside the modal, so it is not part of the modal's badge count
 	let activeFilterCount = $derived(
-		[gender, age_min, age_max, country, region, onlineOnly ? '1' : ''].filter(Boolean).length
+		[gender, age_min, age_max, country, region].filter(Boolean).length
 	);
 
 	async function search() {
@@ -58,7 +59,12 @@
 		age_max = '';
 		country = '';
 		region = '';
-		onlineOnly = false;
+	}
+
+	// a toggle that needs a second click to take effect reads as broken
+	function toggleOnline() {
+		onlineOnly = !onlineOnly;
+		search();
 	}
 
 	function apply() {
@@ -111,6 +117,32 @@
 		</button>
 	</div>
 
+	<div class="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+		<button
+			type="button"
+			class="btn gap-2 {onlineOnly
+				? 'border-accent bg-accent/12 text-ink'
+				: 'text-mute hover:text-ink'}"
+			aria-pressed={onlineOnly}
+			onclick={toggleOnline}
+		>
+			<span class="relative flex h-[7px] w-[7px] items-center justify-center">
+				{#if onlineOnly}
+					<span class="absolute inset-0 animate-ping rounded-full bg-emerald-400/60"></span>
+				{/if}
+				<span
+					class="h-[7px] w-[7px] rounded-full transition-colors duration-300 {onlineOnly
+						? 'bg-emerald-400'
+						: 'bg-line-2'}"
+				></span>
+			</span>
+			online now
+		</button>
+		{#if presenceUnavailable}
+			<span class="text-[12px] text-mute">couldn't check who's online — showing everyone.</span>
+		{/if}
+	</div>
+
 	<Modal bind:open={filtersOpen} title="filters">
 		<div class="filters flex flex-col gap-4">
 			<Select
@@ -142,20 +174,12 @@
 				/>
 			</div>
 			<LocationPicker bind:country bind:region showCity={false} anyLabel="any country" />
-			<label class="flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
-				<input type="checkbox" class="!w-auto accent-accent" bind:checked={onlineOnly} />
-				online now
-			</label>
 		</div>
 		<div class="mt-6 flex items-center gap-3 border-t border-line pt-5">
 			<button class="btn" onclick={clearFilters}>clear</button>
 			<button class="btn btn-amber ml-auto" onclick={apply}>apply</button>
 		</div>
 	</Modal>
-
-	{#if presenceUnavailable}
-		<p class="mt-4 text-[13px] text-mute">couldn't check who's online — showing everyone.</p>
-	{/if}
 
 	{#if results.length}
 		<ul class="results mt-4 grid gap-2.5">
