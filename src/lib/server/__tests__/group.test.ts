@@ -55,7 +55,10 @@ import {
 	is_member,
 	shared_groups
 } from '../group';
-import { V } from '../qdrant';
+import { V, uuid_from } from '../qdrant';
+
+// qdrant only accepts a uuid or a uint as a point id, so a sqids room id is mapped
+const PID = (id: string) => uuid_from(`g:${id}`);
 
 const ENV = { QDRANT_URL: 'u', QDRANT_KEY: 'k' } as unknown as Parameters<
 	typeof import('../group').join_group
@@ -108,6 +111,17 @@ describe('save_group', () => {
 			'group_name: Ceramics | group_about: wheel-thrown pots'
 		);
 		expect(stored().vector).toEqual({ [V]: VEC });
+	});
+
+	it('writes a uuid point id, keeping the sqids id in the payload', async () => {
+		const g = await save_group(ENV, WS, 'owner1', { name: 'Ceramics' });
+		// qdrant rejects anything that is not a uuid or a uint, so a raw sqids id 400s
+		expect(stored().id).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+		);
+		expect(stored().id).toBe(await PID(g.id));
+		expect(stored().payload.id).toBe(g.id);
+		expect(g.id).not.toBe(stored().id);
 	});
 
 	it('rejects a blank name', async () => {
@@ -200,20 +214,20 @@ describe('update_group', () => {
 		await update_group(ENV, 'g1', 'owner1', { country: 'GH' });
 		expect(embedMock).not.toHaveBeenCalled();
 		expect(upsertMock).not.toHaveBeenCalled();
-		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'g1', expect.objectContaining({ co: 'GH' }));
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, await PID('g1'), expect.objectContaining({ co: 'GH' }));
 	});
 
 	it('clears a location when given an empty string, via setPayload not upsert', async () => {
 		retrieveOneMock.mockResolvedValue(group({ co: 'GH' }));
 		await update_group(ENV, 'g1', 'owner1', { country: '' });
 		expect(embedMock).not.toHaveBeenCalled();
-		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'g1', expect.objectContaining({ co: '' }));
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, await PID('g1'), expect.objectContaining({ co: '' }));
 	});
 
 	it('leaves a location alone when the field is undefined', async () => {
 		retrieveOneMock.mockResolvedValue(group({ co: 'GH' }));
 		await update_group(ENV, 'g1', 'owner1', {});
-		expect(setPayloadMock).toHaveBeenCalledWith(ENV, 'g1', expect.objectContaining({ co: 'GH' }));
+		expect(setPayloadMock).toHaveBeenCalledWith(ENV, await PID('g1'), expect.objectContaining({ co: 'GH' }));
 	});
 });
 
@@ -226,7 +240,7 @@ describe('membership', () => {
 		expect(upsertMock).not.toHaveBeenCalled();
 		expect(setPayloadMock).toHaveBeenCalledWith(
 			ENV,
-			'g1',
+			await PID('g1'),
 			expect.objectContaining({ mb: ['owner1', 'bob'] })
 		);
 
@@ -244,7 +258,7 @@ describe('membership', () => {
 		expect(embedMock).not.toHaveBeenCalled();
 		expect(setPayloadMock).toHaveBeenCalledWith(
 			ENV,
-			'g1',
+			await PID('g1'),
 			expect.objectContaining({ mb: ['owner1'] })
 		);
 		expect(await leave_group(ENV, WS, 'g1', 'owner1')).toBeNull();

@@ -11,6 +11,7 @@ import {
 	f,
 	f_not,
 	eq,
+	uuid_from,
 	type QEnv
 } from './qdrant';
 import { embed } from './or';
@@ -67,15 +68,26 @@ const group_text = (name: string, description: string, tags?: string[]) =>
 		tags?.length ? ` | room_tags: ${tags.join(', ')}` : ''
 	}`;
 
+// a room's public id is a sqids string, which qdrant rejects as a point id (uuid or uint
+// only), so every point touch maps it. Rooms created before sqids already have a uuid id —
+// that is its own point id, so it keeps resolving.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const point_id = (id: string): Promise<string> =>
+	UUID.test(id) ? Promise.resolve(id) : uuid_from(`g:${id}`);
+
 async function put(env: QEnv, g: Group): Promise<void> {
 	const vec = await embed(env, group_text(g.nm, g.ds, g.tgs));
 	await upsert(env, [
-		{ id: g.id, vector: { [V]: vec }, payload: g as unknown as Record<string, unknown> }
+		{
+			id: await point_id(g.id),
+			vector: { [V]: vec },
+			payload: g as unknown as Record<string, unknown>
+		}
 	]);
 }
 
 async function put_payload(env: QEnv, g: Group): Promise<void> {
-	await set_payload(env, g.id, g as unknown as Record<string, unknown>);
+	await set_payload(env, await point_id(g.id), g as unknown as Record<string, unknown>);
 }
 
 export async function save_group(
@@ -97,7 +109,7 @@ export async function save_group(
 	if (!name) throw new Error('name_required');
 	const g: Group = {
 		s: 'g',
-		id: await new_group_id(env, async (id) => (await retrieve_one(env, id)) !== null),
+		id: await new_group_id(env, async (id) => (await raw_group(env, id)) !== null),
 		nm: name,
 		ds: (data.description ?? '').trim(),
 		...(data.tags?.length ? { tgs: data.tags } : {}),
@@ -115,7 +127,7 @@ export async function save_group(
 }
 
 async function raw_group(env: QEnv, id: string): Promise<Group | null> {
-	const p = (await retrieve_one(env, id))?.payload as unknown as Group | undefined;
+	const p = (await retrieve_one(env, await point_id(id)))?.payload as unknown as Group | undefined;
 	return p?.s === 'g' ? p : null;
 }
 
@@ -172,7 +184,7 @@ export async function delete_group(env: QEnv, id: string, uid: string): Promise<
 	const cur = await raw_group(env, id);
 	if (!cur || cur.ow !== uid) return false;
 	const { qc, C } = await import('./qdrant');
-	await (await qc(env)).delete(C, { points: [id] }).catch(() => {});
+	await (await qc(env)).delete(C, { points: [await point_id(id)] }).catch(() => {});
 	return true;
 }
 
@@ -187,7 +199,7 @@ export async function join_group(
 	if (!cur) return null;
 	const members = await room_join(env, ws, id, uid);
 	if (members.length !== cur.mb.length || !members.every((m, i) => m === cur.mb[i])) {
-		await set_payload(env, id, { mb: members }).catch(() => {});
+		await set_payload(env, await point_id(id), { mb: members }).catch(() => {});
 	}
 	return view({ ...cur, mb: members });
 }
@@ -203,7 +215,7 @@ export async function leave_group(
 	const cur = await raw_group(env, id);
 	if (!cur || cur.ow === uid) return null;
 	const members = await room_leave(env, ws, id, uid);
-	await set_payload(env, id, { mb: members }).catch(() => {});
+	await set_payload(env, await point_id(id), { mb: members }).catch(() => {});
 	return view({ ...cur, mb: members });
 }
 
