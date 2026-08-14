@@ -26,5 +26,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const shared = me && me !== id ? await shared_groups(env, id, me) : [];
 	const muted = me ? await is_muted(env, locals.x2_ws, me, id) : false;
 	const tz = await resolve_tz({ tz: u.tz, co: u.co });
-	return { id, u: { ...u, w }, wu, shared, muted, tz };
+	// named one by one rather than spread, because everything returned here is serialised into
+	// the page html. Spreading leaks whatever field User gains next — that is how the email
+	// and the interest list were riding along. A new field is opt-in now.
+	return {
+		id,
+		u: { u: u.u, a: u.a, ag: u.ag, r: u.r, co: u.co, st: u.st, ci: u.ci, w },
+		wu,
+		shared,
+		muted,
+		tz
+	};
 };

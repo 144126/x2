@@ -2,12 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import MuteButton from '$lib/components/MuteButton.svelte';
-	import type { User } from '$lib/types';
 	import { local_time } from '$lib/tz';
 	let { data } = $props();
-	let u = $state(data.u as User);
+	let u = $state(data.u);
 	let muted = $state(data.muted as boolean);
-	let username = $derived(u.u || u.m?.split('@')[0] || 'user');
+	let username = $derived(u.u || 'user');
 	let shared = $derived((data.shared ?? []) as { id: string; name: string }[]);
 	let showAllShared = $state(false);
 

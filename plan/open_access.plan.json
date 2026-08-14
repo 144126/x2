@@ -8,7 +8,7 @@
 	},
 	"profile_privacy": {
 		"s": "OUTCOME: the profile loader hands out only what a reader is allowed to have, proved by a staged test.\n\n1. Copy the staged test, byte for byte, and never edit it:\n   cp 'plan/tests/src/routes/@[username]/__tests__/privacy.test.ts.txt' 'src/routes/@[username]/__tests__/privacy.test.ts'\n2. It will fail on interests. src/routes/@[username]/+page.server.ts must strip `i` from the user payload it returns, for every reader including the signed-in one. Removing the markup block was not enough — see the serialisation trap in the preamble.\n3. The phone gate in that same loader is already written and the staged test locks it. Leave it alone unless the test says otherwise.\n\nDECIDED: strip in the loader by rebuilding the returned object, so a new sensitive field added to User later is opt-in rather than leaked by default.",
-		"d": 0,
+		"d": 1,
 		"v": "test -f 'plan/tests/src/routes/@[username]/__tests__/privacy.test.ts.txt'",
 		"t": "bash plan/verify_tests.sh && test -f 'src/routes/@[username]/__tests__/privacy.test.ts' && bash plan/check_budget.sh && pnpm test"
 	},

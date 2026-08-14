@@ -1,0 +1,1 @@
+- 2026-08-14 profile loader now returns an explicit allowlist, not a spread: u,a,ag,r,co,st,ci,w. The spread had been leaking u.m (email) and u.i (interests) into the page html.
