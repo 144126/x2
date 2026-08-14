@@ -14,6 +14,7 @@ import {
 } from '$lib/server/qdrant';
 import { embed } from '$lib/server/or';
 import { guard } from '$lib/server/rl';
+import { is_device_only } from '$lib/server/user';
 import type { User } from '$lib/types';
 
 const WANT = 20;
@@ -91,10 +92,19 @@ export const GET: RequestHandler = async ({ url, locals, platform }) => {
 	const out: ReturnType<typeof to_row>[] = [];
 	let filtered = true;
 
-	for (let page = 0; page < (only_online ? MAX_PAGES : 1) && out.length < WANT; page++) {
-		const hits = await fetch_page(only_online ? PAGE : WANT, page * PAGE);
+	// a device account is a session, not someone who joined: it has no profile to show and
+	// never asked to be listed. It becomes searchable the moment it gains a real credential.
+	// Both filters drop rows, so every path pages now — a full page can be entirely hidden.
+	for (let page = 0; page < MAX_PAGES && out.length < WANT; page++) {
+		const hits = await fetch_page(PAGE, page * PAGE);
 		if (!hits.length) break;
-		let rows = hits.map(to_row).filter((x) => x.id !== locals.user!.id);
+		let rows = hits
+			.filter(
+				(h) =>
+					String(h.id) !== locals.user!.id &&
+					!is_device_only(h.payload as unknown as Pick<User, 'h' | 'o'>)
+			)
+			.map(to_row);
 		if (only_online) {
 			const live = await presence(
 				locals.x2_ws,

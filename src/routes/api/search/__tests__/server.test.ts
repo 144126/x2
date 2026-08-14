@@ -52,7 +52,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('scrolls the filters when no query is given', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const res = await GET(make_event('gender=f'));
 		const body = await res.json();
 		expect(body.r).toHaveLength(1);
@@ -60,7 +60,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('returns all users for a completely empty search instead of 400', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const res = await GET(make_event(''));
 		expect(res.status).toBe(200);
 		expect(scrollMock).toHaveBeenCalled();
@@ -70,7 +70,7 @@ describe('GET /api/search', () => {
 
 	it('falls back to a scroll when the embedder returns a zero vector', async () => {
 		embedMock.mockResolvedValue([0, 0]);
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const res = await GET(make_event('q=hiking'));
 		const body = await res.json();
 		expect(body.r).toHaveLength(1);
@@ -120,17 +120,54 @@ describe('GET /api/search', () => {
 
 	it('filters the caller out of their own search results', async () => {
 		searchMock.mockResolvedValue([
-			{ id: 'me', payload: { s: 'u', n: 'Me' }, score: 1 },
-			{ id: 'other', payload: { s: 'u', n: 'Other' }, score: 0.9 }
+			{ id: 'me', payload: { s: 'u', o: 'google', n: 'Me' }, score: 1 },
+			{ id: 'other', payload: { s: 'u', o: 'google', n: 'Other' }, score: 0.9 }
 		]);
 		const res = await GET(make_event('q=hiking'));
 		const body = await res.json();
 		expect(body.r.map((x: { id: string }) => x.id)).toEqual(['other']);
 	});
 
+	it('hides device-only accounts — a session is not someone who joined', async () => {
+		searchMock.mockResolvedValue([
+			{ id: 'temp', payload: { s: 'u', o: 'device', u: 'soft_ridge_39' }, score: 1 },
+			{ id: 'real', payload: { s: 'u', o: 'google', u: 'ada' }, score: 0.9 }
+		]);
+		const res = await GET(make_event('q=hiking'));
+		expect((await res.json()).r.map((x: { id: string }) => x.id)).toEqual(['real']);
+	});
+
+	it('shows a device account once it gains a credential, by either route', async () => {
+		searchMock.mockResolvedValue([
+			// set a password: o stays 'device' forever, only h appears
+			{ id: 'pw', payload: { s: 'u', o: 'device', h: 'hash', u: 'ada' }, score: 1 },
+			// linked google: o is rewritten, no h
+			{ id: 'goog', payload: { s: 'u', o: 'google', u: 'grace' }, score: 0.9 }
+		]);
+		const res = await GET(make_event('q=hiking'));
+		expect((await res.json()).r.map((x: { id: string }) => x.id)).toEqual(['pw', 'goog']);
+	});
+
+	it('pages past a page that is entirely device accounts', async () => {
+		scrollMock
+			.mockResolvedValueOnce(
+				Array.from({ length: 100 }, (_, i) => ({
+					id: `t${i}`,
+					payload: { s: 'u', o: 'device', u: `t${i}` }
+				}))
+			)
+			.mockResolvedValueOnce([{ id: 'real', payload: { s: 'u', o: 'google', u: 'ada' } }]);
+		const res = await GET(make_event(''));
+		expect((await res.json()).r.map((x: { id: string }) => x.id)).toEqual(['real']);
+	});
+
 	it('maps location fields through into results', async () => {
 		searchMock.mockResolvedValue([
-			{ id: 'other', payload: { s: 'u', n: 'Other', co: 'US', st: 'CA', ci: 'SF' }, score: 0.5 }
+			{
+				id: 'other',
+				payload: { s: 'u', o: 'google', n: 'Other', co: 'US', st: 'CA', ci: 'SF' },
+				score: 0.5
+			}
 		]);
 		const res = await GET(make_event('q=hiking'));
 		const body = await res.json();
@@ -140,10 +177,16 @@ describe('GET /api/search', () => {
 	it('pages through candidates until it has 20 online users', async () => {
 		scrollMock
 			.mockResolvedValueOnce(
-				Array.from({ length: 100 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+				Array.from({ length: 100 }, (_, i) => ({
+					id: `u${i}`,
+					payload: { s: 'u', o: 'google', n: `U${i}` }
+				}))
 			)
 			.mockResolvedValueOnce(
-				Array.from({ length: 100 }, (_, i) => ({ id: `v${i}`, payload: { s: 'u', n: `V${i}` } }))
+				Array.from({ length: 100 }, (_, i) => ({
+					id: `v${i}`,
+					payload: { s: 'u', o: 'google', n: `V${i}` }
+				}))
 			);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
@@ -185,7 +228,10 @@ describe('GET /api/search', () => {
 
 	it('requests at most 100 uids per presence check', async () => {
 		scrollMock.mockResolvedValue(
-			Array.from({ length: 100 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+			Array.from({ length: 100 }, (_, i) => ({
+				id: `u${i}`,
+				payload: { s: 'u', o: 'google', n: `U${i}` }
+			}))
 		);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
@@ -199,7 +245,10 @@ describe('GET /api/search', () => {
 
 	it('stops after three pages rather than scanning forever', async () => {
 		scrollMock.mockResolvedValue(
-			Array.from({ length: 100 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+			Array.from({ length: 100 }, (_, i) => ({
+				id: `u${i}`,
+				payload: { s: 'u', o: 'google', n: `U${i}` }
+			}))
 		);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
@@ -210,7 +259,10 @@ describe('GET /api/search', () => {
 
 	it('stops early when a page comes back short', async () => {
 		scrollMock.mockResolvedValueOnce(
-			Array.from({ length: 30 }, (_, i) => ({ id: `u${i}`, payload: { s: 'u', n: `U${i}` } }))
+			Array.from({ length: 30 }, (_, i) => ({
+				id: `u${i}`,
+				payload: { s: 'u', o: 'google', n: `U${i}` }
+			}))
 		);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
@@ -219,11 +271,11 @@ describe('GET /api/search', () => {
 		expect(scrollMock).toHaveBeenCalledTimes(1);
 	});
 
-	it('does not paginate when the online filter is off', async () => {
+	it('stops at one page once it already has 20 keepers', async () => {
 		searchMock.mockResolvedValue(
 			Array.from({ length: 30 }, (_, i) => ({
 				id: `u${i}`,
-				payload: { s: 'u', n: `U${i}` },
+				payload: { s: 'u', o: 'google', n: `U${i}` },
 				score: 0.5
 			}))
 		);
@@ -232,7 +284,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('returns everyone with filtered:false when presence is unreachable', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
 		ws.fetch.mockRejectedValue(new Error('timeout'));
@@ -243,7 +295,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('returns everyone with filtered:false when presence responds with a non-array', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
 		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: 'nope' })));
@@ -254,7 +306,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('returns everyone with filtered:false on a non-200 from the presence oracle', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
 		ws.fetch.mockResolvedValue(new Response('bad', { status: 400 }));
@@ -265,7 +317,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('reports filtered:true when the check genuinely returned nobody', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
 		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: [] })));
@@ -276,7 +328,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('marks rows online when the online filter is on', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const ev = make_event('online=1');
 		const ws = ev.locals.x2_ws as { fetch: ReturnType<typeof vi.fn> };
 		ws.fetch.mockResolvedValue(new Response(JSON.stringify({ online: ['u1'] })));
@@ -286,7 +338,7 @@ describe('GET /api/search', () => {
 	});
 
 	it('omits the score for scroll results', async () => {
-		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', n: 'U1' } }]);
+		scrollMock.mockResolvedValue([{ id: 'u1', payload: { s: 'u', o: 'google', n: 'U1' } }]);
 		const res = await GET(make_event('gender=m'));
 		const body = await res.json();
 		expect(body.r[0].s).toBeUndefined();
