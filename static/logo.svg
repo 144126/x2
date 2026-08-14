@@ -1,12 +1,20 @@
-<svg width="54" height="54" viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
-  <g transform="matrix(0.8050612,0,0,0.8050612,65.4717655,-99.3283411)">
-    <path
-      d="M 61.54299,136.50112 Q 54.16642,136.50112 54.16642,148.43663 Q 54.16642,160.37213 73.47849,160.37213 Q 92.79057,160.37213 92.79057,141.06006 Q 92.79057,121.74798 80.85507,121.74798 Q 68.91956,121.74798 68.91956,129.12455 Q 68.91956,136.50112 61.54299,136.50112 Z"
-      transform="rotate(45)"
-      fill="#d98b5f"
-      stroke="#d98b5f"
-      stroke-width="5"
-      stroke-linejoin="round"
-    />
-  </g>
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="x2">
+	<!--
+		A heart, built out of the two circles it is actually made of: a square turned 45°
+		with a semicircle on each upper edge. Kept as real geometry rather than a traced
+		path, because the construction is the point — two people, and the lens where they
+		overlap is what x2 matches on. That overlap is the only part that carries the
+		accent colour.
+	-->
+	<defs>
+		<clipPath id="x2-left">
+			<circle cx="10.5" cy="12.5" r="7.778" />
+		</clipPath>
+	</defs>
+	<g transform="translate(0 -0.86)" fill="#ece7dd">
+		<path d="M16 7 L27 18 L16 29 L5 18 Z" />
+		<circle cx="10.5" cy="12.5" r="7.778" />
+		<circle cx="21.5" cy="12.5" r="7.778" />
+		<circle cx="21.5" cy="12.5" r="7.778" fill="#d98b5f" clip-path="url(#x2-left)" />
+	</g>
 </svg>
