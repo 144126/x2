@@ -26,7 +26,7 @@
 	},
 	"heart_icons": {
 		"s": "OUTCOME: every PNG in static/icons is the x2 heart instead of the black diagonal placeholder that is there now.\n\nDECIDED, do not redesign: the heart geometry is exactly the three shapes in static/logo.svg — a square turned 45 degrees with a circle on each upper edge. Fill #d98b5f on a solid #0b0b0c field, which is what the header shows and what the manifest already names as theme_color and background_color.\n\n1. Sizes must not change, because src/lib/__tests__/pwa-assets.test.ts asserts each one against static/manifest.webmanifest: icon-192 192, icon-512 512, icon-192-maskable 192, icon-512-maskable 512, badge-96 96, apple-touch-icon 180.\n2. The two maskable files get the heart scaled to about 60 percent and centred, because Android crops a maskable icon to a circle and anything in the corners is lost.\n3. badge-96.png is declared `purpose: monochrome`, so it is a solid #000000 heart on transparent. The OS recolours a silhouette and a two-tone badge comes out wrong.\n4. inkscape is installed and is the converter. Write the intermediate SVGs to a scratch directory, never into static/.\n5. Leave the two screenshot PNGs alone.",
-		"d": 0,
+		"d": 1,
 		"v": "test -f static/logo.svg && test -f plan/icons.before.sha",
 		"t": "bash plan/verify_tests.sh && test \"$(sha256sum -c plan/icons.before.sha 2>/dev/null | grep -c ': OK')\" -eq 0 && bash plan/check_budget.sh && pnpm test"
 	},
