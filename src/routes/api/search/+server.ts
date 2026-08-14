@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import {
@@ -42,8 +42,7 @@ async function presence(
 }
 
 export const GET: RequestHandler = async ({ url, locals, platform }) => {
-	if (!locals.user) throw error(401, 'auth');
-	await guard(platform, 'RL_SEARCH', locals.user.id);
+	await guard(platform, 'RL_SEARCH', locals.user?.id ?? locals.device_id ?? 'anon');
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	await ensure(env);
 	const conds: Cond[] = [eq('s', 'u')];
@@ -101,7 +100,7 @@ export const GET: RequestHandler = async ({ url, locals, platform }) => {
 		let rows = hits
 			.filter(
 				(h) =>
-					String(h.id) !== locals.user!.id &&
+					String(h.id) !== locals.user?.id &&
 					!is_device_only(h.payload as unknown as Pick<User, 'h' | 'o'>)
 			)
 			.map(to_row);

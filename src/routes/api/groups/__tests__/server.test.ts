@@ -48,8 +48,13 @@ beforeEach(() => {
 });
 
 describe('GET /api/groups', () => {
-	it('401s when signed out', async () => {
-		await expect(GET(getEvent('/api/groups', ''))).rejects.toMatchObject({ status: 401 });
+	it('lets a signed-out visitor browse rooms', async () => {
+		expect(await (await GET(getEvent('/api/groups', ''))).json()).toEqual({ r: [] });
+		expect(listGroupsMock).toHaveBeenCalled();
+	});
+
+	it('still 401s the mine=1 branch, which has no meaning without an account', async () => {
+		await expect(GET(getEvent('/api/groups?mine=1', ''))).rejects.toMatchObject({ status: 401 });
 	});
 
 	it('passes country, state and city query params through to search_groups', async () => {

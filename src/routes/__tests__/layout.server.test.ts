@@ -27,16 +27,13 @@ describe('root layout redirect', () => {
 			location: '/login'
 		});
 	});
-	it('redirects a logged-out visitor from /rooms to /login', async () => {
-		await expect(load(event('/rooms'))).rejects.toMatchObject({
-			status: 302,
-			location: '/login'
-		});
+	it('lets a logged-out visitor browse rooms, read one, and look at a profile', async () => {
+		for (const path of ['/rooms', '/~abc123', '/@ada', '/find']) {
+			expect(await load(event(path))).toEqual({ user: null });
+		}
 	});
-	it('redirects a logged-out visitor from a specific room page to /login', async () => {
-		await expect(load(event('/rooms/abc123'))).rejects.toMatchObject({
-			status: 302,
-			location: '/login'
-		});
+	it('lets a logged-out visitor through the old room shims, which only redirect', async () => {
+		expect(await load(event('/rooms/abc123'))).toEqual({ user: null });
+		expect(await load(event('/groups/abc123'))).toEqual({ user: null });
 	});
 });

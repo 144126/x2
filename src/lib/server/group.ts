@@ -266,6 +266,12 @@ export async function search_groups(
 }
 
 export async function is_member(env: QEnv, ws: Fetcher, id: string, uid: string): Promise<boolean> {
+	// the stored member list is written from the hub's own answer on every join and leave, so
+	// it is the durable copy and the hub is only asked when it disagrees. Reading it first also
+	// keeps a room usable while the hub is down — otherwise a room created during an outage
+	// could never be posted in again, its owner included.
+	const g = await raw_group(env, id);
+	if (g?.mb.includes(uid)) return true;
 	return room_is_member(env, ws, id, uid);
 }
 

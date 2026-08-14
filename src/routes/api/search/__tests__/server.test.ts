@@ -47,8 +47,9 @@ beforeEach(() => {
 });
 
 describe('GET /api/search', () => {
-	it('401s when not logged in', async () => {
-		await expect(GET(make_event('q=hi', ''))).rejects.toMatchObject({ status: 401 });
+	it('lets a signed-out visitor search people', async () => {
+		const res = await GET(make_event('q=hi', ''));
+		expect((await res.json()).r).toEqual([]);
 	});
 
 	it('scrolls the filters when no query is given', async () => {

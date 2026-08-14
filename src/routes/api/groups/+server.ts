@@ -8,8 +8,11 @@ import { ensure_device_session } from '$lib/server/device';
 // GET /api/groups?q=…  — semantic search over name + description
 // GET /api/groups?mine=1 — groups you belong to
 export const GET: RequestHandler = async ({ url, locals }) => {
-	if (!locals.user) throw error(401, 'auth');
-	if (url.searchParams.get('mine')) return json({ r: await list_groups(env, locals.user.id) });
+	// browsing rooms needs no account; only `mine` does, since there is no "mine" without one
+	if (url.searchParams.get('mine')) {
+		if (!locals.user) throw error(401, 'auth');
+		return json({ r: await list_groups(env, locals.user.id) });
+	}
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	const country = url.searchParams.get('country')?.trim() || undefined;
 	const state = url.searchParams.get('state')?.trim() || undefined;

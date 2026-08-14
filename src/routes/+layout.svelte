@@ -49,7 +49,7 @@
 
 	// pages that own the whole viewport and scroll inside themselves — they must never
 	// hand the shell a page-level scrollbar
-	let fit = $derived(/^\/(app\/(chat|rooms)\/[^/]+)?$/.test(here));
+	let fit = $derived(/^\/(chat\/[^/]+|~[^/]+)?$/.test(here));
 
 	async function sign_out() {
 		await fetch('/logout', { method: 'POST' });

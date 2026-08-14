@@ -38,8 +38,10 @@ beforeEach(() => {
 });
 
 describe('GET /@[username] — groups in common', () => {
-	it('401s when signed out', async () => {
-		await expect(load(event('bob', null))).rejects.toMatchObject({ status: 401 });
+	it('serves a signed-out reader the profile, with nothing in common to show', async () => {
+		const data = (await load(event('bob', null))) as { u: { u: string }; shared: unknown[] };
+		expect(data.u.u).toBe('bob');
+		expect(data.shared).toEqual([]);
 	});
 
 	it('loads groups shared between the viewer and the viewed user', async () => {
