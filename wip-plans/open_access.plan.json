@@ -32,7 +32,7 @@
 	},
 	"ship": {
 		"s": "OUTCOME: the whole batch is one commit on master and pushed.\n\n1. Run `pnpm format`, then confirm `pnpm exec prettier --check .` is clean.\n2. Stage with `git add -A ':!.log' ':!.dev-logs'` — those two are live dev-server output and never belong in a commit.\n3. One commit, Conventional Commits with a body: the subject is imperative, under 50 characters, lowercase after the colon, no trailing period. The body covers open access, the two privacy holdbacks, the homepage doors, and the icons, at the level of intent rather than file by file.\n4. Push. A failed push is fine, the commit is what matters.\n5. Commit the archived plan that this step's mark moves into wip-plans/.",
-		"d": 0,
+		"d": 1,
 		"t": "bash plan/check_budget.sh && pnpm test && pnpm exec prettier --check . && test -z \"$(git status --porcelain src/ static/)\""
 	}
 }
