@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { STICKERS, sticker_src, search_stickers, custom_id } from '../stickers';
+import { STICKERS, sticker_src, search_stickers, custom_id, remote_ok } from '../stickers';
 
 describe('sticker manifest', () => {
 	it('loads stickers from the static manifest', () => {
@@ -20,6 +20,17 @@ describe('sticker manifest', () => {
 	it('custom_id round-trips through sticker_src without hitting the manifest', () => {
 		expect(custom_id('k1')).toBe('u:k1');
 		expect(sticker_src('u:k1')).toBe('/media/k1');
+	});
+	it('serves a searched sticker straight from klipy', () => {
+		expect(sticker_src('https://static.klipy.com/a.webp')).toBe('https://static.klipy.com/a.webp');
+		expect(remote_ok('https://static2.klipy.com/a.gif')).toBe(true);
+	});
+	it('refuses a sticker url from any other host', () => {
+		expect(sticker_src('https://evil.example.com/a.webp')).toBeUndefined();
+		expect(remote_ok('https://notklipy.com/a.webp')).toBe(false);
+		expect(remote_ok('https://klipy.com.evil.net/a.webp')).toBe(false);
+		expect(remote_ok('http://static.klipy.com/a.webp')).toBe(false);
+		expect(remote_ok('not a url')).toBe(false);
 	});
 	it('search_stickers matches by id', () => {
 		expect(search_stickers('wave').some((s) => s.id === 'wave')).toBe(true);

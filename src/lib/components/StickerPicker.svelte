@@ -8,9 +8,28 @@
 	let q = $state('');
 	let results = $derived(search_stickers(q));
 	let mine = $state<string[]>([]);
+	let found = $state<string[]>([]);
 	let busy = $state(false);
 	let err = $state('');
 	let editing = $state(false);
+	let seq = 0;
+
+	$effect(() => {
+		const term = q.trim();
+		if (!term) {
+			found = [];
+			return;
+		}
+		// one request per pause in typing, and a stale answer that lands late is dropped —
+		// the klipy test key is 100 calls an hour for the whole site
+		const n = ++seq;
+		const t = setTimeout(async () => {
+			const res = await fetch(`/api/stickers?q=${encodeURIComponent(term)}`).catch(() => null);
+			if (n !== seq) return;
+			found = res?.ok ? ((await res.json()) as { r: string[] }).r : [];
+		}, 300);
+		return () => clearTimeout(t);
+	});
 
 	onMount(async () => {
 		const res = await fetch('/api/stickers').catch(() => null);
@@ -116,4 +135,30 @@
 			</button>
 		{/each}
 	</div>
+
+	{#if found.length}
+		<a
+			class="eyebrow mt-1 hover:text-accent"
+			href="https://klipy.com"
+			target="_blank"
+			rel="noreferrer">powered by klipy</a
+		>
+		<div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
+			{#each found as u (u)}
+				<button
+					type="button"
+					class="rounded-[10px] p-1 transition-colors hover:bg-panel"
+					title={q}
+					onclick={() => onselect(u)}
+				>
+					<img
+						src={sticker_src(u)}
+						alt={q + ' sticker'}
+						loading="lazy"
+						class="aspect-square w-full object-contain"
+					/>
+				</button>
+			{/each}
+		</div>
+	{/if}
 </div>

@@ -8,7 +8,16 @@ const { getUserMock, patchUserMock } = vi.hoisted(() => ({
 vi.mock('$env/dynamic/private', () => ({ env: {} }));
 vi.mock('$lib/server/user', () => ({ get_user: getUserMock, patch_user: patchUserMock }));
 
+import { env } from '$env/dynamic/private';
 import { GET, POST, DELETE } from '../+server';
+
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
+
+const klipy = (items: unknown[]) =>
+	new Response(JSON.stringify({ result: true, data: { data: items } }), {
+		headers: { 'content-type': 'application/json' }
+	});
 
 function event(
 	method: 'GET' | 'POST' | 'DELETE',
@@ -32,6 +41,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	getUserMock.mockResolvedValue({ s: 'u', u: 'ada', sp: ['k1', 'k2'] });
 	patchUserMock.mockResolvedValue(null);
+	delete (env as Record<string, string>).KLIPY_KEY;
 });
 
 describe('GET /api/stickers', () => {
@@ -46,6 +56,58 @@ describe('GET /api/stickers', () => {
 	it('returns an empty pack for someone who has never made one', async () => {
 		getUserMock.mockResolvedValue({ s: 'u', u: 'ada' });
 		expect(await (await GET(event('GET'))).json()).toEqual({ r: [] });
+	});
+});
+
+describe('GET /api/stickers?q=', () => {
+	it('searches nothing while no klipy key is set', async () => {
+		const res = await GET(event('GET', undefined, 'ada', 'q=cat'));
+		expect(await res.json()).toEqual({ r: [] });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it('keeps the webp of every sticker klipy returns', async () => {
+		(env as Record<string, string>).KLIPY_KEY = 'kk';
+		fetchMock.mockResolvedValue(
+			klipy([
+				{
+					id: 1,
+					file: {
+						hd: { gif: { url: 'https://static.klipy.com/a.gif' } },
+						sm: { webp: { url: 'https://static.klipy.com/a.webp' } }
+					}
+				},
+				{ id: 2, file: { sm: { gif: { url: 'https://static2.klipy.com/b.gif' } } } }
+			])
+		);
+		const res = await GET(event('GET', undefined, 'ada', 'q=cat'));
+		expect(await res.json()).toEqual({
+			r: ['https://static.klipy.com/a.webp', 'https://static2.klipy.com/b.gif']
+		});
+		const [url] = fetchMock.mock.calls[0] as [string];
+		expect(url).toContain('/kk/stickers/search?q=cat');
+		expect(url).toContain('customer_id=ada');
+	});
+
+	it('drops a sticker served from anywhere but klipy', async () => {
+		(env as Record<string, string>).KLIPY_KEY = 'kk';
+		fetchMock.mockResolvedValue(
+			klipy([{ id: 3, file: { sm: { webp: { url: 'https://evil.example.com/x.webp' } } } }])
+		);
+		expect(await (await GET(event('GET', undefined, 'ada', 'q=cat'))).json()).toEqual({ r: [] });
+	});
+
+	it('lets a signed-out visitor search, without naming them to klipy', async () => {
+		(env as Record<string, string>).KLIPY_KEY = 'kk';
+		fetchMock.mockResolvedValue(klipy([]));
+		await GET(event('GET', undefined, null, 'q=cat'));
+		expect((fetchMock.mock.calls[0] as [string])[0]).not.toContain('customer_id');
+	});
+
+	it('returns an empty list when klipy fails', async () => {
+		(env as Record<string, string>).KLIPY_KEY = 'kk';
+		fetchMock.mockResolvedValue(new Response('nope', { status: 500 }));
+		expect(await (await GET(event('GET', undefined, 'ada', 'q=cat'))).json()).toEqual({ r: [] });
 	});
 });
 
