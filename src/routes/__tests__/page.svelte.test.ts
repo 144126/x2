@@ -3,15 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import Page from '../+page.svelte';
 
-const g = {
-	id: 'g1',
-	name: 'Chess Club',
-	description: 'openings, endgames, and tournament recaps.',
-	owner: 'bob',
-	roomState: 'a' as const,
-	members: ['me', 'bob'],
-	created: 100
-};
 
 describe('/ (voice match home)', () => {
 	beforeEach(() => {
@@ -19,19 +10,22 @@ describe('/ (voice match home)', () => {
 	});
 
 	it('leads with the one button that starts a match', () => {
-		render(Page, { props: { data: { user: null, q: '', rooms: [] } } });
+		render(Page, { props: { data: { user: null } } });
 		expect(screen.getByRole('button', { name: /start talking/ })).toBeInTheDocument();
 		expect(screen.getByText(/who gets it/)).toBeInTheDocument();
 	});
 
-	it('offers rooms under the voice match, at their handle url', () => {
-		render(Page, { props: { data: { user: null, q: '', rooms: [g] } } });
-		expect(screen.getByRole('link', { name: 'Chess Club' })).toHaveAttribute('href', '/~g1');
+	it('offers two doors under the voice match, rooms first', () => {
+		render(Page, { props: { data: { user: null } } });
+		const doors = screen.getAllByRole('link');
+		const hrefs = doors.map((a) => a.getAttribute('href'));
+		expect(hrefs.indexOf('/rooms')).toBeGreaterThan(-1);
+		expect(hrefs.indexOf('/find')).toBeGreaterThan(hrefs.indexOf('/rooms'));
 	});
 
-	it('sends a signed-out visitor to sign in rather than showing an empty people list', () => {
-		render(Page, { props: { data: { user: null, q: 'chess', rooms: [g] } } });
-		expect(screen.getByText(/then you can search people too/)).toBeInTheDocument();
+	it('tells a stranger the rooms door needs no account, which is the whole offer', () => {
+		render(Page, { props: { data: { user: null } } });
+		expect(screen.getByText(/without an account/)).toBeInTheDocument();
 	});
 
 	it('mints a session and opens the lobby socket when you press start', async () => {
@@ -54,7 +48,7 @@ describe('/ (voice match home)', () => {
 		);
 		vi.stubGlobal('fetch', fetchMock);
 
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, q: '', rooms: [] } } });
+		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
 		await fireEvent.click(screen.getByRole('button', { name: /start talking/ }));
 		// the signalling socket opens alongside the lobby one, so match on the lobby url
 		await vi.waitFor(() => expect(sockets).toContain('ws://x/match?uid=me&t=a&exp=1'));
@@ -69,7 +63,7 @@ describe('/ (voice match home)', () => {
 			'fetch',
 			vi.fn(async () => new Response('no', { status: 503 }))
 		);
-		render(Page, { props: { data: { user: { id: 'me', username: 'me' }, q: '', rooms: [] } } });
+		render(Page, { props: { data: { user: { id: 'me', username: 'me' } } } });
 		await fireEvent.click(screen.getByRole('button', { name: /start talking/ }));
 		await vi.waitFor(() =>
 			expect(screen.getByText(/could not reach the matching service/)).toBeInTheDocument()

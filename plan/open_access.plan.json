@@ -20,7 +20,7 @@
 	},
 	"homepage_doors": {
 		"s": "OUTCOME: the homepage is the voice match plus two doors, and carries no server data of its own.\n\nWHY, so you do not rebuild it: a stranger landing here has no query in mind, so a search box asks a question they cannot answer yet. Two labelled doors teach what the place holds. /rooms and /find already have the real search with filters, and a mini-search here would only be a worse copy.\n\n1. Delete src/routes/+page.server.ts and src/routes/__tests__/page.server.test.ts. The page needs nothing but `user`, which the root layout already provides.\n2. src/routes/+page.svelte: remove the search input, both result lists, `q`, `people`, `load_people`, `run_search`, the `load_people` call inside onMount, and the `goto` and `Search` imports once they are unused.\n3. In their place, under the start button, put two doors — rooms first, then people. Each is a link with a label and one lowercase line of copy. The rooms line must say that a room reads without an account, because that is the strongest thing this page can offer a stranger. No counts and no result previews: the app is new and '1 room open' reads worse than saying nothing.\n4. src/routes/__tests__/page.svelte.test.ts renders with `data: { user, q, rooms }`. Drop `q` and `rooms`, and replace the two room-result assertions with assertions for the two doors.",
-		"d": 0,
+		"d": 1,
 		"v": "test -f src/routes/+page.server.ts",
 		"t": "bash plan/verify_tests.sh && test ! -f src/routes/+page.server.ts && test ! -f src/routes/__tests__/page.server.test.ts && grep -q 'href=\"/rooms\"' src/routes/+page.svelte && grep -q 'href=\"/find\"' src/routes/+page.svelte && bash plan/check_budget.sh && pnpm test"
 	},
