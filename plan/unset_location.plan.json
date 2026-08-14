@@ -8,7 +8,7 @@
 	},
 	"profile_clear": {
 		"s": "Fix the user half in src/routes/app/profile/+page.svelte. 1. The IP-geo prefill is a `$effect` that reads `country` and writes it, so clearing the country instantly refills it from `data.geo` and the clear looks broken. `data.geo` is a plain value from the load, not a promise, so run the prefill exactly once: drop the `$effect` wrapper and do it inline in the script body, right after the `let city = $state(...)` line. Leave the second `$effect`, the locationWarning one, alone. 2. `placeholder=\"—\"` on the gender Select now becomes a clear-row label, so change it to `not set`. 3. Change `anyLabel=\"country\"` on the LocationPicker to `no country`, which reads right both as the empty placeholder and as the clear row. 4. Place the staged test as it is, byte for byte, and do not edit it: `cp plan/tests/src/lib/server/__tests__/profile_clear_location.test.ts.txt src/lib/server/__tests__/profile_clear_location.test.ts`",
-		"d": 0,
+		"d": 1,
 		"v": "grep -q 'data.geo.country) country = data.geo.country' src/routes/app/profile/+page.svelte",
 		"t": "bash plan/verify_unset_location.sh && test -f src/lib/server/__tests__/profile_clear_location.test.ts && ! grep -A1 '\\$effect(() => {' src/routes/app/profile/+page.svelte | grep -q 'if (data.geo)' && pnpm test && bash plan/check_baseline.sh"
 	},

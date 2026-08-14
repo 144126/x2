@@ -60,6 +60,15 @@
 	let country = $state(p.co ?? '');
 	let region = $state(p.st ?? '');
 	let city = $state(p.ci ?? '');
+
+	// runs once, at init, on purpose: as an $effect this read `country` and wrote it, so
+	// clearing a location refilled it from the IP guess on the same tick
+	if (data.geo) {
+		if (!country && data.geo.country) country = data.geo.country;
+		if (!region && data.geo.region) region = data.geo.region;
+		if (!city && data.geo.city) city = data.geo.city;
+	}
+
 	let whatsapp = $state(p.w ?? '');
 	let saved = $state(false);
 	let locating = $state(false);
@@ -91,14 +100,6 @@
 			linkError = 'could not link — check your email and try again.';
 		}
 	}
-
-	$effect(() => {
-		if (data.geo) {
-			if (!country && data.geo.country) country = data.geo.country;
-			if (!region && data.geo.region) region = data.geo.region;
-			if (!city && data.geo.city) city = data.geo.city;
-		}
-	});
 
 	$effect(() => {
 		if (!data.geo) {
@@ -241,7 +242,7 @@
 				<Select
 					bind:value={gender}
 					aria-label="gender"
-					placeholder="—"
+					placeholder="not set"
 					options={[
 						{ value: 'm', label: 'male' },
 						{ value: 'f', label: 'female' },
@@ -253,7 +254,7 @@
 
 		<label class="eyebrow mt-4" for="p-country">location</label>
 		<div id="p-country">
-			<LocationPicker bind:country bind:region bind:city anyLabel="country" />
+			<LocationPicker bind:country bind:region bind:city anyLabel="no country" />
 		</div>
 		<div class="flex items-center gap-3 mt-2">
 			<button class="btn text-[12px]" onclick={useLocation} disabled={locating}>
