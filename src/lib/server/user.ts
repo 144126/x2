@@ -13,6 +13,7 @@ import {
 	type QEnv
 } from './qdrant';
 import { validate_username, available_username } from './username';
+import { friendly_handle } from './handle';
 import { hash_pw, verify_pw } from './pw';
 
 // Identity is the username, derived once from the email local-part. Google's display
@@ -21,10 +22,14 @@ async function claim_username(
 	env: QEnv,
 	id: string,
 	from: string,
-	existing?: User
+	existing?: User,
+	provider?: 'google' | 'local' | 'device'
 ): Promise<string> {
 	if (existing?.u && validate_username(existing.u)) return existing.u;
-	return available_username(env, from, id);
+	// a device account's "email" is a raw uuid, and normalising that gives the other
+	// person `3dfcae71_f891_4e65_a` to look at on every random match
+	const base = provider === 'device' ? await friendly_handle(from) : from;
+	return available_username(env, base, id);
 }
 
 export async function save_user(
@@ -45,7 +50,7 @@ export async function save_user(
 		g: sub,
 		p: picture ?? existing?.p,
 		m: email ?? existing?.m,
-		u: await claim_username(env, id, email ?? sub, existing),
+		u: await claim_username(env, id, email ?? sub, existing, provider),
 		d: existing?.d ?? Date.now(),
 		o: existing?.o ?? provider,
 		h: existing?.h

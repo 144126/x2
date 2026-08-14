@@ -10,8 +10,12 @@
 		Minimize2,
 		Maximize2,
 		PictureInPicture2,
-		SkipForward
+		SkipForward,
+		ArrowRight,
+		Flag,
+		Lock
 	} from '@lucide/svelte';
+	import { WRAP_AFTER_MS, SKIP_LOCK_MS } from '$lib/prompts';
 
 	type Peer = { uid: string; name: string; stream: MediaStream | null };
 
@@ -26,12 +30,14 @@
 		canVideo = true,
 		error = '',
 		nextLabel = '',
+		questions = [],
 		onaccept,
 		ondecline,
 		onhangup,
 		ontogglemic,
 		ontogglevideo,
-		onnext
+		onnext,
+		onreport
 	}: {
 		phase: 'calling' | 'ringing' | 'connected';
 		title: string;
@@ -43,7 +49,11 @@
 		canVideo?: boolean;
 		error?: string;
 		nextLabel?: string;
+		/** a stranger call passes the shared question ladder; a call with someone you
+		 *  already know passes nothing and gets none of this */
+		questions?: string[];
 		onaccept?: () => void;
+		onreport?: () => void;
 		ondecline?: () => void;
 		onhangup: () => void;
 		ontogglemic?: () => void;
@@ -55,6 +65,16 @@
 	let started = $state(0);
 	let now = $state(Date.now());
 	let stage: HTMLDivElement | undefined = $state();
+	let step = $state(0);
+	let wrapped = $state(false);
+
+	let scaffolded = $derived(questions.length > 0);
+	let ms = $derived(started ? now - started : 0);
+	// leaving because of harm is instant and free; leaving because of a moment's
+	// awkwardness costs the first minute
+	let locked = $derived(scaffolded && ms < SKIP_LOCK_MS);
+	let lock_left = $derived(Math.max(0, Math.ceil((SKIP_LOCK_MS - ms) / 1000)));
+	let offer_wrap = $derived(scaffolded && !wrapped && ms > WRAP_AFTER_MS);
 
 	$effect(() => {
 		if (phase === 'connected' && !started) started = Date.now();
@@ -181,7 +201,7 @@
 			<div class="min-w-0">
 				<div class="truncate font-display text-[16px]">{title}</div>
 				<div class="truncate text-[11px] tabular-nums text-mute">
-					{status}{subtitle ? ` · ${subtitle}` : ''}
+					{status}{subtitle && !scaffolded ? ` · ${subtitle}` : ''}
 				</div>
 			</div>
 			<button
@@ -195,7 +215,7 @@
 			<p class="shrink-0 px-4 pb-2 text-[12px] text-danger">{error}</p>
 		{/if}
 
-		<div class="grid min-h-0 flex-1 gap-1.5 px-1.5 {grid}" bind:this={stage}>
+		<div class="relative grid min-h-0 flex-1 gap-1.5 px-1.5 {grid}" bind:this={stage}>
 			{#each peers as p (p.uid)}
 				<CallTile
 					stream={p.stream}
@@ -212,7 +232,42 @@
 					class="h-full w-full rounded-[14px]"
 				/>
 			{/if}
+
+			{#if scaffolded}
+				<!-- the shared question is the third participant: it removes the "who talks
+				     first" freeze, and it is identical on both screens -->
+				<div
+					class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-2.5 bg-gradient-to-t from-base via-base/85 to-transparent px-4 pb-4 pt-12"
+				>
+					{#if subtitle}
+						<span
+							class="pointer-events-auto rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-[11.5px] text-accent"
+							>{subtitle}</span
+						>
+					{/if}
+					<p
+						class="max-w-[30ch] text-center font-display text-[clamp(17px,4.5vw,23px)] leading-[1.25]"
+					>
+						{questions[step]}
+					</p>
+					{#if step < questions.length - 1}
+						<button class="btn btn-ghost pointer-events-auto text-mute" onclick={() => (step += 1)}>
+							next question <ArrowRight size={13} />
+						</button>
+					{/if}
+				</div>
+			{/if}
 		</div>
+
+		{#if offer_wrap}
+			<div
+				class="flex shrink-0 items-center justify-center gap-2 px-4 pb-1 text-[12.5px] text-ink-soft"
+			>
+				<span>been a while — keep going?</span>
+				<button class="btn" onclick={() => (wrapped = true)}>keep going</button>
+				<button class="btn" onclick={onhangup}>wrap up</button>
+			</div>
+		{/if}
 
 		<!-- a self-preview with no camera on is just a black box with your initial in it -->
 		{#if local && videoOn}
@@ -251,8 +306,30 @@
 				</button>
 			{/if}
 			{#if nextLabel}
-				<button class="ctl" onclick={onnext} aria-label={nextLabel} title={nextLabel}>
-					<SkipForward size={20} />
+				<button
+					class="ctl relative"
+					onclick={onnext}
+					disabled={locked}
+					aria-label={locked ? `${nextLabel} — available in ${lock_left}s` : nextLabel}
+					title={locked ? `give it a moment — ${lock_left}s` : nextLabel}
+				>
+					{#if locked}
+						<Lock size={16} />
+						<span class="absolute -bottom-5 text-[10px] tabular-nums text-mute">{lock_left}s</span>
+					{:else}
+						<SkipForward size={20} />
+					{/if}
+				</button>
+			{/if}
+			{#if onreport}
+				<!-- never locked, never delayed: leaving because of harm must always be free -->
+				<button
+					class="ctl h-9 w-9 border-transparent bg-transparent text-mute hover:text-danger"
+					onclick={onreport}
+					aria-label="report and leave"
+					title="report and leave"
+				>
+					<Flag size={15} />
 				</button>
 			{/if}
 			<button class="ctl ctl-end" onclick={onhangup} aria-label="hang up">

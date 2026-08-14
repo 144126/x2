@@ -5,12 +5,13 @@
 	import { ws_on, ws_send } from '$lib/ws';
 	import { CallMesh, media_error, type CallSignal } from '$lib/call';
 	import { enable_push, push_available } from '$lib/push-client';
+	import { questions_for } from '$lib/prompts';
 	import CallOverlay from '$lib/components/CallOverlay.svelte';
 	import { Mic, LoaderCircle, MessageSquare, Users, BellRing, Check } from '@lucide/svelte';
 
 	let { data } = $props();
 
-	type Peer = { id: string; name: string; shared: string[] };
+	type Peer = { id: string; name: string; shared: string[]; conv: string };
 
 	let phase = $state<'idle' | 'searching' | 'call' | 'ended'>('idle');
 	let waiting = $state(0);
@@ -78,11 +79,17 @@
 				peer?: string;
 				peer_name?: string;
 				shared?: string[];
+				conv?: string;
 			};
 			if (m.type === 'searching' || m.type === 'waiting') waiting = m.n ?? 0;
 			else if (m.type === 'parked') parked = true;
 			else if (m.type === 'matched') {
-				peer = { id: m.peer!, name: m.peer_name ?? 'someone', shared: m.shared ?? [] };
+				peer = {
+					id: m.peer!,
+					name: m.peer_name ?? 'someone',
+					shared: m.shared ?? [],
+					conv: m.conv ?? ''
+				};
 				open_call();
 				explain(m.peer!);
 			}
@@ -193,6 +200,17 @@
 	function toggleMic() {
 		micOn = !micOn;
 		mesh?.setMic(micOn);
+	}
+
+	/** leaving because of harm: record it, then get them out immediately */
+	function report() {
+		const body = JSON.stringify({ peer: peer?.id, conv: peer?.conv });
+		fetch('/api/report', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body
+		}).catch(() => {});
+		next();
 	}
 
 	onMount(() => {
@@ -307,9 +325,11 @@
 		{micOn}
 		canVideo={false}
 		nextLabel="next person"
+		questions={questions_for(peer.conv || peer.id)}
 		error={err}
 		onhangup={stop}
 		ontogglemic={toggleMic}
 		onnext={next}
+		onreport={report}
 	/>
 {/if}
