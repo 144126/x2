@@ -24,8 +24,12 @@
 	let typeahead = '';
 	let typeahead_timer: ReturnType<typeof setTimeout> | null = null;
 
-	let selected_index = $derived(options.findIndex((o) => o.value === value));
-	let selected_label = $derived(selected_index >= 0 ? options[selected_index].label : placeholder);
+	// without a row that carries '', a chosen value can never be taken back — the placeholder
+	// is only ever a label. Every index below counts rows, not options.
+	let rows = $derived(value ? [{ value: '', label: placeholder }, ...options] : options);
+
+	let selected_index = $derived(rows.findIndex((o) => o.value === value));
+	let selected_label = $derived(selected_index >= 0 ? rows[selected_index].label : placeholder);
 
 	function open_list() {
 		// nothing highlighted yet when there's no selection — the first arrow press then
@@ -40,7 +44,7 @@
 	}
 
 	function commit(i: number) {
-		if (options[i]) value = options[i].value;
+		if (rows[i]) value = rows[i].value;
 		close_list(true);
 	}
 
@@ -54,7 +58,7 @@
 		}
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			highlighted = Math.min(highlighted + 1, options.length - 1);
+			highlighted = Math.min(highlighted + 1, rows.length - 1);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
 			highlighted = Math.max(highlighted - 1, 0);
@@ -63,7 +67,7 @@
 			highlighted = 0;
 		} else if (e.key === 'End') {
 			e.preventDefault();
-			highlighted = options.length - 1;
+			highlighted = rows.length - 1;
 		} else if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
 			commit(highlighted);
@@ -76,9 +80,9 @@
 			if (typeahead_timer) clearTimeout(typeahead_timer);
 			typeahead_timer = setTimeout(() => (typeahead = ''), 600);
 			const from = highlighted + 1;
-			const ordered = [...options.slice(from), ...options.slice(0, from)];
+			const ordered = [...rows.slice(from), ...rows.slice(0, from)];
 			const hit = ordered.find((o) => o.label.toLowerCase().startsWith(typeahead));
-			if (hit) highlighted = options.indexOf(hit);
+			if (hit) highlighted = rows.indexOf(hit);
 		}
 	}
 
@@ -121,7 +125,7 @@
 			class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-[10px] border border-line bg-panel-solid py-1 shadow-lg"
 			aria-activedescendant={opt_id(highlighted)}
 		>
-			{#each options as o, i (o.value)}
+			{#each rows as o, i (o.value)}
 				<li
 					id={opt_id(i)}
 					role="option"
