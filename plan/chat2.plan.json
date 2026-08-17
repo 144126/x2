@@ -50,7 +50,7 @@
 			},
 			"message_menu": {
 				"s": "Create src/lib/components/MessageMenu.svelte, props `{rect: DOMRect, items: Item[], onclose: () => void}` where `Item = {id: string; label: string; icon?: unknown; danger?: boolean}`, and an `onpick: (id: string) => void`. Render position:fixed next to rect, flipping above when it would overflow the bottom and clamping to the left and right viewport edges. Close on outside pointerdown, on Escape, and on scroll. It decides nothing about which actions exist — the caller passes items. Keep it to a bordered panel of rows using the app.css tokens; danger rows use text-danger.",
-				"d": 0,
+				"d": 1,
 				"t": "test -f src/lib/components/MessageMenu.svelte && grep -q Escape src/lib/components/MessageMenu.svelte && pnpm test && pnpm build"
 			},
 			"message_row": {

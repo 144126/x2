@@ -1,5 +1,9 @@
+import type { Component } from 'svelte';
 import type { Message } from './types';
 import { msg_kind, KIND_LABEL } from './types';
+
+/** one row of a message's context menu — the caller decides which exist */
+export type Item = { id: string; label: string; icon?: Component; danger?: boolean };
 
 /** an attachment still on its way: uploading, sending, or stopped */
 export type Up = {
