@@ -47,6 +47,13 @@ vi.mock('$lib/chat_optimistic', () => ({
 import type { Message } from '$lib/types';
 import Page from '../+page.svelte';
 
+// actions moved off a hover toolbar and into a menu on the bubble, so a test has to open
+// the menu the way a person does before it can pick anything
+async function pick(action: string, text = 'original text') {
+	await fireEvent.click(screen.getByText(text));
+	await fireEvent.click(screen.getByRole('menuitem', { name: action }));
+}
+
 const data = {
 	user: { id: 'me', username: 'me' },
 	peer: 'bob',
@@ -73,7 +80,7 @@ describe('replying', () => {
 
 	it('clicking reply on a message shows the quote-preview strip', async () => {
 		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		const strip = screen.getByLabelText('cancel reply').parentElement!;
 		expect(strip).toHaveTextContent('original text');
 	});
@@ -84,14 +91,20 @@ describe('replying', () => {
 			.mockResolvedValue({ ok: true, json: () => Promise.resolve({ m: null }) });
 		globalThis.fetch = mockFetch;
 		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		const input = screen.getByPlaceholderText(/write something considered/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
 		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ to: 'bob', text: 'my reply', reply_to: 'm1' })
+			body: JSON.stringify({
+				to: 'bob',
+				text: 'my reply',
+				at: undefined,
+				view_once: false,
+				reply_to: 'm1'
+			})
 		});
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
 	});
@@ -103,7 +116,7 @@ describe('replying', () => {
 		});
 		globalThis.fetch = mockFetch;
 		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		const input = screen.getByPlaceholderText(/write something considered/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
@@ -117,7 +130,7 @@ describe('replying', () => {
 		const mockFetch = vi.fn();
 		globalThis.fetch = mockFetch;
 		renderWith([{ id: 'm1', f: 'bob', x: 'original text', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		await fireEvent.click(screen.getByLabelText('cancel reply'));
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
 		// opening a thread marks it read, so only assert nothing was sent
@@ -209,7 +222,7 @@ describe('reactions', () => {
 		});
 		globalThis.fetch = mockFetch;
 		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'react' }));
+		await pick('react', 'hi');
 		const search = screen.getByPlaceholderText('search emoji…');
 		await fireEvent.input(search, { target: { value: 'thumbs up' } });
 		await fireEvent.click(screen.getByTitle('thumbs up'));
@@ -279,7 +292,7 @@ describe('stickers', () => {
 		renderWith([{ id: 'm1', f: 'bob', x: '', sk: 'wave', d: 100 }]);
 		const img = screen.getByAltText('wave sticker');
 		expect(img).toHaveAttribute('src', '/stickers/basics/wave.svg');
-		const bubble = img.closest('div')!;
+		const bubble = img.closest('button')!;
 		expect(bubble.className).toContain('border-0');
 		expect(bubble.className).toContain('bg-transparent');
 	});
@@ -313,7 +326,7 @@ describe('forwarding', () => {
 	it('clicking forward opens the picker, lazy-loading conversations and rooms', async () => {
 		const mockFetch = stubTargets();
 		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await pick('forward', 'hi');
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
 		expect(mockFetch).toHaveBeenCalledWith('/api/conversations');
 		expect(mockFetch).toHaveBeenCalledWith('/api/groups?mine=1');
@@ -322,13 +335,13 @@ describe('forwarding', () => {
 	it('lazy-loads conversations and rooms only once across reopens', async () => {
 		const mockFetch = stubTargets();
 		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await pick('forward', 'hi');
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
 		const dialog = screen
 			.getAllByRole('dialog', { hidden: true })
 			.find((d) => d.querySelector('h2')?.textContent === 'forward to…')!;
 		await fireEvent.click(within(dialog).getByLabelText('close'));
-		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await pick('forward', 'hi');
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
 		expect(mockFetch.mock.calls.filter((c) => c[0] === '/api/conversations')).toHaveLength(1);
 		expect(mockFetch.mock.calls.filter((c) => c[0] === '/api/groups?mine=1')).toHaveLength(1);
@@ -337,7 +350,7 @@ describe('forwarding', () => {
 	it('confirming a selection POSTs /api/send once per target with forwarded: true', async () => {
 		const mockFetch = stubTargets();
 		renderWith([{ id: 'm1', f: 'bob', x: 'hi', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await pick('forward', 'hi');
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
 		await fireEvent.click(screen.getByRole('button', { name: 'Design Club' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'bob' }));

@@ -5,7 +5,10 @@
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
 	import { profile_url } from '$lib/links';
 	import { confirm_sent, mark_failed } from '$lib/chat_optimistic';
-	import { upload, media_src, image_from_event } from '$lib/attach';
+	import { upload, image_from_event } from '$lib/attach';
+	import MessageRow from '$lib/components/MessageRow.svelte';
+	import MediaViewer from '$lib/components/MediaViewer.svelte';
+	import { failed, openable, pending, type Row, type Up } from '$lib/msg';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import { sync_badge } from '$lib/badge';
 	import { ctrlEnter } from '$lib/actions';
@@ -15,8 +18,7 @@
 	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
 	import StickerPicker from '$lib/components/StickerPicker.svelte';
 	import ForwardPicker from '$lib/components/ForwardPicker.svelte';
-	import { sticker_src } from '$lib/stickers';
-	import { day_label, clock } from '$lib/time';
+	import { day_label } from '$lib/time';
 	import Modal from '$lib/components/Modal.svelte';
 	import AiThread from '$lib/components/AiThread.svelte';
 	import {
@@ -26,29 +28,13 @@
 		Paperclip,
 		Clock,
 		Send as SendIcon,
-		FileText,
 		Sticker,
-		CornerUpLeft,
-		SmilePlus,
-		Forward,
+		Eye,
 		Smile
 	} from '@lucide/svelte';
 
 	type FileAttach = { key: string; name: string; size: number; type: string };
-	type Msg = {
-		id: string;
-		f: string;
-		x: string;
-		im?: string;
-		fl?: FileAttach;
-		d: number;
-		rp?: string;
-		rx?: Record<string, string[]>;
-		sk?: string;
-		fw?: boolean;
-		cid?: string;
-		err?: boolean;
-	};
+	type Msg = Row;
 	let { data } = $props();
 	let muted = $state(data.muted as boolean);
 	let messages = $state(data.messages as Msg[]);
@@ -126,7 +112,17 @@
 
 	async function sendSticker(id: string) {
 		stickerOpen = false;
-		const row: Msg = { id: '', cid: crypto.randomUUID(), f: me!, x: '', sk: id, d: Date.now() };
+		const row: Msg = {
+			s: 'm',
+			id: '',
+			cid: crypto.randomUUID(),
+			c: '',
+			f: me!,
+			t: data.peer,
+			x: '',
+			sk: id,
+			d: Date.now()
+		};
 		add_msg(row);
 		const res = await fetch('/api/send', {
 			method: 'POST',
@@ -188,7 +184,11 @@
 		loading_older = false;
 	}
 
-	let pendingFile: File | null = $state(null);
+	let pendingFiles = $state<File[]>([]);
+	let view_once = $state(false);
+	let viewing = $state<Msg | null>(null);
+	const uploads = new Map<string, () => void>();
+	const files = new Map<string, File>();
 	let busy = $state(false);
 	let text = $state('');
 	let scheduleAt = $state('');
@@ -240,21 +240,63 @@
 		});
 	}
 
-	async function send(retry?: Msg) {
-		const body = retry ? retry.x : text.trim();
-		if ((!body && !pendingFile && !retry) || busy) return;
+	function patch(cid: string, over: Partial<Msg>) {
+		messages = messages.map((e) => (e.cid === cid ? { ...e, ...over } : e));
+	}
 
-		let image: string | undefined;
-		let file: FileAttach | undefined;
-		if (!retry && pendingFile) {
-			busy = true;
-			const r = await upload(pendingFile).promise;
-			busy = false;
-			if (r.error || !r.key) return;
-			if (pendingFile.type.startsWith('image/')) image = r.key;
-			else file = { key: r.key, name: r.name!, size: r.size!, type: r.type! };
-			pendingFile = null;
+	/**
+	 * The file goes into the thread first and moves second, so there is always something to
+	 * look at while it uploads and something to retry when it does not.
+	 */
+	async function send_file(f: File, once: boolean, cid = crypto.randomUUID()) {
+		const up: Up = { pct: 0, st: 'u', name: f.name, size: f.size, type: f.type, vo: once };
+		if (!messages.some((e) => e.cid === cid)) {
+			add_msg({ s: 'm', id: '', cid, c: '', f: me!, t: data.peer, x: '', d: Date.now(), up });
+			files.set(cid, f);
+		} else patch(cid, { up, err: false });
+
+		const h = upload(f, {
+			view_once: once,
+			onprogress: (pct) => patch(cid, { up: { ...up, pct } })
+		});
+		uploads.set(cid, h.abort);
+		const r = await h.promise;
+		uploads.delete(cid);
+		if (r.error || !r.key) return patch(cid, { up: { ...up, st: 'e' } });
+
+		patch(cid, { up: { ...up, pct: 100, st: 's' } });
+		const image = f.type.startsWith('image/') ? r.key : undefined;
+		const file = image ? undefined : { key: r.key, name: r.name!, size: r.size!, type: r.type! };
+		const res = await fetch('/api/send', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ to: data.peer, image, file, view_once: once, reply_to: replyTo?.id })
+		}).catch(() => null);
+
+		if (!res?.ok) return patch(cid, { up: { ...up, st: 'e' } });
+		mark_first_send();
+		replyTo = null;
+		const { m } = await res.json();
+		files.delete(cid);
+		patch(cid, { id: m.id, d: m.ts, up: undefined, im: image, fl: file, vo: m.vo, vk: m.vk });
+	}
+
+	async function send(retry?: Msg) {
+		if (retry?.up || retry?.cid) {
+			const f = files.get(retry.cid!);
+			if (f) return send_file(f, !!retry.up?.vo || !!retry.vo, retry.cid);
 		}
+		const body = retry ? retry.x : text.trim();
+		if ((!body && !pendingFiles.length && !retry) || busy) return;
+
+		const once = view_once;
+		const queued = pendingFiles;
+		if (!retry) {
+			pendingFiles = [];
+			view_once = false;
+		}
+		for (const f of queued) send_file(f, once);
+		if (!body) return;
 
 		const at = retry ? undefined : scheduleAt ? new Date(scheduleAt).getTime() : undefined;
 		if (!retry) {
@@ -271,14 +313,16 @@
 				row = retry;
 			} else {
 				row = {
+					s: 'm',
 					id: '',
 					cid: crypto.randomUUID(),
+					c: '',
 					f: me!,
+					t: data.peer,
 					x: body,
-					im: image,
-					fl: file,
 					d: Date.now(),
-					rp: replyTo?.id
+					rp: replyTo?.id,
+					...(once ? { vo: 1 as const, vk: 't' as const } : {})
 				};
 				add_msg(row);
 			}
@@ -287,7 +331,13 @@
 		const res = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ to: data.peer, text: body, image, file, at, reply_to: replyTo?.id })
+			body: JSON.stringify({
+				to: data.peer,
+				text: body,
+				at,
+				view_once: once,
+				reply_to: replyTo?.id
+			})
 		}).catch(() => null);
 
 		if (!res?.ok) {
@@ -298,13 +348,46 @@
 		replyTo = null;
 		const { m } = await res.json();
 		if (row?.cid && m)
-			messages = confirm_sent(messages, row.cid, {
-				id: m.id,
-				d: m.ts,
-				rp: m.rp,
-				sk: m.sk,
-				fw: m.fw
-			});
+			messages = confirm_sent(messages, row.cid, { id: m.id, d: m.ts, rp: m.rp, fw: m.fw });
+	}
+
+	async function do_delete(m: Msg, scope: 'me' | 'all') {
+		const res = await fetch(`/api/messages/${m.id}/delete`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ scope })
+		}).catch(() => null);
+		if (!res?.ok) return;
+		messages =
+			scope === 'me'
+				? messages.filter((e) => e.id !== m.id)
+				: messages.map((e) => (e.id === m.id ? { ...e, dx: Date.now(), x: '' } : e));
+	}
+
+	function actions_for(m: Msg): string[] {
+		if (m.dx) return [];
+		if (failed(m)) return ['retry', 'delete_me'];
+		if (pending(m)) return [];
+		const out: string[] = [];
+		if (openable(m, me!)) out.push('open');
+		out.push('reply', 'react');
+		if (!m.vo) out.push('forward');
+		if (m.x) out.push('copy');
+		out.push('delete_me');
+		if (m.f === me) out.push('delete_all');
+		return out;
+	}
+
+	function on_action(id: string, m: Msg) {
+		if (id.startsWith('react_')) return react(m.id, id.slice(6));
+		if (id === 'open') return (viewing = m);
+		if (id === 'reply') return (replyTo = m);
+		if (id === 'react') return (reactingTo = m.id);
+		if (id === 'forward') return openForward(m);
+		if (id === 'copy') return void navigator.clipboard?.writeText(m.x);
+		if (id === 'retry') return void send(m);
+		if (id === 'delete_me') return void do_delete(m, 'me');
+		if (id === 'delete_all') return void do_delete(m, 'all');
 	}
 
 	const watch = { type: 'watch', peer: data.peer };
@@ -339,9 +422,20 @@
 					e.id === m.id ? { ...e, x: m.text as string, e: m.ts as number } : e
 				);
 			} else if (m.type === 'delete') {
-				messages = messages.filter((e) => e.id !== m.id);
+				messages = messages.map((e) =>
+					e.id === m.id ? { ...e, dx: Date.now(), x: '', im: undefined, fl: undefined } : e
+				);
+			} else if (m.type === 'viewed') {
+				messages = messages.map((e) =>
+					e.id === m.id
+						? { ...e, vw: [...(e.vw ?? []), m.by as string], ...(m.gone ? { vd: Date.now() } : {}) }
+						: e
+				);
 			} else if (m.type === 'msg' && m.from === data.peer) {
 				add_msg({
+					s: 'm',
+					c: '',
+					t: me!,
 					id: m.id as string,
 					f: m.from as string,
 					x: (m.text as string) ?? '',
@@ -350,6 +444,8 @@
 					rp: m.reply_msg as string | undefined,
 					sk: m.sticker as string | undefined,
 					fw: m.fw as boolean | undefined,
+					vo: m.vo as 1 | undefined,
+					vk: m.vk as Msg['vk'],
 					d: m.ts as number
 				});
 				// the thread is open, so nothing here is unread — keep the badge honest
@@ -541,132 +637,15 @@
 					{day_label(m.d)}
 				</div>
 			{/if}
-			<div
-				class="group relative flex max-w-[80%] flex-col gap-0.5 sm:max-w-[68%] {mine
-					? 'items-end self-end'
-					: 'self-start'}"
-			>
-				<div
-					class="overflow-hidden px-3 py-2 text-[13.5px] leading-[1.45] {mine
-						? 'rounded-[14px_4px_14px_14px] border border-accent bg-accent text-accent-ink'
-						: 'rounded-[4px_14px_14px_14px] border border-line bg-panel-solid'}"
-					class:border-0={m.sk}
-					class:bg-transparent={m.sk}
-					class:p-0={m.sk}
-					class:opacity-60={m.id === '' && !m.err}
-				>
-					{#if m.fw}
-						<div class="mb-1 text-[9.5px] uppercase tracking-[0.12em] opacity-60">forwarded</div>
-					{/if}
-					{#if m.sk}
-						<img
-							src={sticker_src(m.sk)}
-							alt={m.sk + ' sticker'}
-							class="h-[104px] w-[104px] object-contain"
-						/>
-					{:else}
-						{#if m.rp}
-							<div
-								class="mb-1.5 truncate border-l-2 border-current/40 pl-2 text-[11.5px] opacity-70"
-							>
-								<span class="font-medium">{quoted[m.rp]?.f === me ? 'you' : data.peer_name}</span>
-								<span class="opacity-80"> · {quoted[m.rp]?.x || 'original message'}</span>
-							</div>
-						{/if}
-						{#if m.im}
-							<a href={media_src(m.im)} target="_blank" rel="noopener noreferrer">
-								<img
-									src={media_src(m.im)}
-									alt=""
-									class="mb-1.5 max-h-[260px] w-full rounded-[8px] object-cover"
-								/>
-							</a>
-						{/if}
-						{#if m.fl?.type.startsWith('audio/')}
-							<!-- a voice reply is the point of the note pool: it has to be
-							     hearable in the thread, not a file to download -->
-							<audio
-								controls
-								preload="none"
-								src={media_src(m.fl.key)}
-								class="mb-1.5 h-9 w-[220px] max-w-full"
-							></audio>
-						{:else if m.fl}
-							<a
-								href={media_src(m.fl.key)}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="mb-1.5 flex items-center gap-2 rounded-[8px] border border-current/20 px-2.5 py-1.5 text-[12px] no-underline"
-							>
-								<FileText size={14} class="shrink-0" />
-								<span class="truncate">{m.fl.name}</span>
-								<span class="opacity-60">{(m.fl.size / 1024).toFixed(0)}kb</span>
-							</a>
-						{/if}
-						{#if m.x}<span class="whitespace-pre-wrap break-words">{m.x}</span>{/if}
-					{/if}
-				</div>
-
-				{#if m.rx && Object.keys(m.rx).length}
-					<div class="-mt-1 flex flex-wrap gap-1">
-						{#each Object.entries(m.rx).slice(0, 3) as [emoji, uids] (emoji)}
-							<button
-								type="button"
-								class="flex items-center gap-1 rounded-full border border-line bg-panel-solid px-1.5 py-0.5 text-[11px]"
-								class:border-accent={uids.includes(me)}
-								onclick={() => react(m.id, emoji)}
-							>
-								{emoji}
-								{uids.length}
-							</button>
-						{/each}
-						{#if Object.keys(m.rx).length > 3}
-							<button
-								type="button"
-								class="rounded-full border border-line bg-panel-solid px-1.5 py-0.5 text-[11px] text-mute"
-								onclick={() => (reactionListFor = m.id)}>+{Object.keys(m.rx).length - 3}</button
-							>
-						{/if}
-					</div>
-				{/if}
-
-				{#if m.err}
-					<button class="text-[10.5px] text-danger underline" onclick={() => send(m)}>
-						not sent — retry
-					</button>
-				{:else}
-					<time class="px-1 text-[9.5px] tabular-nums text-mute">{clock(m.d)}</time>
-				{/if}
-
-				<!-- absolutely placed so the row reserves no height when nobody is hovering -->
-				<div
-					class="absolute -top-2.5 z-10 flex items-center gap-0.5 rounded-full border border-line bg-panel-solid px-1 py-0.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 {mine
-						? 'right-1'
-						: 'left-1'}"
-				>
-					<button
-						type="button"
-						class="p-1 text-mute hover:text-accent"
-						aria-label="reply"
-						title="reply"
-						onclick={() => (replyTo = m)}><CornerUpLeft size={12} /></button
-					>
-					<button
-						type="button"
-						class="p-1 text-mute hover:text-accent"
-						aria-label="react"
-						title="react"
-						onclick={() => (reactingTo = m.id)}><SmilePlus size={12} /></button
-					>
-					<button
-						type="button"
-						class="p-1 text-mute hover:text-accent"
-						aria-label="forward"
-						title="forward"
-						onclick={() => openForward(m)}><Forward size={12} /></button
-					>
-				</div>
-			</div>
+			<MessageRow
+				{m}
+				me={me!}
+				{mine}
+				quoted={m.rp ? quoted[m.rp] : null}
+				quoted_name={m.rp ? (quoted[m.rp]?.f === me ? 'you' : data.peer_name) : undefined}
+				actions={actions_for(m)}
+				onaction={on_action}
+			/>
 		{/each}
 	</div>
 
@@ -696,6 +675,27 @@
 		</div>
 	{/if}
 
+	{#if pendingFiles.length}
+		<div class="flex shrink-0 flex-wrap items-center gap-1.5 border-t border-line py-1.5">
+			{#each pendingFiles as f, i (f.name + i)}
+				<span
+					class="flex items-center gap-1.5 rounded-full border border-line bg-panel-solid px-2 py-0.5 text-[11.5px] text-ink-soft"
+				>
+					{f.name}
+					<button
+						type="button"
+						class="text-mute hover:text-danger"
+						aria-label="remove {f.name}"
+						onclick={() => (pendingFiles = pendingFiles.filter((_, j) => j !== i))}>&times;</button
+					>
+				</span>
+			{/each}
+			{#if view_once}
+				<span class="text-[11px] uppercase tracking-[0.14em] text-accent">view once</span>
+			{/if}
+		</div>
+	{/if}
+
 	<form
 		class="flex shrink-0 items-end gap-1.5 border-t border-line py-2.5"
 		use:ctrlEnter={() => send()}
@@ -713,20 +713,32 @@
 		}}
 	>
 		<label
-			class="btn btn-icon cursor-pointer {pendingFile ? 'border-accent text-accent' : ''}"
+			class="btn btn-icon cursor-pointer {pendingFiles.length ? 'border-accent text-accent' : ''}"
 			aria-label="attach file"
-			title={pendingFile ? pendingFile.name : 'attach file'}
+			title={pendingFiles.length ? pendingFiles.map((f) => f.name).join(', ') : 'attach file'}
 		>
 			<Paperclip size={15} />
 			<input
 				type="file"
+				multiple
 				class="hidden"
 				onchange={(e) => {
-					const f = (e.currentTarget as HTMLInputElement).files?.[0];
-					if (f) pendingFile = f;
+					const el = e.currentTarget as HTMLInputElement;
+					pendingFiles = [...pendingFiles, ...(el.files ?? [])];
+					el.value = '';
 				}}
 			/>
 		</label>
+		<button
+			type="button"
+			class="btn btn-icon {view_once ? 'border-accent text-accent' : ''}"
+			aria-label="view once"
+			title={view_once ? 'view once is on for the next send' : 'send the next one as view once'}
+			aria-pressed={view_once}
+			onclick={() => (view_once = !view_once)}
+		>
+			<Eye size={15} />
+		</button>
 		<button
 			type="button"
 			class="btn btn-icon max-sm:hidden"
@@ -755,7 +767,7 @@
 			autocomplete="off"
 			onpaste={(e) => {
 				const f = image_from_event(e);
-				if (f) pendingFile = f;
+				if (f) pendingFiles = [...pendingFiles, f];
 			}}></textarea>
 		<button
 			type="button"
@@ -838,4 +850,14 @@
 			<p class="text-[12px] text-faint">loading…</p>
 		{/if}
 	</Modal>
+{/if}
+
+{#if viewing}
+	<MediaViewer
+		m={viewing}
+		me={me!}
+		onburnt={(id) =>
+			(messages = messages.map((e) => (e.id === id ? { ...e, vw: [...(e.vw ?? []), me!] } : e)))}
+		onclose={() => (viewing = null)}
+	/>
 {/if}

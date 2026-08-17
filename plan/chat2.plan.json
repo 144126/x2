@@ -68,7 +68,7 @@
 		"c": {
 			"wire_dm": {
 				"s": "src/routes/chat/[id]/+page.svelte uses MessageRow and loses its own bubble markup and its hover toolbar. It owns the behaviour behind onaction: reply, react, forward, copy, open (MediaViewer), retry, delete_me, delete_all. Build the action list per message — delete_all only when m.f === me. Delete calls POST /api/messages/[id]/delete with {scope}. Add a view-once toggle button to the composer beside the paperclip; it applies to the next send only. Attaching a file must push an optimistic Row with `up` immediately and upload in the background, so the file is visible in the thread while it moves. Handle the new `viewed` ws frame by setting vw on that message. Keep calls, stickers, emoji, schedule and the note pool exactly as they are.",
-				"d": 0,
+				"d": 1,
 				"v": "test -f src/lib/components/MessageRow.svelte",
 				"t": "grep -q MessageRow src/routes/chat/\\[id\\]/+page.svelte && grep -q view_once src/routes/chat/\\[id\\]/+page.svelte && pnpm test && pnpm build"
 			},
