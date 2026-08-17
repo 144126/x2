@@ -44,7 +44,7 @@
 			},
 			"media_viewer": {
 				"s": "Clicking a chip opens the thing. Create src/lib/components/MediaViewer.svelte, props `{m: Row, me: string, onburnt: (id: string) => void, onclose: () => void}`. For ordinary media it shows the image full-bleed, or an <audio controls> for audio, or a download link for a document, using media_src(key). For a view-once message it POSTs /api/messages/[id]/view FIRST, turns the returned bytes into a blob URL, and revokes that URL on close. Read x-kind, x-caption (base64url) and x-name off the response; a JSON body means text or sticker. 410 means the view was already spent — say so plainly. Call onburnt(id) after a successful open so the thread can grey the row. Set `draggable=\"false\"` and oncontextmenu preventDefault on view-once media.",
-				"d": 0,
+				"d": 1,
 				"v": "test -f src/routes/api/messages/\\[id\\]/view/+server.ts",
 				"t": "test -f src/lib/components/MediaViewer.svelte && grep -q createObjectURL src/lib/components/MediaViewer.svelte && grep -q revokeObjectURL src/lib/components/MediaViewer.svelte && pnpm test && pnpm build"
 			},
