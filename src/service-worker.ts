@@ -4,12 +4,17 @@ import {
 	cache_mode,
 	cache_name,
 	is_cacheable,
+	may_cache,
 	notification_from,
 	pick_client,
+	pin_header,
+	purgeable,
+	redact,
 	reply_body,
 	should_notify,
 	stale_caches,
 	target_url,
+	PIN_KEY,
 	type SwClient
 } from '$lib/sw-core';
 import { drain, type Outgoing, type OutStore } from '$lib/outbox';
@@ -40,6 +45,32 @@ self.addEventListener('activate', (event) => {
 	);
 });
 
+const CTX = { origin: self.location.origin, assets: new Set(files) };
+
+async function pin_on(cache: Cache): Promise<boolean> {
+	return !!(await cache.match(PIN_KEY));
+}
+
+/**
+ * Reads `x-pin` off a live response and keeps the worker in step with it. Turning the lock on
+ * throws away everything already cached that could show the account, so the very first
+ * response after someone sets a pin also cleans up what came before it.
+ */
+async function sync_pin(cache: Cache, res: Response): Promise<boolean> {
+	const said = pin_header(res);
+	if (said === null) return pin_on(cache);
+	if (!said) {
+		await cache.delete(PIN_KEY);
+		return false;
+	}
+	if (!(await pin_on(cache))) {
+		await cache.put(PIN_KEY, new Response('1'));
+		const keys = await cache.keys();
+		await Promise.all(keys.filter((k) => purgeable(k.url, CTX)).map((k) => cache.delete(k)));
+	}
+	return true;
+}
+
 self.addEventListener('fetch', (event) => {
 	const req = event.request;
 	const mode = cache_mode(
@@ -49,20 +80,22 @@ self.addEventListener('fetch', (event) => {
 			mode: req.mode,
 			range: req.headers.has('range')
 		},
-		{ origin: self.location.origin, assets: new Set(files) }
+		CTX
 	);
 	if (mode === 'bypass') return;
 
 	event.respondWith(
 		(async () => {
 			const cache = await caches.open(CACHE);
+			const locked = await pin_on(cache);
 
-			if (mode === 'immutable' || mode === 'cache-first') {
+			if (mode === 'immutable' || (mode === 'cache-first' && !locked)) {
 				const cached = await cache.match(req);
 				if (cached) return cached;
 				try {
 					const res = await fetch(req);
-					if (is_cacheable(res)) await cache.put(req, res.clone());
+					const pin = await sync_pin(cache, res);
+					if (is_cacheable(res) && may_cache(req.url, CTX, pin)) await cache.put(req, res.clone());
 					return res;
 				} catch {
 					return (
@@ -75,10 +108,13 @@ self.addEventListener('fetch', (event) => {
 			// network-first
 			try {
 				const res = await fetch(req);
-				if (is_cacheable(res)) await cache.put(req, res.clone());
+				const pin = await sync_pin(cache, res);
+				if (is_cacheable(res) && may_cache(req.url, CTX, pin)) await cache.put(req, res.clone());
 				return res;
 			} catch {
-				const cached = await cache.match(req);
+				// offline. With a pin set there is deliberately nothing to fall back to — the
+				// offline page is all a locked device gets, rather than yesterday's thread.
+				const cached = locked ? undefined : await cache.match(req);
 				if (cached) return cached;
 				if (req.mode === 'navigate') return (await cache.match('/offline'))!;
 				return Response.error();
@@ -107,7 +143,10 @@ self.addEventListener('push', (event) => {
 
 			if (!should_notify(sw_clients, url)) return;
 
-			const { title, options } = notification_from(data as Parameters<typeof notification_from>[0]);
+			const payload = data as Parameters<typeof notification_from>[0];
+			const { title, options } = notification_from(
+				(await pin_on(await caches.open(CACHE))) ? redact(payload) : payload
+			);
 			await self.registration.showNotification(title, options as NotificationOptions);
 			if (typeof (data as { unread?: number } | null)?.unread === 'number') {
 				await set_badge((data as { unread: number }).unread);

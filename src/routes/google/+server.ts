@@ -4,9 +4,10 @@ import { env } from '$env/dynamic/private';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import { get_secret } from '$lib/server/qdrant';
 import { save_user, get_user, patch_user, find_user_by_google_sub } from '$lib/server/user';
-import { encode_session } from '$lib/server/session';
+import { sign_in } from '$lib/server/signin';
 import { uuid_from } from '$lib/server/qdrant';
 import { attribute_referral, ensure_partner_code } from '$lib/server/partner';
+import { clear_pin } from '$lib/server/pin_state';
 
 const google_client = async (origin: string) =>
 	new Google(
@@ -16,7 +17,11 @@ const google_client = async (origin: string) =>
 	);
 
 export const GET: RequestHandler = async ({ url, cookies, locals }) => {
-	if (locals.user && !locals.user.is_device) throw redirect(302, '/find');
+	// forgot the pin: run the full google login again and drop the pin if it comes back as
+	// the same account. A signed-in user normally bounces straight to /find, so both legs of
+	// the reset have to be let through before that.
+	const reset = url.searchParams.get('reset') === 'pin' || cookies.get('pin_reset') === '1';
+	if (locals.user && !locals.user.is_device && !reset) throw redirect(302, '/find');
 
 	const code = url.searchParams.get('code');
 	const state = url.searchParams.get('state');
@@ -40,6 +45,19 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 		if (!ures.ok) throw error(400, 'userinfo_failed');
 		const gu = (await ures.json()) as { sub: string; picture?: string; email?: string };
 		if (!gu.email) throw error(400, 'email_required');
+
+		if (reset) {
+			cookies.delete('pin_reset', { path: '/' });
+			cookies.delete('oauth_state', { path: '/' });
+			cookies.delete('oauth_verifier', { path: '/' });
+			const me = locals.user ? await get_user(env, locals.user.id) : null;
+			// the account that just proved itself has to be the account being unlocked, or a
+			// second google account would be a way in
+			if (!me || !locals.user || (me.g !== gu.sub && me.gl !== gu.sub && me.m !== gu.email))
+				throw error(403, 'wrong_account');
+			await clear_pin(env, locals.x2_ws, cookies, locals.user);
+			throw redirect(302, '/profile#pin');
+		}
 
 		let id: string;
 		let username: string;
@@ -66,14 +84,11 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 			cookies.delete('ref_code', { path: '/' });
 		}
 
-		const session = await encode_session(env.SECRET, {
-			id,
+		await sign_in(env, locals.x2_ws, cookies, id, {
 			username,
 			picture: gu.picture,
-			email: gu.email,
-			is_device: false
+			email: gu.email
 		});
-		cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
 		cookies.delete('oauth_state', { path: '/' });
 		cookies.delete('oauth_verifier', { path: '/' });
 		throw redirect(302, '/find');
@@ -94,6 +109,14 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 	const verifier = generateCodeVerifier();
 	const g = await google_client(url.origin);
 	const auth_url = g.createAuthorizationURL(s, verifier, ['openid', 'profile', 'email']);
+	if (reset) {
+		// Whoever is holding the phone is already signed in to google on it, so the plain
+		// consent screen would wave them straight through and the pin would be worth nothing.
+		// `prompt=login` plus `max_age=0` makes google ask for the password again.
+		auth_url.searchParams.set('prompt', 'login');
+		auth_url.searchParams.set('max_age', '0');
+		cookies.set('pin_reset', '1', { path: '/', httpOnly: true, maxAge: 600, sameSite: 'lax' });
+	}
 	cookies.set('oauth_state', s, { path: '/', httpOnly: true, maxAge: 600, sameSite: 'lax' });
 	cookies.set('oauth_verifier', verifier, {
 		path: '/',

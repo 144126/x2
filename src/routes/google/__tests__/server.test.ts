@@ -8,7 +8,7 @@ const {
 	uuidFromMock,
 	attributeReferralMock,
 	ensurePartnerCodeMock,
-	encodeSessionMock
+	signInMock
 } = vi.hoisted(() => ({
 	saveUserMock: vi.fn(),
 	getUserMock: vi.fn(),
@@ -17,7 +17,7 @@ const {
 	uuidFromMock: vi.fn(),
 	attributeReferralMock: vi.fn(),
 	ensurePartnerCodeMock: vi.fn(),
-	encodeSessionMock: vi.fn()
+	signInMock: vi.fn()
 }));
 
 vi.mock('$env/dynamic/private', () => ({ env: { SECRET: 's' } }));
@@ -43,7 +43,7 @@ vi.mock('$lib/server/user', () => ({
 	patch_user: patchUserMock,
 	find_user_by_google_sub: findUserByGoogleSubMock
 }));
-vi.mock('$lib/server/session', () => ({ encode_session: encodeSessionMock }));
+vi.mock('$lib/server/signin', () => ({ sign_in: signInMock }));
 vi.mock('$lib/server/partner', () => ({
 	attribute_referral: attributeReferralMock,
 	ensure_partner_code: ensurePartnerCodeMock
@@ -82,7 +82,7 @@ beforeEach(() => {
 	findUserByGoogleSubMock.mockResolvedValue(null);
 	patchUserMock.mockResolvedValue({ s: 'u', u: 'ada', d: 1 });
 	saveUserMock.mockResolvedValue('derived-uid');
-	encodeSessionMock.mockResolvedValue('sess');
+	signInMock.mockResolvedValue(undefined);
 	attributeReferralMock.mockResolvedValue({ ok: true });
 	ensurePartnerCodeMock.mockResolvedValue('code');
 });
@@ -101,13 +101,13 @@ describe('GET /google — linking a device account', () => {
 		});
 		expect(saveUserMock).not.toHaveBeenCalled();
 		expect(attributeReferralMock).not.toHaveBeenCalled();
-		expect(encodeSessionMock).toHaveBeenCalledWith(expect.anything(), {
-			id: 'dev-uid',
-			username: 'ada',
-			picture: 'pic.png',
-			email: 'ada@gmail.com',
-			is_device: false
-		});
+		expect(signInMock).toHaveBeenCalledWith(
+			expect.anything(),
+			undefined,
+			expect.anything(),
+			'dev-uid',
+			{ username: 'ada', picture: 'pic.png', email: 'ada@gmail.com' }
+		);
 	});
 });
 
@@ -134,9 +134,12 @@ describe('GET /google — fresh login/signup', () => {
 			status: 302,
 			location: '/find'
 		});
-		expect(encodeSessionMock).toHaveBeenCalledWith(
+		expect(signInMock).toHaveBeenCalledWith(
 			expect.anything(),
-			expect.objectContaining({ id: 'linked-uid' })
+			undefined,
+			expect.anything(),
+			'linked-uid',
+			expect.anything()
 		);
 		expect(saveUserMock).not.toHaveBeenCalled();
 	});

@@ -15,8 +15,10 @@ export type SessionUser = {
 	email?: string;
 	v?: number;
 	is_device?: boolean;
+	/** current pin version, 0 when no pin is set. Signed, so a stolen browser cannot clear it. */
+	pin?: number;
 };
-export type DecodedSession = { user: SessionUser; v: number };
+export type DecodedSession = { user: SessionUser; v: number; pin: number };
 
 export async function encode_session(secret: SecretVal, data: SessionUser): Promise<string> {
 	const p = {
@@ -26,6 +28,7 @@ export async function encode_session(secret: SecretVal, data: SessionUser): Prom
 		m: data.email,
 		v: data.v ?? 0,
 		dv: data.is_device ? 1 : 0,
+		pk: data.pin ?? 0,
 		e: Date.now() + 604800000
 	};
 	const raw = b64u(new TextEncoder().encode(JSON.stringify(p)));
@@ -50,7 +53,8 @@ export async function decode_session(
 		if (p.e < Date.now()) return null;
 		return {
 			user: { id: p.u, username: p.n, picture: p.p, email: p.m, is_device: !!p.dv },
-			v: p.v ?? 0
+			v: p.v ?? 0,
+			pin: p.pk ?? 0
 		};
 	} catch {
 		return null;

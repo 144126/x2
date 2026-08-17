@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { verify_user_pw } from '$lib/server/user';
 
-import { encode_session } from '$lib/server/session';
+import { sign_in } from '$lib/server/signin';
 
 export const POST: RequestHandler = async ({ request, cookies, locals }) => {
 	if (locals.user) return json({ ok: true });
@@ -13,12 +13,6 @@ export const POST: RequestHandler = async ({ request, cookies, locals }) => {
 	if (!e || !p) throw error(400, 'email and password required');
 	const u = await verify_user_pw(env, e, p);
 	if (!u) throw error(401, 'invalid credentials');
-	const session = await encode_session(env.SECRET, {
-		id: u.id,
-		username: u.u,
-		picture: u.p,
-		email: u.m
-	});
-	cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
+	await sign_in(env, locals.x2_ws, cookies, u.id, { username: u.u, picture: u.p, email: u.m });
 	return json({ ok: true });
 };

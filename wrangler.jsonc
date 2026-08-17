@@ -112,7 +112,10 @@
 		{ "name": "RL_UPLOAD", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
 		{ "name": "RL_SEARCH", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } },
 		{ "name": "RL_AI", "namespace_id": "1004", "simple": { "limit": 5, "period": 60 } },
-		{ "name": "RL_DEVICE_CREATE", "namespace_id": "1005", "simple": { "limit": 5, "period": 60 } }
+		{ "name": "RL_DEVICE_CREATE", "namespace_id": "1005", "simple": { "limit": 5, "period": 60 } },
+		// pin unlock and pin reset. The escalating lockout on the user record is the real
+		// defence — this only caps the burst before it gets there.
+		{ "name": "RL_PIN", "namespace_id": "1006", "simple": { "limit": 10, "period": 60 } }
 	],
 	// chat image uploads; create once with: wrangler r2 bucket create x2-media
 	// `remote: true` keeps the Worker local in dev while proxying this binding to the real

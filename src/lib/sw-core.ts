@@ -32,6 +32,48 @@ export function cache_name(version: string): string {
 	return `x2-${version}`;
 }
 
+// The cache is the one place the pin cannot reach: a page already on disk renders with no
+// server in the loop, so an offline reload would repaint the very thread the lock exists to
+// hide. Every response carries `x-pin` once someone is signed in, and while it reads `1` the
+// worker keeps nothing but the immutable build assets and the offline page — which say
+// nothing about anybody.
+export const PIN_KEY = '/__pin';
+
+/** `1` -> locking is on, `0` -> off, null -> this response did not say (leave the flag alone) */
+export function pin_header(res: { headers: { get(n: string): string | null } }): boolean | null {
+	const v = res.headers.get('x-pin');
+	return v === '1' ? true : v === '0' ? false : null;
+}
+
+/** true for anything held in the cache that could name a person or show their messages */
+export function purgeable(url: string, ctx: SwContext): boolean {
+	let u: URL;
+	try {
+		u = new URL(url);
+	} catch {
+		return false;
+	}
+	if (u.pathname === PIN_KEY || u.pathname === '/offline') return false;
+	return !(ctx.assets.has(u.pathname) || u.pathname.startsWith('/_app/immutable/'));
+}
+
+/** with a pin set, only the build assets and the offline page are allowed to persist */
+export function may_cache(url: string, ctx: SwContext, pin: boolean): boolean {
+	return !pin || !purgeable(url, ctx);
+}
+
+/**
+ * A notification preview is app content shown without the pin, and a phone on a table shows
+ * it to whoever walks past. With a pin set, the notification says a message arrived and
+ * nothing else: no sender, no text, no photo, and no inline reply — tapping it goes to the
+ * lock screen like everything else. Keeps the click target and the badge count, which name
+ * nobody.
+ */
+export function redact(data: NotifyPayload): NotifyPayload {
+	if (!data) return data;
+	return { title: 'x2', body: 'new message', url: data.url, unread: data.unread };
+}
+
 export function stale_caches(names: string[], current: string): string[] {
 	return names.filter((n) => n.startsWith('x2-') && n !== current);
 }

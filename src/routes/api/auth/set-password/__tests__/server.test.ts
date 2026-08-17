@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { findUserByEmailMock, patchUserMock, uuidFromMock, hashPwMock, encodeSessionMock } =
-	vi.hoisted(() => ({
+const { findUserByEmailMock, patchUserMock, uuidFromMock, hashPwMock, signInMock } = vi.hoisted(
+	() => ({
 		findUserByEmailMock: vi.fn(),
 		patchUserMock: vi.fn(),
 		uuidFromMock: vi.fn(),
 		hashPwMock: vi.fn(),
-		encodeSessionMock: vi.fn()
-	}));
+		signInMock: vi.fn()
+	})
+);
 
 vi.mock('$env/dynamic/private', () => ({ env: { SECRET: 's' } }));
 vi.mock('$lib/server/user', () => ({
@@ -16,7 +17,7 @@ vi.mock('$lib/server/user', () => ({
 }));
 vi.mock('$lib/server/qdrant', () => ({ uuid_from: uuidFromMock }));
 vi.mock('$lib/server/pw', () => ({ hash_pw: hashPwMock }));
-vi.mock('$lib/server/session', () => ({ encode_session: encodeSessionMock }));
+vi.mock('$lib/server/signin', () => ({ sign_in: signInMock }));
 
 import { POST } from '../+server';
 
@@ -37,7 +38,7 @@ beforeEach(() => {
 	findUserByEmailMock.mockResolvedValue(null);
 	patchUserMock.mockResolvedValue({ s: 'u', u: 'Me', m: 'e@x.com', d: 1 });
 	hashPwMock.mockResolvedValue('hashed');
-	encodeSessionMock.mockResolvedValue('sess');
+	signInMock.mockResolvedValue(undefined);
 });
 
 describe('POST /api/auth/set-password', () => {
@@ -74,19 +75,12 @@ describe('POST /api/auth/set-password', () => {
 		});
 	});
 
-	it('sets a fresh session cookie on success', async () => {
+	it('signs in again on success, so the new session carries any pin the account has', async () => {
 		const ev = event({ email: 'e@x.com', password: 'hunter22' });
 		await POST(ev);
-		expect(encodeSessionMock).toHaveBeenCalledWith(expect.anything(), {
-			id: 'me',
+		expect(signInMock).toHaveBeenCalledWith(expect.anything(), undefined, ev.cookies, 'me', {
 			username: 'Me',
-			email: 'e@x.com',
-			is_device: false
+			email: 'e@x.com'
 		});
-		expect(ev.cookies.set).toHaveBeenCalledWith(
-			'session',
-			'sess',
-			expect.objectContaining({ path: '/' })
-		);
 	});
 });

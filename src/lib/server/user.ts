@@ -70,6 +70,15 @@ export function is_device_only(u: Pick<User, 'h' | 'o'>): boolean {
 	return !u.h && u.o !== 'google';
 }
 
+/**
+ * A pin may only be set on an account that can prove itself again from scratch, because
+ * re-authenticating is the only way back in once the pin is forgotten. That means a real
+ * login — google or a password — and the email it belongs to.
+ */
+export function can_lock(u: Pick<User, 'h' | 'o' | 'm' | 'gl'>): boolean {
+	return !!u.m && (!!u.h || u.o === 'google' || !!u.gl);
+}
+
 export async function find_user_by_email(
 	env: QEnv,
 	email: string

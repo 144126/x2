@@ -32,7 +32,8 @@ function data(p: Record<string, unknown>) {
 		user: { id: 'me', username: 'ada' },
 		p: { id: 'me', u: 'ada', s: 'u', g: 'me', d: 1, ...p },
 		partner_code: '',
-		mutes: []
+		mutes: [],
+		pin: { on: false, allowed: true, has_google: true, has_pw: false }
 	} as unknown as Parameters<typeof Page>[1]['data'];
 }
 

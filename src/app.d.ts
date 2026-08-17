@@ -31,6 +31,12 @@ declare global {
 				is_device?: boolean;
 			} | null;
 			session_v?: number;
+			/** this account has an app-lock pin set */
+			pin_on?: boolean;
+			/** the pin is set and this browser has not passed it */
+			pin_locked?: boolean;
+			/** pin version carried by the session cookie, 0 when no pin is set */
+			pin_v?: number;
 			device_id?: string;
 			x2_ws: Fetcher;
 			geo: Geo | null;

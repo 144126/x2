@@ -6,7 +6,7 @@ const {
 	uuidFromMock,
 	attributeReferralMock,
 	ensurePartnerCodeMock,
-	encodeSessionMock,
+	signInMock,
 	findUserByEmailMock
 } = vi.hoisted(() => ({
 	createPwUserMock: vi.fn(),
@@ -14,7 +14,7 @@ const {
 	uuidFromMock: vi.fn(),
 	attributeReferralMock: vi.fn(),
 	ensurePartnerCodeMock: vi.fn(),
-	encodeSessionMock: vi.fn(),
+	signInMock: vi.fn(),
 	findUserByEmailMock: vi.fn()
 }));
 
@@ -29,7 +29,7 @@ vi.mock('$lib/server/partner', () => ({
 	attribute_referral: attributeReferralMock,
 	ensure_partner_code: ensurePartnerCodeMock
 }));
-vi.mock('$lib/server/session', () => ({ encode_session: encodeSessionMock }));
+vi.mock('$lib/server/signin', () => ({ sign_in: signInMock }));
 
 import { POST } from '../+server';
 
@@ -41,6 +41,7 @@ function event(body: unknown, cookie_ref?: string) {
 	};
 	return {
 		request: { json: async () => body },
+		locals: {},
 		cookies
 	} as unknown as Parameters<typeof POST>[0];
 }
@@ -52,7 +53,7 @@ beforeEach(() => {
 	createPwUserMock.mockResolvedValue('new-uid');
 	attributeReferralMock.mockResolvedValue({ ok: true, inviter: 'bob' });
 	ensurePartnerCodeMock.mockResolvedValue('abc123');
-	encodeSessionMock.mockResolvedValue('sess');
+	signInMock.mockResolvedValue(undefined);
 });
 
 describe('POST /api/auth/register', () => {

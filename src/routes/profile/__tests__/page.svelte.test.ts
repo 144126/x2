@@ -40,7 +40,8 @@ const baseData = {
 		w: ''
 	},
 	partner_code: '',
-	mutes: [] as { target: string; kind: 'u' | 'r'; until: number; name: string }[]
+	mutes: [] as { target: string; kind: 'u' | 'r'; until: number; name: string }[],
+	pin: { on: false, allowed: true, has_google: true, has_pw: false }
 };
 
 function data(over: Record<string, unknown> = {}) {
@@ -57,6 +58,7 @@ function data(over: Record<string, unknown> = {}) {
 			tz: string | null;
 		} | null;
 		mutes: { target: string; kind: 'u' | 'r'; until: number; name: string }[];
+		pin: { on: boolean; allowed: boolean; has_google: boolean; has_pw: boolean };
 	};
 }
 

@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { find_user_by_email, patch_user } from '$lib/server/user';
 import { hash_pw } from '$lib/server/pw';
-import { encode_session } from '$lib/server/session';
+import { sign_in } from '$lib/server/signin';
 import { assert_session_current } from '$lib/server/hub_client';
 
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
@@ -24,12 +24,6 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	});
 	if (!updated) throw error(404, 'account not found');
 
-	const session = await encode_session(env.SECRET, {
-		id: locals.user.id,
-		username: updated.u,
-		email,
-		is_device: false
-	});
-	cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
+	await sign_in(env, locals.x2_ws, cookies, locals.user.id, { username: updated.u, email });
 	return json({ ok: true });
 };

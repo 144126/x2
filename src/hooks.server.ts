@@ -1,6 +1,13 @@
-import { dev } from '$app/environment';
 import { decode_session } from '$lib/server/session';
-import type { Handle } from '@sveltejs/kit';
+import {
+	clear_unlock,
+	decode_unlock,
+	encode_unlock,
+	open_while_locked,
+	set_unlock,
+	unlocks
+} from '$lib/server/pin';
+import { error, redirect, type Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 
 function devFetcher(): Fetcher {
@@ -37,13 +44,42 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const session_id = event.cookies.get('session');
 	event.locals.user = null;
+	let pin_v = 0;
 	if (session_id) {
 		const s = await decode_session(env.SECRET, session_id);
 		if (s) {
 			event.locals.user = s.user;
 			event.locals.session_v = s.v;
+			pin_v = s.pin;
 		} else {
 			event.cookies.delete('session', { path: '/' });
+		}
+	}
+
+	// The app lock. The pin version rides inside the HMAC-signed session cookie, so a browser
+	// that holds a session cannot lie about whether that account is locked, and the check
+	// costs no round trip. Unlocking mints a second signed cookie tied to that same version —
+	// changing or clearing the pin bumps the version and every outstanding unlock dies.
+	event.locals.pin_on = pin_v > 0;
+	event.locals.pin_v = pin_v;
+	event.locals.pin_locked = false;
+	if (event.locals.user && pin_v > 0) {
+		const uid = event.locals.user.id;
+		const tok = await decode_unlock(env.SECRET, event.cookies.get('pin'));
+		if (unlocks(tok, uid, pin_v)) {
+			set_unlock(event.cookies, await encode_unlock(env.SECRET, uid, pin_v));
+		} else {
+			event.locals.pin_locked = true;
+			if (event.cookies.get('pin')) clear_unlock(event.cookies);
+			if (!open_while_locked(event.url.pathname)) {
+				// A page gets sent to the lock screen; anything else is simply refused, because a
+				// locked browser must never receive a byte of the account's own data.
+				if (event.isDataRequest || event.request.headers.get('accept')?.includes('text/html')) {
+					const back = event.url.pathname + event.url.search;
+					throw redirect(302, '/lock' + (back === '/' ? '' : `?r=${encodeURIComponent(back)}`));
+				}
+				throw error(423, 'locked');
+			}
 		}
 	}
 
@@ -79,5 +115,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (wait_until) wait_until(t);
 	};
 
-	return resolve(event);
+	const res = await resolve(event);
+	// Tells the service worker whether this account is locked-capable. It stops caching pages
+	// and media the moment this turns on, and throws away whatever it already holds — an
+	// offline reload must never repaint a thread the pin was supposed to be hiding.
+	if (event.locals.user) res.headers.set('x-pin', event.locals.pin_on ? '1' : '0');
+	return res;
 };

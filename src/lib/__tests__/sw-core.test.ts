@@ -3,8 +3,12 @@ import {
 	cache_mode,
 	cache_name,
 	is_cacheable,
+	may_cache,
 	notification_from,
 	pick_client,
+	pin_header,
+	purgeable,
+	redact,
 	should_notify,
 	stale_caches,
 	target_url,
@@ -272,5 +276,76 @@ describe('should_notify', () => {
 
 	it('notifies when nothing is open', () => {
 		expect(should_notify([], '/chat/abc')).toBe(true);
+	});
+});
+
+describe('the cache under an app lock', () => {
+	const res = (v?: string) => ({ headers: { get: () => v ?? null } });
+
+	it('reads the flag the server sets, and leaves it alone when nothing was said', () => {
+		expect(pin_header(res('1'))).toBe(true);
+		expect(pin_header(res('0'))).toBe(false);
+		expect(pin_header(res())).toBeNull();
+	});
+
+	it('treats anything that could show the account as throwaway', () => {
+		expect(purgeable('https://x2.studio/chats', ctx)).toBe(true);
+		expect(purgeable('https://x2.studio/media/photo-key', ctx)).toBe(true);
+		expect(purgeable('https://x2.studio/~room/__data.json', ctx)).toBe(true);
+	});
+
+	it('keeps the build assets and the offline page, which name nobody', () => {
+		expect(purgeable('https://x2.studio/_app/immutable/chunk.abc123.js', ctx)).toBe(false);
+		expect(purgeable('https://x2.studio/logo.svg', ctx)).toBe(false);
+		expect(purgeable('https://x2.studio/offline', ctx)).toBe(false);
+		expect(purgeable('https://x2.studio/__pin', ctx)).toBe(false);
+	});
+
+	it('stops storing pages and media once a pin is set, and keeps storing the shell', () => {
+		expect(may_cache('https://x2.studio/chats', ctx, true)).toBe(false);
+		expect(may_cache('https://x2.studio/media/photo-key', ctx, true)).toBe(false);
+		expect(may_cache('https://x2.studio/_app/immutable/chunk.abc123.js', ctx, true)).toBe(true);
+		expect(may_cache('https://x2.studio/offline', ctx, true)).toBe(true);
+	});
+
+	it('caches everything as before when no pin is set', () => {
+		expect(may_cache('https://x2.studio/chats', ctx, false)).toBe(true);
+		expect(may_cache('https://x2.studio/media/photo-key', ctx, false)).toBe(true);
+	});
+});
+
+describe('notifications under an app lock', () => {
+	const p = {
+		title: 'ada',
+		body: 'are you around?',
+		url: '/chat/ada-id',
+		conv: 'ada-id|me',
+		id: 'msg-1',
+		image: '/media/u/a.png',
+		kind: 'u' as const,
+		reply_to: 'ada-id',
+		unread: 3
+	};
+
+	it('says nothing about the sender, the message, or the photo', () => {
+		const n = notification_from(redact(p));
+		expect(n.title).toBe('x2');
+		expect(n.options.body).toBe('new message');
+		expect(n.options.image).toBeUndefined();
+		// the click target survives — it is never drawn, it just picks the thread to open
+		expect(n.options.data.url).toBe('/chat/ada-id');
+	});
+
+	it('drops the inline reply, which would send a message from a locked phone', () => {
+		expect(notification_from(redact(p)).options.actions ?? []).toEqual([]);
+	});
+
+	it('still opens the right thread and still carries the badge count', () => {
+		expect(redact(p)?.url).toBe('/chat/ada-id');
+		expect(redact(p)?.unread).toBe(3);
+	});
+
+	it('leaves an empty payload alone', () => {
+		expect(redact(null)).toBeNull();
 	});
 });

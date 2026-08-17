@@ -8,6 +8,11 @@ export interface User {
 	o?: 'google' | 'local' | 'device'; // provider — 'device' means created implicitly, no password or google link yet
 	gl?: string; // linked google sub — set when a device/local account later links Google, distinct from g (fixed at creation, used to derive id)
 	h?: string; // pw hash (local only)
+	// app lock — see src/lib/server/pin.ts
+	pn?: string; // pin hash, peppered with SECRET. presence is what turns the lock on
+	pv?: number; // pin version — bumped on every set, change and clear, killing every unlock token
+	pf?: number; // consecutive failed unlocks
+	pl?: number; // locked out until this ts, after too many failures
 	// profile
 	u: string; // username (the only user-facing identity)
 	a?: string; // about text

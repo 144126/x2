@@ -8,10 +8,15 @@
 	import InstallBanner from '$lib/components/InstallBanner.svelte';
 	import { sync_badge } from '$lib/badge';
 	import { sync_subscription } from '$lib/push-client';
+	import { arm_lock } from '$lib/pin-client';
 	import { Search, MessagesSquare, DoorOpen, UserRound, LogOut, Radio } from '@lucide/svelte';
 
 	let { children, data } = $props();
 	let vapid_key = $state('');
+
+	onMount(() => {
+		if (data.pin_on) return arm_lock();
+	});
 
 	onMount(async () => {
 		if (!data.user) return;

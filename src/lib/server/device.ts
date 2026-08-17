@@ -38,7 +38,10 @@ export async function ensure_device_session(
 	const session = await encode_session(env.SECRET, {
 		id: u.id,
 		username: u.u,
-		is_device: is_device_only(u)
+		is_device: is_device_only(u),
+		// this device id may belong to an account that has since linked google and set a pin —
+		// a cleared cookie must not hand back a session that has never heard of it
+		pin: u.pn ? (u.pv ?? 0) : 0
 	});
 	cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
 	locals.user = { id: u.id, username: u.u };

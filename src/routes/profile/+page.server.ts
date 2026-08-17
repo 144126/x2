@@ -5,7 +5,17 @@ import { get_user, get_user_name } from '$lib/server/user';
 import { get_group } from '$lib/server/group';
 import { ensure } from '$lib/server/qdrant';
 import { ensure_partner_code } from '$lib/server/partner';
+import { can_lock } from '$lib/server/user';
 import { list_mutes, type Mute } from '$lib/server/mute';
+import type { User } from '$lib/types';
+
+// A load return is serialised whole and shipped to the browser, so the record is copied field
+// by field rather than spread. `h` and `pn` are the password and pin hashes and must never
+// leave the worker.
+function safe(u: User): User {
+	const { a, ag, ci, co, i, m, p, r, st, u: name, w, tz, sp, ac, d } = u;
+	return { s: 'u', g: '', a, ag, ci, co, i, m, p, r, st, u: name, w, tz, sp, ac, d };
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'auth');
@@ -22,9 +32,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 	);
 	return {
 		id: locals.user.id,
-		p: p ?? { id: locals.user.id, u: locals.user.username, ac },
+		p: p ? safe(p) : ({ s: 'u', g: '', d: 0, u: locals.user.username, ac } satisfies User),
 		partner_code: ac,
 		mutes,
-		geo: locals.geo
+		geo: locals.geo,
+		pin: {
+			on: !!p?.pn,
+			allowed: !!p && can_lock(p),
+			has_google: p?.o === 'google' || !!p?.gl,
+			has_pw: !!p?.h
+		}
 	};
 };

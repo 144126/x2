@@ -4,9 +4,9 @@ import { env } from '$env/dynamic/private';
 import { create_pw_user, get_user, find_user_by_email } from '$lib/server/user';
 import { uuid_from } from '$lib/server/qdrant';
 import { attribute_referral, ensure_partner_code } from '$lib/server/partner';
-import { encode_session } from '$lib/server/session';
+import { sign_in } from '$lib/server/signin';
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, locals }) => {
 	const body = (await request.json().catch(() => null)) as { e?: string; p?: string; c?: string };
 	const e = body?.e?.trim().toLowerCase();
 	const p = body?.p ?? '';
@@ -26,7 +26,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	await ensure_partner_code(env, id);
 
 	cookies.delete('ref_code', { path: '/' });
-	const session = await encode_session(env.SECRET, { id, username: e.split('@')[0], email: e });
-	cookies.set('session', session, { path: '/', httpOnly: true, maxAge: 604800, sameSite: 'lax' });
+	// re-registering an email that already exists keeps whatever that account had, pin included
+	await sign_in(env, locals.x2_ws, cookies, id, { username: e.split('@')[0], email: e });
 	return json({ ok: true });
 };

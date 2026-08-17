@@ -7,6 +7,7 @@
 	import LocationPicker from '$lib/LocationPicker.svelte';
 	import PhoneInput from '$lib/PhoneInput.svelte';
 	import Select from '$lib/components/Select.svelte';
+	import PinSettings from '$lib/components/PinSettings.svelte';
 	import { push_state, enable_push, disable_push } from '$lib/push-client';
 	import { phone_length_error } from '$lib/phone';
 	import { detect_location } from '$lib/geo-client';
@@ -357,6 +358,8 @@
 			{/if}
 		</div>
 	</div>
+
+	<PinSettings pin={data.pin} />
 
 	{#if data.partner_code}
 		<div class="card mt-4">
