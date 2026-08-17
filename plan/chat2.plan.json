@@ -15,7 +15,7 @@
 	},
 	"client_lib": {
 		"s": "the two pure client modules every component below imports",
-		"d": 0,
+		"d": 1,
 		"t": "pnpm test && pnpm build",
 		"c": {
 			"upload_xhr": {
@@ -26,7 +26,7 @@
 			},
 			"msg_row_model": {
 				"s": "One shared client type for a thread row, so both chat pages and every component agree. Create src/lib/msg.ts exporting: `type Up = {pct: number; st: 'u'|'s'|'e'; name: string; size: number; type: string; vo?: boolean}`; `type Row = Message & {cid?: string; err?: boolean; up?: Up}`; and pure helpers `pending(r)`, `failed(r)`, `burnt(r)` (r.vo && (r.vd || r.vw?.includes(me))), `openable(r, me)` (view-once, not burnt, not mine), `label(r)` returning the lowercase chip text such as 'view once photo' or a filename. Import Message, msg_kind and KIND_LABEL from $lib/types. Pure functions only — no fetch, no DOM. Unit test it: this is the module every render decision reads.",
-				"d": 0,
+				"d": 1,
 				"t": "test -f src/lib/msg.ts && test -f src/lib/__tests__/msg.test.ts && pnpm test && pnpm build"
 			}
 		}
