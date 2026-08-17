@@ -33,7 +33,7 @@
 	},
 	"components": {
 		"s": "the shared message surface — built once here, used by both chat pages",
-		"d": 0,
+		"d": 1,
 		"t": "pnpm test && pnpm build",
 		"c": {
 			"attachment_chip": {
@@ -55,7 +55,7 @@
 			},
 			"message_row": {
 				"s": "One bubble, used by both pages. Create src/lib/components/MessageRow.svelte, props `{m: Row, me: string, mine: boolean, sender_name?: string, quoted?: Row | null, quoted_name?: string, actions: string[], onaction: (id: string, m: Row) => void}`. It renders forwarded tag, quote block, Attachment, sticker, text, reactions, time, and the pending/failed state. Tapping the bubble opens MessageMenu built from `actions`; the component owns positioning and calls onaction(id, m) — it performs NO fetch and decides NO permissions. Action ids: reply, react, forward, copy, private, open, retry, delete_me, delete_all. Skip opening the menu when window.getSelection() is non-collapsed, or selecting text becomes impossible. A dx tombstone renders as italic mute 'this message was deleted' with no menu.",
-				"d": 0,
+				"d": 1,
 				"v": "test -f src/lib/components/MessageMenu.svelte",
 				"t": "test -f src/lib/components/MessageRow.svelte && test -f src/lib/components/__tests__/MessageRow.svelte.test.ts && pnpm test && pnpm build"
 			}
