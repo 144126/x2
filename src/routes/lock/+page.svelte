@@ -81,7 +81,7 @@
 		});
 		busy = false;
 		password = '';
-		if (res.ok) return location.assign('/profile#pin');
+		if (res.ok) return location.assign('/me#pin');
 		const body = (await res.json().catch(() => ({}))) as { wait?: number };
 		wait = body.wait ?? wait;
 		msg = 'wrong password';

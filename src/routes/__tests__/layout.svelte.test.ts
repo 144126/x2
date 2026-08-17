@@ -53,14 +53,14 @@ describe('bottom nav', () => {
 		render(Layout, { props: { data: { user: fakeUser }, children: () => '' } });
 		const links = screen.getAllByRole('link');
 		const labels = links.map((l) => l.textContent?.toLowerCase().trim());
-		expect(labels).toEqual(expect.arrayContaining(['talk', 'chats', 'rooms', 'find', 'profile']));
+		expect(labels).toEqual(expect.arrayContaining(['talk', 'chats', 'rooms', 'find', 'me']));
 	});
 
 	it('renders no nav at all when signed out', () => {
 		render(Layout, { props: { data: { user: null }, children: () => '' } });
 		const links = screen.queryAllByRole('link');
 		const navLabels = links.filter((l) =>
-			['talk', 'chats', 'rooms', 'find', 'profile'].includes(
+			['talk', 'chats', 'rooms', 'find', 'me'].includes(
 				l.textContent?.toLowerCase().trim() ?? ''
 			)
 		);
@@ -73,7 +73,7 @@ describe('bottom nav', () => {
 		});
 		const links = screen.getAllByRole('link').filter((l) => l.textContent?.toLowerCase().trim());
 		const navLinks = links.filter((l) =>
-			['talk', 'chats', 'rooms', 'find', 'profile'].includes(
+			['talk', 'chats', 'rooms', 'find', 'me'].includes(
 				l.textContent?.toLowerCase().trim() ?? ''
 			)
 		);
@@ -100,7 +100,7 @@ describe('device-account upgrade banner', () => {
 		});
 		expect(screen.getByText(/chatting without an account/)).toBeInTheDocument();
 		const link = screen.getByRole('link', { name: 'link account' });
-		expect(link).toHaveAttribute('href', '/profile#link-account');
+		expect(link).toHaveAttribute('href', '/me#link-account');
 	});
 
 	it('hides the banner for a fully linked user', () => {

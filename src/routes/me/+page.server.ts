@@ -13,8 +13,8 @@ import type { User } from '$lib/types';
 // by field rather than spread. `h` and `pn` are the password and pin hashes and must never
 // leave the worker.
 function safe(u: User): User {
-	const { a, ag, ci, co, i, m, p, r, st, u: name, w, tz, sp, ac, d } = u;
-	return { s: 'u', g: '', a, ag, ci, co, i, m, p, r, st, u: name, w, tz, sp, ac, d };
+	const { a, ag, ci, co, i, m, p, r, st, u: name, w, tz, sp, ac, d, mp } = u;
+	return { s: 'u', g: '', a, ag, ci, co, i, m, p, r, st, u: name, w, tz, sp, ac, d, mp };
 }
 
 export const load: PageServerLoad = async ({ locals }) => {

@@ -14,6 +14,21 @@
 	let { data } = $props();
 	let p = $state(data.p as User);
 
+	let previews = $state(p.mp === 1);
+	let saving_previews = $state(false);
+
+	async function toggle_previews() {
+		const next = !previews;
+		saving_previews = true;
+		const res = await fetch('/api/profile', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ previews: next })
+		});
+		saving_previews = false;
+		if (res.ok) previews = next;
+	}
+
 	let credit_balance = $state<number | null>(null);
 	let buying = $state(false);
 	let pushState = $state<'on' | 'off' | 'blocked' | 'unsupported'>('off');

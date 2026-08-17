@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { get_user_names } from '$lib/server/chat';
+import { get_user } from '$lib/server/user';
 import { list_folders } from '$lib/server/folders';
 import { hub_convs, ChatHubError } from '$lib/server/hub_client';
 import { list_mutes } from '$lib/server/mute';
@@ -9,10 +10,14 @@ import { list_mutes } from '$lib/server/mute';
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	const uid = locals.user.id;
-	const [folders, mutes] = await Promise.all([
+	const [folders, mutes, self] = await Promise.all([
 		list_folders(env, uid, 'c'),
-		list_mutes(env, locals.x2_ws, uid)
+		list_mutes(env, locals.x2_ws, uid),
+		get_user(env, uid)
 	]);
+	// a preview is the message itself, on a screen anyone can read over your shoulder. It is
+	// stripped on the server rather than hidden in the markup, so it never reaches the page.
+	const previews = self?.mp === 1;
 	let convs: Awaited<ReturnType<typeof hub_convs>> = [];
 	let hub_error: string | null = null;
 	try {
@@ -27,6 +32,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const muted = new Set(mutes.filter((m) => m.k === 'u').map((m) => m.tg));
 	const r = convs.map((c) => ({
 		...c,
+		preview: previews ? c.preview : '',
 		name: names[c.peer ?? c.group ?? ''] ?? c.peer ?? c.group ?? '',
 		muted: muted.has(c.peer ?? '')
 	}));
@@ -37,5 +43,5 @@ export const load: PageServerLoad = async ({ locals }) => {
 			if (peer) by_conv[peer] = c.unread;
 		}
 	}
-	return { convs: r, folders, unread: by_conv, hub_error };
+	return { convs: r, folders, unread: by_conv, hub_error, previews };
 };

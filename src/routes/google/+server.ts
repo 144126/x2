@@ -56,7 +56,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 			if (!me || !locals.user || (me.g !== gu.sub && me.gl !== gu.sub && me.m !== gu.email))
 				throw error(403, 'wrong_account');
 			await clear_pin(env, locals.x2_ws, cookies, locals.user);
-			throw redirect(302, '/profile#pin');
+			throw redirect(302, '/me#pin');
 		}
 
 		let id: string;

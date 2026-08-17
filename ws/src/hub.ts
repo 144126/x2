@@ -82,7 +82,12 @@ export class ChatHub implements DurableObject {
 				await this.state.storage.put('conv:' + conv, {
 					...(body.group ? { group: body.group as string } : { peer: body.from as string }),
 					last: body.ts as number,
-					preview: (body.text as string) || (body.file ? '📎 file' : '📷 image')
+					// the sender already worked out what this thread is allowed to say about the
+					// message — a view-once one says only its kind, never its content
+					preview:
+						(body.preview as string) ||
+						(body.text as string) ||
+						(body.file ? '📎 file' : '📷 image')
 				});
 			}
 			const delivered = this.deliver(to, payload);

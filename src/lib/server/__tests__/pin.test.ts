@@ -121,7 +121,7 @@ describe('what a locked browser may still reach', () => {
 			'/chats',
 			'/chat/abc',
 			'/find',
-			'/profile',
+			'/me',
 			'/rooms',
 			'/~room',
 			'/@ada',

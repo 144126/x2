@@ -46,7 +46,7 @@
 		{ href: '/rooms', label: 'rooms', icon: DoorOpen },
 		{ href: '/chats', label: 'chats', icon: MessagesSquare },
 		{ href: '/find', label: 'find', icon: Search },
-		{ href: '/profile', label: 'profile', icon: UserRound }
+		{ href: '/me', label: 'me', icon: UserRound }
 	];
 	let here = $derived($page.url.pathname);
 	const exact = ['/', '/find'];
@@ -106,7 +106,7 @@
 				class="wrap flex shrink-0 flex-wrap items-center gap-2 border-b border-line bg-accent-soft py-1.5 text-[11.5px] text-ink-soft"
 			>
 				<span>you're chatting without an account — link one so you don't lose access.</span>
-				<a href="/profile#link-account" class="btn btn-amber ml-auto px-2.5 py-1 text-[11px]"
+				<a href="/me#link-account" class="btn btn-amber ml-auto px-2.5 py-1 text-[11px]"
 					>link account</a
 				>
 			</div>

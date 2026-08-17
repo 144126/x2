@@ -26,6 +26,7 @@ export interface User {
 	tz?: string; // IANA timezone
 	sp?: string[]; // own sticker pack — R2 media keys, newest first (see /api/stickers)
 	hn?: string[]; // voice notes already heard, newest first — nothing is ever replayed
+	mp?: 1; // show message previews on the chats page. off unless asked for
 	// partner program
 	ac?: string; // this user's own referral code, as a partner
 	invited_by?: string; // uid of the partner whose code this user signed up under
@@ -56,9 +57,6 @@ export interface Message {
 	// deletion
 	dl?: string[]; // uids who deleted this for themselves alone
 	dx?: number; // ts deleted for everyone — content is gone, the tombstone stays
-	// transport only, never stored: short-lived signed urls for whatever media is attached
-	iu?: string;
-	fu?: string;
 }
 
 /** i=image, a=audio, f=file, s=sticker, t=text */

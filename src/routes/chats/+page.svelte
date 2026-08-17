@@ -29,7 +29,7 @@
 				{
 					peer,
 					last: m.ts as number,
-					preview: m.text as string,
+					preview: data.previews ? ((m.text as string) ?? '') : '',
 					name: prev?.name ?? (m.from_name as string) ?? peer
 				},
 				...rest
@@ -74,7 +74,9 @@
 								>
 							{/if}
 						</div>
-						<p class="line-clamp-1 max-w-[60ch] text-[12.5px] text-ink-soft">{c.preview}</p>
+						{#if c.preview}
+							<p class="line-clamp-1 max-w-[60ch] text-[12.5px] text-ink-soft">{c.preview}</p>
+						{/if}
 					</a>
 				</li>
 			{/each}

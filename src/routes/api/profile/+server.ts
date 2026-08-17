@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { save_profile } from '$lib/server/profile';
-import { get_user } from '$lib/server/user';
+import { get_user, patch_user } from '$lib/server/user';
 import { ensure } from '$lib/server/qdrant';
 import { phone_length_error } from '$lib/phone';
 
@@ -10,7 +10,10 @@ export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'auth');
 	await ensure(env);
 	const p = await get_user(env, locals.user.id);
-	return json({ p: p ?? { id: locals.user.id, u: locals.user.username } });
+	if (!p) return json({ p: { u: locals.user.username } });
+	// field by field: this record also holds the password and pin hashes
+	const { a, ag, ci, co, i, m, r, st, u, w, tz, sp, ac, mp } = p;
+	return json({ p: { a, ag, ci, co, i, m, r, st, u, w, tz, sp, ac, mp } });
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -25,7 +28,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		state?: string;
 		city?: string;
 		whatsapp?: string;
+		previews?: boolean;
 	};
+	if (typeof b.previews === 'boolean') {
+		await patch_user(env, locals.user.id, b.previews ? { mp: 1 } : { mp: undefined });
+		return json({ ok: true });
+	}
+
 	const phoneErr = b.whatsapp ? phone_length_error(b.whatsapp, b.country ?? null) : null;
 	if (phoneErr) throw error(400, phoneErr);
 
