@@ -1,7 +1,106 @@
+$ node scripts/dev-all.mjs
 $ vite dev
+$ wrangler dev -c ws/wrangler.jsonc
 
-  VITE v8.1.5  ready in 5584 ms
+ ⛅️ wrangler 4.114.0
+────────────────────
+Using secrets defined in ws/.env
+Your Worker has access to the following bindings:
+Binding                                                                     Resource                  Mode
+env.CHAT_HUB (ChatHub)                                                      Durable Object            local
+env.CREDIT_ACCOUNT (CreditAccount)                                          Durable Object            local
+env.ROOM (Room)                                                             Durable Object            local
+env.MATCH_LOBBY (MatchLobby)                                                Durable Object            local
+env.QDRANT_URL (45748cb1c67946df943075fa14cb8815/QDRANT_URL)                Secrets Store Secret      local
+env.QDRANT_KEY (45748cb1c67946df943075fa14cb8815/QDRANT_KEY)                Secrets Store Secret      local
+env.SECRET (45748cb1c67946df943075fa14cb8815/SECRET)                        Secrets Store Secret      local
+env.X2_ORIGIN (45748cb1c67946df943075fa14cb8815/X2_ORIGIN)                  Secrets Store Secret      local
+env.VAPID_PUBLIC (45748cb1c67946df943075fa14cb8815/VAPID_PUBLIC)            Secrets Store Secret      local
+env.VAPID_PRIVATE (45748cb1c67946df943075fa14cb8815/VAPID_PRIVATE)          Secrets Store Secret      local
+env.VAPID_SUBJECT (45748cb1c67946df943075fa14cb8815/VAPID_SUBJECT)          Secrets Store Secret      local
+env.DEV_QDRANT_URL ("(hidden)")                                             Environment Variable      local
+env.DEV_QDRANT_KEY ("(hidden)")                                             Environment Variable      local
+env.DEV_SECRET ("(hidden)")                                                 Environment Variable      local
+env.DEV_VAPID_PUBLIC ("(hidden)")                                           Environment Variable      local
+env.DEV_VAPID_PRIVATE ("(hidden)")                                          Environment Variable      local
+env.DEV_VAPID_SUBJECT ("(hidden)")                                          Environment Variable      local
+
+⎔ Starting local server...
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mScheduled Workers are not automatically triggered during local development.[0m
+
+  To manually trigger a scheduled event, run:
+    curl "http://localhost:8787/cdn-cgi/handler/scheduled"
+  For more details, see [4mhttps://developers.cloudflare.com/workers/configuration/cron-triggers/#test-cron-triggers-locally[0m
+
+
+[wrangler:info] Ready on http://localhost:8787
+
+  VITE v8.1.5  ready in 1959 ms
 
   ➜  Local:   http://localhost:7227/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
+⎔ Reloading local server...
+⎔ Local server updated and ready
+Using secrets defined in .env
+[HUB] GET /hub/e7bb811d/mutes -> 200 64ms
+[HUB] GET /hub/e7bb811d/convs -> 200 26ms
+3:25:34 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:25:34 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:25:34 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/e7bb811d/sv -> 200 23ms
+[wrangler:info] GET /ws 101 Switching Protocols (10ms)
+3:25:47 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:25:47 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:25:47 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+[HUB] GET /hub/e7bb811d/sv -> 200 18ms
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+
+[1;31m[404] GET /app/chat/[0m
+[HUB] POST /hub/e7bb811d/sub -> 200 13ms
+[HUB] GET /hub/e7bb811d/unread -> 200 4ms
+[HUB] GET /hub/e7bb811d/mutes -> 200 11ms
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:41 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: '73db4f19-d50a-4e0f-8530-4a4067938a78' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+[HUB] GET /hub/e7bb811d/sv -> 200 11ms
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] POST /hub/e7bb811d/read -> 200 15ms
+[HUB] GET /hub/e7bb811d/sv -> 200 11ms
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+[HUB] POST /hub/e7bb811d/sub -> 200 16ms
+[HUB] GET /hub/e7bb811d/unread -> 200 16ms
+[HUB] GET /hub/e7bb811d/sv -> 200 15ms
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+[HUB] GET /hub/e7bb811d/unread -> 200 7ms
+[HUB] GET /hub/e7bb811d/sv -> 200 9ms
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+[HUB] GET /hub/e7bb811d/unread -> 200 7ms

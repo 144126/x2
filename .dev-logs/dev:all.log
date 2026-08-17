@@ -1,18 +1,16 @@
-[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
 $ node scripts/dev-all.mjs
-[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
-[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
 $ vite dev
 $ wrangler dev -c ws/wrangler.jsonc
 
- ⛅️ wrangler 4.114.0 (update available 4.118.0)
-───────────────────────────────────────────────
+ ⛅️ wrangler 4.114.0
+────────────────────
 Using secrets defined in ws/.env
 Your Worker has access to the following bindings:
 Binding                                                                     Resource                  Mode
 env.CHAT_HUB (ChatHub)                                                      Durable Object            local
 env.CREDIT_ACCOUNT (CreditAccount)                                          Durable Object            local
 env.ROOM (Room)                                                             Durable Object            local
+env.MATCH_LOBBY (MatchLobby)                                                Durable Object            local
 env.QDRANT_URL (45748cb1c67946df943075fa14cb8815/QDRANT_URL)                Secrets Store Secret      local
 env.QDRANT_KEY (45748cb1c67946df943075fa14cb8815/QDRANT_KEY)                Secrets Store Secret      local
 env.SECRET (45748cb1c67946df943075fa14cb8815/SECRET)                        Secrets Store Secret      local
@@ -36,216 +34,73 @@ env.DEV_VAPID_SUBJECT ("(hidden)")                                          Envi
 
 
 [wrangler:info] Ready on http://localhost:8787
-⎔ Reloading local server...
 
-  VITE v8.1.5  ready in 2670 ms
+  VITE v8.1.5  ready in 1959 ms
 
   ➜  Local:   http://localhost:7227/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
+⎔ Reloading local server...
 ⎔ Local server updated and ready
 Using secrets defined in .env
-Using secrets defined in .env
-*** Fatal uncaught kj::Exception: workerd/util/sqlite.c++:844: failed: SENTRY_DO SQLite failed; NOSENTRY database is locked: SQLITE_BUSY (extended: SQLITE_BUSY_RECOVERY)
-stack: /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33af68b /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2010925 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206e2bc /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206dc76 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@202b09c /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@202aaf2 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1fe0a32 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@20680bf /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@206b415 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1fb1339 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5432855 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5432d78 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@543082e /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@543062e /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f98d17 /usr/lib/libc.so.6@2abfb /usr/lib/libc.so.6@2acb4 /home/ed/i/x2/node_modules/.pnpm/@cloudflare+workerd-linux-64@1.20260722.1/node_modules/@cloudflare/workerd-linux-64/bin/workerd@1f98024
-[HUB] GET /hub/e7bb811d/sv -> 200 64ms
-[HUB] GET /hub/e7bb811d/sv -> 200 7ms
-12:01:24 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+[HUB] GET /hub/e7bb811d/mutes -> 200 64ms
+[HUB] GET /hub/e7bb811d/convs -> 200 26ms
+3:25:34 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:01:24 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:25:34 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:01:24 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:01:24 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-[wrangler:info] GET / 200 OK (15ms)
-12:01:51 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:25:34 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:01:51 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+[HUB] GET /hub/e7bb811d/sv -> 200 23ms
+[wrangler:info] GET /ws 101 Switching Protocols (10ms)
+3:25:47 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:01:51 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:01:51 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:277:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-[HUB] GET /hub/e7bb811d/sv -> 200 52ms
-[HUB] GET /hub/e7bb811d/sv -> 200 11ms
-[HUB] POST /hub/e7bb811d/sub -> 200 34ms
-[HUB] GET /hub/e7bb811d/sv -> 200 8ms
-[HUB] GET /hub/e7bb811d/unread -> 200 10ms
-[HUB] GET /hub/73db4f19/sv -> 200 22ms
-12:02:43 PM [vite-plugin-svelte] src/routes/app/+page.svelte:165:4 Non-interactive element `<li>` cannot have interactive role 'button'
-https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
-12:02:43 PM [vite-plugin-svelte] src/routes/app/+page.svelte:165:4 Visible, non-interactive element `<li>` with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
-https://svelte.dev/e/a11y_click_events_have_key_events
-[HUB] GET /hub/73db4f19/sv -> 200 21ms
-[HUB] GET /hub/e7bb811d/sv -> 200 21ms
-[HUB] GET /hub/e7bb811d/unread -> 200 14ms
-[HUB] GET /hub/e7bb811d/sv -> 200 21ms
-[HUB] GET /hub/e7bb811d/unread -> 200 18ms
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:36:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:25:47 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:37:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:25:47 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:38:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:39:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:50:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:51:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:52:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:53:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:54:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:55:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:57:26 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:05:35 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:55:8 Avoid using autofocus
-https://svelte.dev/e/a11y_autofocus
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/73db4f19/sv -> 200 97ms
-[HUB] GET /hub/73db4f19/mutes -> 200 7ms
-[HUB] GET /hub/73db4f19/sv -> 200 7ms
-[wrangler:info] GET /ws 101 Switching Protocols (13ms)
-[HUB] GET /hub/73db4f19/sv -> 200 19ms
-[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[RELAY] no targets, returning null[0m
-
-
-[HUB] POST /hub/73db4f19/conv -> 200 29ms
-[HUB] GET /hub/73db4f19/sv -> 200 986ms
-[HUB] GET /hub/73db4f19/sv -> 200 22ms
-[HUB] GET /hub/73db4f19/mutes -> 200 20ms
-12:08:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:08:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:08:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:318:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-12:08:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:319:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-12:08:42 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:55:8 Avoid using autofocus
-https://svelte.dev/e/a11y_autofocus
-[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'e7bb811d-4c81-4a23-8870-63d4ba299573' }
-[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
-[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
-12:08:45 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:08:45 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-12:08:45 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:318:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-12:08:45 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:319:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/73db4f19/sv -> 200 19ms
-[HUB] GET /hub/73db4f19/sv -> 200 37ms
-[HUB] GET /hub/73db4f19/sv -> 200 21ms
-[wrangler:info] GET /ws 101 Switching Protocols (41ms)
-[HUB] GET /hub/73db4f19/sv -> 200 50ms
-[wrangler:info] GET /ws 101 Switching Protocols (19ms)
-[HUB] GET /hub/73db4f19/sv -> 200 30ms
-[HUB] GET /hub/73db4f19/unread -> 200 21ms
-[wrangler:info] GET /ws 101 Switching Protocols (12ms)
-[HUB] GET /hub/73db4f19/sv -> 200 28ms
-[HUB] POST /hub/73db4f19/conv -> 200 484ms
-[HUB] GET /hub/e7bb811d/sv -> 200 7ms
-[HUB] GET /hub/e7bb811d/mutes -> 200 20ms
-[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: '73db4f19-d50a-4e0f-8530-4a4067938a78' }
-[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
-[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/e7bb811d/sv -> 200 15ms
-[HUB] GET /hub/e7bb811d/sv -> 200 19ms
-[wrangler:info] GET /ws 101 Switching Protocols (13ms)
-[HUB] GET /hub/e7bb811d/sv -> 200 12ms
-[HUB] GET /hub/e7bb811d/sv -> 200 15ms
-[wrangler:info] GET /ws 101 Switching Protocols (25ms)
-[HUB] POST /hub/e7bb811d/sub -> 200 31ms
-[HUB] GET /hub/e7bb811d/sv -> 200 19ms
-[HUB] GET /hub/e7bb811d/sv -> 200 7ms
-[wrangler:info] GET /ws 101 Switching Protocols (12ms)
-[HUB] GET /hub/e7bb811d/unread -> 200 17ms
-[HUB] GET /hub/73db4f19/sv -> 200 7ms
-[HUB] GET /hub/73db4f19/sv -> 200 34ms
-[HUB] GET /hub/73db4f19/sv -> 200 39ms
-[HUB] GET /hub/73db4f19/sv -> 200 42ms
-
-[1;31m[404] GET /stickers/basics/heart-eyes.webp[0m
-
-[1;31m[404] GET /stickers/basics/thumbs-up.webp[0m
-
-[1;31m[404] GET /stickers/basics/wave.webp[0m
-[HUB] GET /hub/73db4f19/sv -> 200 15ms
-[HUB] GET /hub/73db4f19/sv -> 200 18ms
-
-[1;31m[404] GET /stickers/basics/wave.webp[0m
-[HUB] POST /hub/73db4f19/conv -> 200 31ms
-[HUB] GET /hub/e7bb811d/sv -> 200 12ms
-
-[1;31m[404] GET /stickers/basics/wave.webp[0m
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/4.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/7.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/10.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-12:11:31 PM [vite] (ssr) page reload .svelte-kit/generated/shared/error-template.js
-12:11:31 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-12:11:31 PM [vite] (client) page reload .svelte-kit/generated/root.js
-12:11:31 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
-12:11:31 PM [vite] (ssr) page reload .svelte-kit/generated/root.svelte
-[HUB] GET /hub/73db4f19/sv -> 200 49ms
-[HUB] GET /hub/e7bb811d/sv -> 200 58ms
-[HUB] GET /hub/73db4f19/mutes -> 200 40ms
-[HUB] GET /hub/e7bb811d/mutes -> 200 23ms
-[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: '73db4f19-d50a-4e0f-8530-4a4067938a78' }
-[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
-[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
-[HUB] GET /hub/e7bb811d/sv -> 200 103ms
-
-[1;31m[404] GET /stickers/basics/wave.webp[0m
-[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'e7bb811d-4c81-4a23-8870-63d4ba299573' }
-[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
-[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
-[HUB] GET /hub/73db4f19/sv -> 200 22ms
-
-[1;31m[404] GET /stickers/basics/wave.webp[0m
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/e7bb811d/sv -> 200 108ms
-[HUB] GET /hub/e7bb811d/sv -> 200 143ms
-[HUB] GET /hub/e7bb811d/sv -> 200 15ms
-[wrangler:info] GET /ws 101 Switching Protocols (70ms)
-[HUB] GET /hub/e7bb811d/sv -> 200 47ms
-[HUB] GET /hub/e7bb811d/sv -> 200 68ms
-[wrangler:info] GET /ws 101 Switching Protocols (58ms)
-[HUB] POST /hub/e7bb811d/sub -> 200 85ms
-[wrangler:info] GET /ws 101 Switching Protocols (42ms)
 [HUB] GET /hub/e7bb811d/sv -> 200 18ms
-[HUB] GET /hub/e7bb811d/unread -> 200 23ms
-[HUB] GET /hub/73db4f19/sv -> 200 36ms
-[HUB] GET /hub/73db4f19/sv -> 200 37ms
-[wrangler:info] GET /ws 101 Switching Protocols (23ms)
-[HUB] GET /hub/73db4f19/sv -> 200 24ms
-[HUB] GET /hub/73db4f19/sv -> 200 18ms
-[HUB] GET /hub/73db4f19/sv -> 200 24ms
-[HUB] GET /hub/73db4f19/unread -> 200 30ms
-[wrangler:info] GET /ws 101 Switching Protocols (84ms)
-[wrangler:info] GET /ws 101 Switching Protocols (79ms)
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+
+[1;31m[404] GET /app/chat/[0m
+[HUB] POST /hub/e7bb811d/sub -> 200 13ms
+[HUB] GET /hub/e7bb811d/unread -> 200 4ms
+[HUB] GET /hub/e7bb811d/mutes -> 200 11ms
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:40 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:41 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: '73db4f19-d50a-4e0f-8530-4a4067938a78' }
+[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
+[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
+[HUB] GET /hub/e7bb811d/sv -> 200 11ms
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+3:30:42 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+Assets in public directory cannot be imported from JavaScript.
+If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
+If you intend to use the URL of that asset, use /stickers/manifest.json?url.
+[HUB] POST /hub/e7bb811d/read -> 200 15ms
+[HUB] GET /hub/e7bb811d/sv -> 200 11ms
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+[HUB] POST /hub/e7bb811d/sub -> 200 16ms
+[HUB] GET /hub/e7bb811d/unread -> 200 16ms
+[HUB] GET /hub/e7bb811d/sv -> 200 15ms
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+[HUB] GET /hub/e7bb811d/unread -> 200 7ms
+[HUB] GET /hub/e7bb811d/sv -> 200 9ms
+[wrangler:info] GET /ws 101 Switching Protocols (4ms)
+[HUB] GET /hub/e7bb811d/unread -> 200 7ms

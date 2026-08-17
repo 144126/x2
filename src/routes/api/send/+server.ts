@@ -1,7 +1,14 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
-import { send_msg, send_group_msg, conv_id, group_conv_id } from '$lib/server/chat';
+import {
+	send_msg,
+	send_group_msg,
+	conv_id,
+	group_conv_id,
+	preview_of,
+	type Draft
+} from '$lib/server/chat';
 import { get_group, is_member } from '$lib/server/group';
 import { save_scheduled, MIN_LEAD_MS } from '$lib/server/scheduled';
 import { guard } from '$lib/server/rl';
@@ -46,6 +53,7 @@ export const POST: RequestHandler = async ({
 		reply_to?: string;
 		sticker?: string;
 		forwarded?: boolean;
+		view_once?: boolean;
 	};
 	const to = b?.to?.trim();
 	const group = b?.group?.trim();
@@ -60,6 +68,13 @@ export const POST: RequestHandler = async ({
 		throw error(400, 'text, image, file or sticker required');
 	if (!to && !group) throw error(400, 'to or group required');
 
+	const view_once = !!b?.view_once;
+	// a forward of a view-once message would be a second view, granted by the one person who
+	// already spent theirs — the content is gone by then anyway, so refuse it outright
+	if (view_once && forwarded) throw error(400, 'cannot forward as view once');
+	const draft: Draft = { text, image, file, reply_to, sticker, forwarded, view_once };
+	const preview = preview_of(draft);
+
 	if (b?.at && b.at > Date.now() + MIN_LEAD_MS) {
 		const sm = await save_scheduled(env, me.id, { to, group, text, image, file, at: b.at });
 		return json({ ok: true, scheduled: true, id: sm.id });
@@ -69,17 +84,7 @@ export const POST: RequestHandler = async ({
 		const g = await get_group(env, group);
 		if (!g) throw error(404, 'no group');
 		if (!(await is_member(env, locals.x2_ws, g.id, me.id))) throw error(403, 'not a member');
-		const m = await send_group_msg(
-			env,
-			me.id,
-			group,
-			text,
-			image,
-			file,
-			reply_to,
-			sticker,
-			forwarded
-		).catch((e) => {
+		const m = await send_group_msg(env, me.id, group, draft).catch((e) => {
 			console.error('[SEND] not_stored', e);
 			throw error(503, 'not_stored');
 		});
@@ -93,25 +98,21 @@ export const POST: RequestHandler = async ({
 						group,
 						from: me.id,
 						from_name: me.username,
-						text,
-						image,
-						file,
-						sticker,
+						// a view-once message travels as a knock on the door: kind only, no content,
+						// so a socket frame or a push payload is never a second copy of it
+						...(view_once
+							? { vo: 1, vk: m.vk }
+							: { text, image, file, sticker, ...(image ? { image: `/media/${image}` } : {}) }),
 						fw: forwarded || undefined,
 						ts: m.d,
 						conv: group_conv_id(group),
 						mute_key: group,
 						title: g.name,
-						push_body: file
-							? `${me.username}: 📎 ${file.name}`
-							: sticker
-								? `${me.username}: sent a sticker`
-								: `${me.username}: ${text}`,
+						push_body: `${me.username}: ${preview}`,
 						url: `/~${group}`,
 						kind: 'r',
 						reply_to: group,
-						reply_msg: reply_to,
-						...(image ? { image: `/media/${image}` } : {})
+						reply_msg: reply_to
 					},
 					locals.x2_ws
 				),
@@ -122,35 +123,22 @@ export const POST: RequestHandler = async ({
 					group_conv_id(group),
 					{ group },
 					m.d,
-					text || (file ? '📎 file' : sticker ? 'sticker' : '📷 image')
+					preview
 				).catch((e) => console.error('[HUB-CONV] sender self-index failed', e))
 			])
 		);
 
 		return json({
 			ok: true,
-			m: {
-				id: m.id,
-				from: m.f,
-				group,
-				text: m.x,
-				image: m.im,
-				file: m.fl,
-				ts: m.d,
-				rp: m.rp,
-				sk: m.sk,
-				fw: m.fw
-			}
+			m: { id: m.id, from: m.f, group, ts: m.d, rp: m.rp, fw: m.fw, vo: m.vo, vk: m.vk }
 		});
 	}
 
 	if (!to) throw error(400, 'to or group required');
-	const m = await send_msg(env, me.id, to, text, image, file, reply_to, sticker, forwarded).catch(
-		(e) => {
-			console.error('[SEND] not_stored', e);
-			throw error(503, 'not_stored');
-		}
-	);
+	const m = await send_msg(env, me.id, to, draft).catch((e) => {
+		console.error('[SEND] not_stored', e);
+		throw error(503, 'not_stored');
+	});
 
 	locals.bg(
 		Promise.all([
@@ -160,21 +148,19 @@ export const POST: RequestHandler = async ({
 					to,
 					from: me.id,
 					from_name: me.username,
-					text,
-					image,
-					file,
-					sticker,
+					...(view_once
+						? { vo: 1, vk: m.vk }
+						: { text, image, file, sticker, ...(image ? { image: `/media/${image}` } : {}) }),
 					fw: forwarded || undefined,
 					ts: m.d,
 					conv: conv_id(me.id, to),
 					mute_key: me.id,
 					title: me.username,
-					push_body: file ? `📎 ${file.name}` : sticker ? 'sent a sticker' : text,
+					push_body: preview,
 					url: `/chat/${me.id}`,
 					kind: 'u',
 					reply_to: me.id,
-					reply_msg: reply_to,
-					...(image ? { image: `/media/${image}` } : {})
+					reply_msg: reply_to
 				},
 				locals.x2_ws
 			),
@@ -185,24 +171,13 @@ export const POST: RequestHandler = async ({
 				conv_id(me.id, to),
 				{ peer: to },
 				m.d,
-				text || (file ? '📎 file' : sticker ? 'sticker' : '📷 image')
+				preview
 			).catch((e) => console.error('[HUB-CONV] sender self-index failed', e))
 		])
 	);
 
 	return json({
 		ok: true,
-		m: {
-			id: m.id,
-			from: m.f,
-			to: m.t,
-			text: m.x,
-			image: m.im,
-			file: m.fl,
-			ts: m.d,
-			rp: m.rp,
-			sk: m.sk,
-			fw: m.fw
-		}
+		m: { id: m.id, from: m.f, to: m.t, ts: m.d, rp: m.rp, fw: m.fw, vo: m.vo, vk: m.vk }
 	});
 };

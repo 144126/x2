@@ -1,329 +1,61 @@
 $ vite dev
 
-  VITE v8.1.5  ready in 3967 ms
+  VITE v8.1.5  ready in 10950 ms
 
   ➜  Local:   http://localhost:7227/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
 Using secrets defined in .env
-[HUB] GET /hub/8437c0a1/sv -> 503 18ms
-[HUB] GET /hub/8437c0a1/sv -> 503 17ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 11ms
-7:34:45 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+Using secrets defined in .env
+[HUB] POST /hub/e7bb811d/sub -> 503 17ms
+[HUB] GET /hub/e7bb811d/unread -> 503 2ms
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:39:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:34:47 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:40:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:35:08 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:41:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:35:08 AM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-[HUB] GET /hub/8437c0a1/unread -> 503 6ms
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:39:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:53:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:40:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:54:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:41:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:55:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:56:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:53:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:57:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:54:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:58:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:55:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+3:24:39 PM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:60:26 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:56:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:57:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:58:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:60:26 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:37:27 AM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
+3:24:39 PM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
 https://svelte.dev/e/a11y_autofocus
 Assets in public directory cannot be imported from JavaScript.
 If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
 If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/8437c0a1/mutes -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] POST /hub/8437c0a1/conv -> 503 11ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 8ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 3ms
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:39:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+[HUB] GET /hub/e7bb811d/mutes -> 503 18ms
+[HUB] GET /hub/e7bb811d/mutes -> 503 10ms
+[HUB] GET /hub/e7bb811d/mutes -> 503 5ms
+[HUB] GET /hub/e7bb811d/mutes -> 503 11ms
+3:24:43 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:13:19 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:40:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:43 PM [vite-plugin-svelte] src/routes/app/rooms/+page.svelte:14:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:41:44 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+[HUB] GET /hub/e7bb811d/mutes -> 503 15ms
+[HUB] GET /hub/e7bb811d/sv -> 503 3ms
+[HUB] GET /hub/e7bb811d/sv -> 503 11ms
+[HUB] GET /hub/e7bb811d/sv -> 503 10ms
+3:24:49 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:42:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+3:24:49 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:53:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
+3:24:49 PM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
 https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:54:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:55:23 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:56:22 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:57:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:58:20 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/routes/app/rooms/[id]/+page.svelte:60:26 This reference only captures the initial value of `g`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:39:22 AM [vite-plugin-svelte] src/lib/components/EmojiPicker.svelte:52:8 Avoid using autofocus
-https://svelte.dev/e/a11y_autofocus
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/8437c0a1/sv -> 503 13ms
-[HUB] GET /hub/8437c0a1/unread -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 8ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 13ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 30ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/sv -> 503 502ms
-[HUB] GET /hub/8437c0a1/sv -> 503 528ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/8437c0a1/sv -> 503 8ms
-[HUB] GET /hub/8437c0a1/unread -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 8ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/8437c0a1/sv -> 503 8ms
-[HUB] GET /hub/8437c0a1/unread -> 503 17ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 27ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 4ms
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/unread -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 11ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 15ms
-[HUB] POST /hub/8437c0a1/mute -> 503 11ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/unread -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 16ms
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/8437c0a1/sv -> 503 17ms
-[HUB] GET /hub/8437c0a1/unread -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 2ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-
-[1;31m[500] GET /media/8437c0a1-be69-4848-8f3d-2356ae921282/e863db95-5f50-4fea-89ad-654e3a32acef.png[0m
-DevalueError: Cannot stringify arbitrary non-POJOs
-    at flatten (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71392:19)
-    at flatten (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71303:22)
-    at stringify2 (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71448:17)
-    at stringifyWithStreams (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:71658:28)
-    at #call (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:92557:25)
-    at Proxy.writeHttpMetadata (node_modules/.pnpm/miniflare@4.20260722.0/node_modules/miniflare/dist/src/index.js:92546:34)
-    at GET (src/routes/media/[...key]/+server.ts:24:6)
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 13ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 8ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/unread -> 503 4ms
-7:49:32 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:49:32 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:49:32 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-7:49:32 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-[HUB] GET /hub/8437c0a1/mutes -> 503 15ms
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/8437c0a1/sv -> 503 10ms
-[HUB] POST /hub/8437c0a1/read -> 503 8ms
-[HUB] GET /hub/8437c0a1/unread -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 2ms
-[HUB] POST /hub/8437c0a1/conv -> 503 10ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 11ms
-7:50:02 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:52:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:50:02 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:53:23 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:50:02 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:309:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-7:50:02 AM [vite-plugin-svelte] src/routes/app/chat/[id]/+page.svelte:310:38 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
-https://svelte.dev/e/state_referenced_locally
-[WS-CLIENT] ws_send → socket NOT open (readyState= undefined ), triggering open() { type: 'unwatch', peer: 'e7bb811d-4c81-4a23-8870-63d4ba299573' }
-[WS-CLIENT] open() called { sock: false, intentionallyClosed: false, tries: 0 }
-[WS-CLIENT] open() bailing early { sock: false, intentionallyClosed: false, isWindow: false }
-[HUB] GET /hub/8437c0a1/sv -> 503 8ms
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] POST /hub/8437c0a1/read -> 503 49ms
-[HUB] GET /hub/8437c0a1/sv -> 503 94ms
-[HUB] GET /hub/8437c0a1/unread -> 503 39ms
-[HUB] GET /hub/8437c0a1/sv -> 503 18ms
-[HUB] GET /hub/8437c0a1/unread -> 503 12ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 8ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 236ms
-[HUB] GET /hub/8437c0a1/sv -> 503 189ms
-[HUB] GET /hub/8437c0a1/sv -> 503 84ms
-[HUB] GET /hub/8437c0a1/sv -> 503 22ms
-[HUB] GET /hub/8437c0a1/sv -> 503 606ms
-[HUB] GET /hub/8437c0a1/sv -> 503 586ms
-[HUB] GET /hub/8437c0a1/sv -> 503 16ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 12ms
-[HUB] GET /hub/8437c0a1/convs -> 503 5ms
-7:54:18 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:54:18 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:54:18 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-7:54:19 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:10:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:54:19 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:11:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:54:19 AM [vite-plugin-svelte] src/routes/app/chats/+page.svelte:12:22 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/unread -> 503 2ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/sv -> 503 3ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 6ms
-7:54:45 AM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:13:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:54:45 AM [vite-plugin-svelte] src/lib/PhoneInput.svelte:107:0 `<div>` with a click or keydown handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-7:54:45 AM [vite-plugin-svelte] src/lib/PhoneInput.svelte:149:3 `<div>` with a click handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-[HUB] GET /hub/8437c0a1/sv -> 503 106ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-7:54:46 AM [vite-plugin-svelte] src/routes/app/profile/+page.svelte:13:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:54:46 AM [vite-plugin-svelte] src/lib/PhoneInput.svelte:107:0 `<div>` with a click or keydown handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-7:54:46 AM [vite-plugin-svelte] src/lib/PhoneInput.svelte:149:3 `<div>` with a click handler must have an ARIA role
-https://svelte.dev/e/a11y_no_static_element_interactions
-[HUB] GET /hub/8437c0a1/unread -> 503 3ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 2ms
-[HUB] GET /hub/8437c0a1/unread -> 503 5ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 12ms
-[HUB] GET /hub/8437c0a1/unread -> 503 4ms
-7:56:57 AM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:8:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:56:57 AM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:9:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-[HUB] GET /hub/8437c0a1/mutes -> 503 5ms
-7:57:10 AM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:8:16 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-7:57:10 AM [vite-plugin-svelte] src/routes/app/user/[id]/+page.svelte:9:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
-https://svelte.dev/e/state_referenced_locally
-[HUB] GET /hub/8437c0a1/unread -> 503 7ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 12ms
-[HUB] GET /hub/8437c0a1/unread -> 503 4ms
-
-[1;31m[404] GET /talk[0m
-[HUB] GET /hub/8437c0a1/unread -> 503 5ms
-[HUB] GET /hub/8437c0a1/sv -> 503 4ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/8437c0a1/sv -> 503 6ms
-[HUB] GET /hub/8437c0a1/mutes -> 503 9ms
-[HUB] GET /hub/8437c0a1/sv -> 503 5ms
-[HUB] GET /hub/8437c0a1/unread -> 503 8ms
-[HUB] GET /hub/8437c0a1/sv -> 503 7ms
-[HUB] GET /hub/c2c29915/unread -> 503 7ms
-[HUB] GET /hub/c2c29915/unread -> 503 10ms
-Assets in public directory cannot be imported from JavaScript.
-If you intend to import that asset, put the file in the src directory, and use /src/stickers/manifest.json instead of /static/stickers/manifest.json.
-If you intend to use the URL of that asset, use /stickers/manifest.json?url.
-[HUB] GET /hub/c2c29915/mutes -> 503 4ms
-[HUB] GET /hub/c2c29915/sv -> 503 5ms
-[HUB] GET /hub/c2c29915/sv -> 503 7ms
-[HUB] GET /hub/c2c29915/sv -> 503 10ms
-[HUB] GET /hub/c2c29915/sv -> 503 4ms
-[HUB] GET /hub/c2c29915/sv -> 503 3ms
-[HUB] GET /hub/c2c29915/sv -> 503 13ms
-[HUB] GET /hub/c2c29915/sv -> 503 12ms
-[HUB] POST /hub/c2c29915/conv -> 503 9ms
-[HUB] GET /hub/c2c29915/sv -> 503 4ms
-[HUB] GET /hub/c2c29915/sv -> 503 6ms
-[HUB] GET /hub/c2c29915/unread -> 503 5ms
+[HUB] GET /hub/e7bb811d/mutes -> 503 6ms
+[HUB] GET /hub/e7bb811d/convs -> 503 8ms
+[HUB] GET /hub/e7bb811d/sv -> 503 17ms
+[HUB] GET /hub/e7bb811d/sv -> 503 8ms
+[HUB] GET /hub/e7bb811d/sv -> 503 1ms

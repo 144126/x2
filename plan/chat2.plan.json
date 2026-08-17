@@ -1,0 +1,101 @@
+{
+	"_": "x2 chat overhaul, second half. Repo /home/ed/i/x2. SvelteKit 2 + Svelte 5 RUNES ONLY ($props/$state/$derived/$effect, never `export let`), Tailwind v4, Cloudflare Workers, Qdrant (collection `i`, tenant field `s`). pnpm only.\n\nCONVENTIONS: snake_case vars and functions. Stored payload keys are single letters. All UI text lowercase. No code comments except a non-obvious WHY. No inline `style=` and NO `<style>` blocks — a `<style>` block with `@apply` on a theme colour (border-line, bg-panel) FAILS THE BUILD with 'Cannot apply unknown utility class', because `@reference \"tailwindcss\"` does not pull in src/app.css tokens. Put the classes in a `const` string in the script and bind `class={THAT}`. Design tokens live in src/app.css: colours ink/ink-soft/mute/faint/line/line-2/panel/panel-solid/accent/accent-soft/accent-ink/danger/base; classes .btn .btn-icon .btn-amber .btn-ghost .card .eyebrow .wrap. Icons from '@lucide/svelte'.\n\nGATES: `pnpm check` ALREADY EXITS NON-ZERO — 14 pre-existing errors is the baseline, so never put it in a gate. Gate on `pnpm test` and `pnpm build`. Run `pnpm format` before marking or prettier drift shows up later. Never start the dev server; `.log` at the repo root holds its output when the user has one running.\n\nALREADY DONE, DO NOT REDO (server side, committed nowhere yet — it is in the working tree): src/lib/types.ts has vo/vk/vw/vd/dl/dx on Message plus msg_kind() and KIND_LABEL. src/lib/server/viewonce.ts has open_view_once/redacted/recipients_of/media_key/fresh. src/lib/server/chat.ts has present()/may_read()/may_delete_for_all()/delete_msg()/delete_msg_for_me()/preview_of() and a `Draft` options object replacing the old positional args on send_msg/send_group_msg. src/lib/server/msg_relay.ts has audience()/relay_to(). src/lib/server/qdrant.ts has clear_payload(). src/lib/server/media.ts has VO_PREFIX/is_vo_key/owns_key/purge_key/signed_for. Routes done: api/messages/[id]/view/+server.ts (POST, returns raw bytes for media with x-kind/x-name/x-size/x-caption headers, JSON for text and stickers) and api/messages/[id]/delete/+server.ts (POST {scope:'me'|'all'}).\n\nTHE MODEL: a view-once message NEVER carries content in any thread payload, socket frame, push notification, or conversation preview. present() redacts it to {vo:1, vk, vw, vd}. The only way to content is POST /api/messages/[id]/view, which spends the view and returns the bytes in the same response. There is no URL to fetch, on purpose.\n\nSIGNATURE CHANGES a cold session will trip on: send_msg(env, from, to, Draft) and send_group_msg(env, from, group, Draft) where Draft = {text, image?, file?, reply_to?, sticker?, forwarded?, view_once?}. get_message(env, id, uid) and get_group_messages(env, group, uid, before?) both gained a uid. delete_msg(env, bucket, uid, msg_id). get_message_raw(env, id) is the unredacted read and is only for code about to decide what a reader may see.",
+	"finish_server": {
+		"s": "close the half-finished server refactor so the repo is green again",
+		"t": "pnpm test && pnpm build",
+		"c": {
+			"relay_viewed": {
+				"s": "The sender's thread updates live when a recipient opens a view-once message. Add a `viewed` case to build_relay_payload in ws/src/hub.ts (near the existing `edit`/`delete`/`reaction` cases, around line 415) returning exactly {type:'viewed', id: body.id, by: body.by, gone: body.gone}. Without it the fall-through turns a burn notice into a `msg` and the recipient's thread grows a phantom message. The sender-side handling of that frame is a later step — do not touch any .svelte file here.",
+				"d": 0,
+				"v": "grep -q build_relay_payload ws/src/hub.ts",
+				"t": "grep -q \"'viewed'\" ws/src/hub.ts && pnpm test"
+			},
+			"fix_server_tests": {
+				"s": "The suite and the build are green again. Every call site of the changed signatures listed in the preamble is updated. Known breakage: src/lib/server/__tests__/chat.test.ts (send_msg/send_group_msg/get_messages/get_group_messages/get_message), src/lib/server/__tests__/chat-edit.test.ts (delete_msg gained a bucket arg and now writes a tombstone via set_payload + clear_payload instead of calling remove — rewrite those assertions against the new behaviour), src/routes/api/send/__tests__/server.test.ts, src/routes/api/messages/__tests__/server.test.ts, src/routes/api/messages/[id]/__tests__/server.test.ts. Change the tests to match the new contract; do not change the source to match old tests.",
+				"d": 0,
+				"v": "grep -q 'export type Draft' src/lib/server/chat.ts",
+				"t": "pnpm test && pnpm build"
+			}
+		}
+	},
+	"client_lib": {
+		"s": "the two pure client modules every component below imports",
+		"t": "pnpm test && pnpm build",
+		"c": {
+			"upload_xhr": {
+				"s": "Uploads report progress and can be cancelled. Rewrite src/lib/attach.ts: replace upload_file/upload_image with one `upload(file: File, opts: {view_once?: boolean; onprogress?: (pct: number) => void}): {promise: Promise<UploadResult>; abort: () => void}`. Use XMLHttpRequest — fetch() has no upload progress. Wire xhr.upload.onprogress to a 0-100 integer. POST to /api/upload, adding ?vo=1 when view_once. UploadResult = {key?, name?, size?, type?, error?}. Keep media_src and image_from_event exactly as they are. Also add `view_once` support to src/routes/api/upload/+server.ts: read the vo query param and pass it as the last arg of put_image/put_file, which already accept it.",
+				"d": 0,
+				"v": "grep -q 'export function image_from_event' src/lib/attach.ts",
+				"t": "grep -q XMLHttpRequest src/lib/attach.ts && grep -q 'vo' src/routes/api/upload/+server.ts && pnpm test && pnpm build"
+			},
+			"msg_row_model": {
+				"s": "One shared client type for a thread row, so both chat pages and every component agree. Create src/lib/msg.ts exporting: `type Up = {pct: number; st: 'u'|'s'|'e'; name: string; size: number; type: string; vo?: boolean}`; `type Row = Message & {cid?: string; err?: boolean; up?: Up}`; and pure helpers `pending(r)`, `failed(r)`, `burnt(r)` (r.vo && (r.vd || r.vw?.includes(me))), `openable(r, me)` (view-once, not burnt, not mine), `label(r)` returning the lowercase chip text such as 'view once photo' or a filename. Import Message, msg_kind and KIND_LABEL from $lib/types. Pure functions only — no fetch, no DOM. Unit test it: this is the module every render decision reads.",
+				"d": 0,
+				"t": "test -f src/lib/msg.ts && test -f src/lib/__tests__/msg.test.ts && pnpm test && pnpm build"
+			}
+		}
+	},
+	"components": {
+		"s": "the shared message surface — built once here, used by both chat pages",
+		"t": "pnpm test && pnpm build",
+		"c": {
+			"attachment_chip": {
+				"s": "Media stops previewing inline. Create src/lib/components/Attachment.svelte, props `{m: Row, me: string, onopen: () => void}`. It renders ONE compact chip — icon, name, size — for an image, a file, an audio note, or a view-once message of any kind, and nothing else. No <img>, no <audio>, no thumbnail. Use label() from $lib/msg for the text. States it must show: normal (clickable, calls onopen), in-flight (m.up — show `${m.up.pct}%` and a thin progress bar, dimmed), failed (m.up.st === 'e' — dimmed with 'not sent'), and burnt (greyed, 'opened', not clickable). Stickers are NOT attachments; they still render as images in the row and are out of scope here.",
+				"d": 0,
+				"v": "test -f src/lib/msg.ts",
+				"t": "test -f src/lib/components/Attachment.svelte && ! grep -q '<img' src/lib/components/Attachment.svelte && pnpm test && pnpm build"
+			},
+			"media_viewer": {
+				"s": "Clicking a chip opens the thing. Create src/lib/components/MediaViewer.svelte, props `{m: Row, me: string, onburnt: (id: string) => void, onclose: () => void}`. For ordinary media it shows the image full-bleed, or an <audio controls> for audio, or a download link for a document, using media_src(key). For a view-once message it POSTs /api/messages/[id]/view FIRST, turns the returned bytes into a blob URL, and revokes that URL on close. Read x-kind, x-caption (base64url) and x-name off the response; a JSON body means text or sticker. 410 means the view was already spent — say so plainly. Call onburnt(id) after a successful open so the thread can grey the row. Set `draggable=\"false\"` and oncontextmenu preventDefault on view-once media.",
+				"d": 0,
+				"v": "test -f src/routes/api/messages/\\[id\\]/view/+server.ts",
+				"t": "test -f src/lib/components/MediaViewer.svelte && grep -q createObjectURL src/lib/components/MediaViewer.svelte && grep -q revokeObjectURL src/lib/components/MediaViewer.svelte && pnpm test && pnpm build"
+			},
+			"message_menu": {
+				"s": "Create src/lib/components/MessageMenu.svelte, props `{rect: DOMRect, items: Item[], onclose: () => void}` where `Item = {id: string; label: string; icon?: unknown; danger?: boolean}`, and an `onpick: (id: string) => void`. Render position:fixed next to rect, flipping above when it would overflow the bottom and clamping to the left and right viewport edges. Close on outside pointerdown, on Escape, and on scroll. It decides nothing about which actions exist — the caller passes items. Keep it to a bordered panel of rows using the app.css tokens; danger rows use text-danger.",
+				"d": 0,
+				"t": "test -f src/lib/components/MessageMenu.svelte && grep -q Escape src/lib/components/MessageMenu.svelte && pnpm test && pnpm build"
+			},
+			"message_row": {
+				"s": "One bubble, used by both pages. Create src/lib/components/MessageRow.svelte, props `{m: Row, me: string, mine: boolean, sender_name?: string, quoted?: Row | null, quoted_name?: string, actions: string[], onaction: (id: string, m: Row) => void}`. It renders forwarded tag, quote block, Attachment, sticker, text, reactions, time, and the pending/failed state. Tapping the bubble opens MessageMenu built from `actions`; the component owns positioning and calls onaction(id, m) — it performs NO fetch and decides NO permissions. Action ids: reply, react, forward, copy, private, open, retry, delete_me, delete_all. Skip opening the menu when window.getSelection() is non-collapsed, or selecting text becomes impossible. A dx tombstone renders as italic mute 'this message was deleted' with no menu.",
+				"d": 0,
+				"v": "test -f src/lib/components/MessageMenu.svelte",
+				"t": "test -f src/lib/components/MessageRow.svelte && test -f src/lib/components/__tests__/MessageRow.svelte.test.ts && pnpm test && pnpm build"
+			}
+		}
+	},
+	"wire_pages": {
+		"s": "replace the duplicated bubble in both chat pages with the shared one",
+		"t": "pnpm test && pnpm build",
+		"c": {
+			"wire_dm": {
+				"s": "src/routes/chat/[id]/+page.svelte uses MessageRow and loses its own bubble markup and its hover toolbar. It owns the behaviour behind onaction: reply, react, forward, copy, open (MediaViewer), retry, delete_me, delete_all. Build the action list per message — delete_all only when m.f === me. Delete calls POST /api/messages/[id]/delete with {scope}. Add a view-once toggle button to the composer beside the paperclip; it applies to the next send only. Attaching a file must push an optimistic Row with `up` immediately and upload in the background, so the file is visible in the thread while it moves. Handle the new `viewed` ws frame by setting vw on that message. Keep calls, stickers, emoji, schedule and the note pool exactly as they are.",
+				"d": 0,
+				"v": "test -f src/lib/components/MessageRow.svelte",
+				"t": "grep -q MessageRow src/routes/chat/\\[id\\]/+page.svelte && grep -q view_once src/routes/chat/\\[id\\]/+page.svelte && pnpm test && pnpm build"
+			},
+			"wire_room": {
+				"s": "src/routes/~[handle]/+page.svelte gets the same treatment as wire_dm, reusing every decision made there — read that file first and follow it rather than inventing a second shape. Two differences: the action list also carries `private` (reply privately, goto /chat/<from>?reply=<id>) for other people's messages, and delete_all is allowed when m.f === me OR g.owner === me. Group sends already pass {group: g.id}; keep that. This page currently uses upload_image and only supports images — move it to the new upload() so it accepts files and voice notes like the DM page does.",
+				"d": 0,
+				"v": "grep -q MessageRow src/routes/chat/\\[id\\]/+page.svelte",
+				"t": "grep -q MessageRow src/routes/~\\[handle\\]/+page.svelte && ! grep -q upload_image src/routes/~\\[handle\\]/+page.svelte && pnpm test && pnpm build"
+			}
+		}
+	},
+	"verify": {
+		"s": "prove the whole thing, by machine and by eye",
+		"t": "pnpm test && pnpm build",
+		"c": {
+			"sweep_dead_code": {
+				"s": "Nothing is left over. Remove src/lib/chat_optimistic.ts if both pages have stopped importing confirm_sent/mark_failed, and delete any now-unused import, icon, or helper the two pages dropped. Run `pnpm format`. The gate proves the old inline bubble markup is gone from both pages: neither should still reference sticker_src, media_src or day_label directly if MessageRow owns them.",
+				"d": 0,
+				"t": "pnpm format && pnpm test && pnpm build && rtk proxy pnpm exec eslint src/lib/components src/lib/msg.ts src/lib/attach.ts"
+			},
+			"browser_pass": {
+				"s": "Look at it. The user runs the dev server — never start one. Ask them to run `pnpm dev:all`, then use the agent-browser skill to walk: send a photo and watch the percentage climb; kill the network mid-send and confirm the row stays dimmed and retries from the menu; open a view-once photo, then reload and confirm it says opened and cannot reopen; delete for me and confirm only your side changes; delete for everyone and confirm the tombstone. If the dev server is not running, BLOCK this step rather than starting one.",
+				"d": 0,
+				"t": "-"
+			}
+		}
+	}
+}

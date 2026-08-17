@@ -94,7 +94,11 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 			if (sm.group) {
 				const g = await get_group(env, sm.group);
 				if (g && (await is_member(env, ws, g.id, sm.f))) {
-					const m = await send_group_msg(env, sm.f, sm.group, sm.text, sm.image, sm.file);
+					const m = await send_group_msg(env, sm.f, sm.group, {
+			text: sm.text,
+			image: sm.image,
+			file: sm.file
+		});
 					await relay(ws, {
 						id: m.id,
 						members: g.members.filter((u) => u !== sm.f),
@@ -114,7 +118,7 @@ export async function send_scheduled_batch(env: QEnv, ws: Fetcher, now: number):
 					});
 				}
 			} else if (sm.to) {
-				const m = await send_msg(env, sm.f, sm.to, sm.text, sm.image, sm.file);
+				const m = await send_msg(env, sm.f, sm.to, { text: sm.text, image: sm.image, file: sm.file });
 				await relay(ws, {
 					id: m.id,
 					to: sm.to,

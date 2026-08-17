@@ -15,6 +15,9 @@ interface RateLimit {
 interface MediaObject {
 	body: ReadableStream;
 	httpEtag: string;
+	httpMetadata?: { contentType?: string; cacheControl?: string };
+	/** used by the view-once path, which must hold the bytes before it deletes the object */
+	arrayBuffer(): Promise<ArrayBuffer>;
 	writeHttpMetadata(headers: Headers): void;
 }
 

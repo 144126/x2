@@ -241,3 +241,13 @@ export async function set_payload(
 ): Promise<void> {
 	await (await qc(env)).setPayload(C, { payload, points: [id] });
 }
+
+/**
+ * Removes keys outright rather than setting them to null. Destroying content — a burnt
+ * view-once message, a message deleted for everyone — has to leave nothing behind to read
+ * back, and a null still tells you the key was there.
+ */
+export async function clear_payload(env: QEnv, id: string, keys: string[]): Promise<void> {
+	if (!keys.length) return;
+	await (await qc(env)).deletePayload(C, { keys, points: [id] });
+}

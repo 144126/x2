@@ -47,7 +47,37 @@ export interface Message {
 	x: string; // text (may be empty when im or fl is set)
 	d: number; // ts
 	e?: number; // edited ts
+	// view once — see src/lib/server/viewonce.ts. Content never rides in a thread payload:
+	// it is handed out once per recipient by /api/messages/[id]/view and then destroyed.
+	vo?: 1; // this message is view once
+	vk?: MsgKind; // what kind it was, the only thing that survives the burn
+	vw?: string[]; // recipients who have spent their one view
+	vd?: number; // ts the content was destroyed, once every recipient had looked
+	// deletion
+	dl?: string[]; // uids who deleted this for themselves alone
+	dx?: number; // ts deleted for everyone — content is gone, the tombstone stays
+	// transport only, never stored: short-lived signed urls for whatever media is attached
+	iu?: string;
+	fu?: string;
 }
+
+/** i=image, a=audio, f=file, s=sticker, t=text */
+export type MsgKind = 'i' | 'a' | 'f' | 's' | 't';
+
+export function msg_kind(m: Pick<Message, 'im' | 'fl' | 'sk'>): MsgKind {
+	if (m.im) return 'i';
+	if (m.fl) return m.fl.type.startsWith('audio/') ? 'a' : 'f';
+	if (m.sk) return 's';
+	return 't';
+}
+
+export const KIND_LABEL: Record<MsgKind, string> = {
+	i: 'photo',
+	a: 'voice note',
+	f: 'file',
+	s: 'sticker',
+	t: 'message'
+};
 
 // records that two users were paired by random match, so the thread shows up
 // in their conversation list even before either sends a message

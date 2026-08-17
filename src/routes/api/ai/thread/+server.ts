@@ -27,7 +27,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 	let messages;
 	if (b.conv.startsWith('g:')) {
-		messages = await get_group_messages(env, b.conv.slice(2));
+		messages = await get_group_messages(env, b.conv.slice(2), uid);
 	} else {
 		const [a, p] = b.conv.split('|');
 		const peer = a === uid ? p : a;
