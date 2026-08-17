@@ -46,7 +46,7 @@
 
 	let commonText = $state<string | null>(null);
 	let commonLoading = $state(false);
-	let commonError = $state<'insufficient_credits' | 'llm_error' | null>(null);
+	let commonError = $state<'insufficient_credits' | 'llm_error' | 'blank_profiles' | null>(null);
 
 	async function findCommon() {
 		commonLoading = true;
@@ -156,6 +156,10 @@
 			{#if commonError === 'insufficient_credits'}
 				<p class="mt-2 text-[12px] text-mute">
 					out of credits — back tomorrow, or buy more on your profile.
+				</p>
+			{:else if commonError === 'blank_profiles'}
+				<p class="mt-2 text-[12px] text-mute">
+					one of your cards is still empty — fill in a few interests first.
 				</p>
 			{:else if commonError === 'llm_error'}
 				<p class="mt-2 text-[12px] text-mute">couldn't figure that out just now — try again.</p>

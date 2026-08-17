@@ -74,35 +74,3 @@ export async function modal_model(
 	}
 	return provider(MODAL_MODEL);
 }
-
-export async function modal_complete(
-	env: QEnv & {
-		MODAL_ENDPOINT_URL?: SecretVal;
-		MODAL_WORKSPACE?: SecretVal;
-		MODAL_ENDPOINT_NAME?: SecretVal;
-		MODAL_ROUTING_REGION?: SecretVal;
-		MODAL_PROXY_TOKEN_ID?: SecretVal;
-		MODAL_PROXY_TOKEN_SECRET?: SecretVal;
-	},
-	messages: { role: string; content: string }[]
-): Promise<string> {
-	const url = await endpoint(env);
-	const auth = await auth_header(env);
-	const controller = new AbortController();
-	const timeout = setTimeout(() => controller.abort(), 20_000);
-	try {
-		const res = await fetch(`${url}/v1/chat/completions`, {
-			method: 'POST',
-			headers: { Authorization: auth, 'Content-Type': 'application/json' },
-			body: JSON.stringify({ model: MODAL_MODEL, messages, stream: false }),
-			signal: controller.signal
-		});
-		if (!res.ok) throw new Error('modal_error');
-		const data = (await res.json()) as { choices: { message: { content: string } }[] };
-		const text = data.choices[0]?.message?.content?.trim();
-		if (!text) throw new Error('modal_empty');
-		return text;
-	} finally {
-		clearTimeout(timeout);
-	}
-}
