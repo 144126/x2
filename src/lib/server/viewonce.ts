@@ -82,7 +82,11 @@ export async function open_view_once(
 
 	// The write happens after the bytes are in hand and before they go out, so a reader who
 	// dies mid-response has still spent their view. Losing the content is the safe failure.
-	await set_payload(env, m.id, { vw, vk: m.vk ?? msg_kind(m), ...(gone ? { vd: Date.now(), x: '' } : {}) });
+	await set_payload(env, m.id, {
+		vw,
+		vk: m.vk ?? msg_kind(m),
+		...(gone ? { vd: Date.now(), x: '' } : {})
+	});
 	if (gone) {
 		await clear_payload(env, m.id, ['im', 'fl', 'sk']);
 		if (key) await purge_key(bucket, key);

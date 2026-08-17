@@ -116,15 +116,9 @@ export const POST: RequestHandler = async ({
 					},
 					locals.x2_ws
 				),
-				hub_conv(
-					env,
-					locals.x2_ws,
-					me.id,
-					group_conv_id(group),
-					{ group },
-					m.d,
-					preview
-				).catch((e) => console.error('[HUB-CONV] sender self-index failed', e))
+				hub_conv(env, locals.x2_ws, me.id, group_conv_id(group), { group }, m.d, preview).catch(
+					(e) => console.error('[HUB-CONV] sender self-index failed', e)
+				)
 			])
 		);
 
@@ -164,15 +158,9 @@ export const POST: RequestHandler = async ({
 				},
 				locals.x2_ws
 			),
-			hub_conv(
-				env,
-				locals.x2_ws,
-				me.id,
-				conv_id(me.id, to),
-				{ peer: to },
-				m.d,
-				preview
-			).catch((e) => console.error('[HUB-CONV] sender self-index failed', e))
+			hub_conv(env, locals.x2_ws, me.id, conv_id(me.id, to), { peer: to }, m.d, preview).catch(
+				(e) => console.error('[HUB-CONV] sender self-index failed', e)
+			)
 		])
 	);
 

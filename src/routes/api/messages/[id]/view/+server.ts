@@ -22,7 +22,8 @@ export const POST: RequestHandler = async ({ params, locals, platform }) => {
 
 	const m = await get_message_raw(env, params.id);
 	if (!m) throw error(404, 'not found');
-	if (!(await may_read(env, locals.x2_ws, m, locals.user.id))) throw error(403, 'not a participant');
+	if (!(await may_read(env, locals.x2_ws, m, locals.user.id)))
+		throw error(403, 'not a participant');
 
 	const burnt = await open_view_once(env, platform?.env?.MEDIA, m, locals.user.id);
 

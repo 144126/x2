@@ -2,24 +2,20 @@
 	"_": "x2 chat overhaul, second half. Repo /home/ed/i/x2. SvelteKit 2 + Svelte 5 RUNES ONLY ($props/$state/$derived/$effect, never `export let`), Tailwind v4, Cloudflare Workers, Qdrant (collection `i`, tenant field `s`). pnpm only.\n\nCONVENTIONS: snake_case vars and functions. Stored payload keys are single letters. All UI text lowercase. No code comments except a non-obvious WHY. No inline `style=` and NO `<style>` blocks — a `<style>` block with `@apply` on a theme colour (border-line, bg-panel) FAILS THE BUILD with 'Cannot apply unknown utility class', because `@reference \"tailwindcss\"` does not pull in src/app.css tokens. Put the classes in a `const` string in the script and bind `class={THAT}`. Design tokens live in src/app.css: colours ink/ink-soft/mute/faint/line/line-2/panel/panel-solid/accent/accent-soft/accent-ink/danger/base; classes .btn .btn-icon .btn-amber .btn-ghost .card .eyebrow .wrap. Icons from '@lucide/svelte'.\n\nGATES: `pnpm check` ALREADY EXITS NON-ZERO — 14 pre-existing errors is the baseline, so never put it in a gate. Gate on `pnpm test` and `pnpm build`. Run `pnpm format` before marking or prettier drift shows up later. Never start the dev server; `.log` at the repo root holds its output when the user has one running.\n\nALREADY DONE, DO NOT REDO (server side, committed as 9bf3cf6): src/lib/types.ts has vo/vk/vw/vd/dl/dx on Message plus msg_kind() and KIND_LABEL. src/lib/server/viewonce.ts has open_view_once/redacted/recipients_of/media_key/fresh. src/lib/server/chat.ts has present()/may_read()/may_delete_for_all()/delete_msg()/delete_msg_for_me()/preview_of() and a `Draft` options object replacing the old positional args on send_msg/send_group_msg. src/lib/server/msg_relay.ts has audience()/relay_to(). src/lib/server/qdrant.ts has clear_payload(). src/lib/server/media.ts has VO_PREFIX/is_vo_key/owns_key/purge_key/signed_for. Routes done: api/messages/[id]/view/+server.ts (POST, returns raw bytes for media with x-kind/x-name/x-size/x-caption headers, JSON for text and stickers) and api/messages/[id]/delete/+server.ts (POST {scope:'me'|'all'}).\n\nTHE MODEL: a view-once message NEVER carries content in any thread payload, socket frame, push notification, or conversation preview. present() redacts it to {vo:1, vk, vw, vd}. The only way to content is POST /api/messages/[id]/view, which spends the view and returns the bytes in the same response. There is no URL to fetch, on purpose.\n\nSIGNATURE CHANGES a cold session will trip on: send_msg(env, from, to, Draft) and send_group_msg(env, from, group, Draft) where Draft = {text, image?, file?, reply_to?, sticker?, forwarded?, view_once?}. get_message(env, id, uid) and get_group_messages(env, group, uid, before?) both gained a uid. delete_msg(env, bucket, uid, msg_id). get_message_raw(env, id) is the unredacted read and is only for code about to decide what a reader may see.",
 	"finish_server": {
 		"s": "close the half-finished server refactor so the repo is green again",
+		"d": 1,
 		"t": "pnpm test && pnpm build",
 		"c": {
-			"relay_viewed": {
-				"s": "The sender's thread updates live when a recipient opens a view-once message. Add a `viewed` case to build_relay_payload in ws/src/hub.ts (near the existing `edit`/`delete`/`reaction` cases, around line 415) returning exactly {type:'viewed', id: body.id, by: body.by, gone: body.gone}. Without it the fall-through turns a burn notice into a `msg` and the recipient's thread grows a phantom message. The sender-side handling of that frame is a later step — do not touch any .svelte file here.",
-				"d": 0,
-				"v": "grep -q build_relay_payload ws/src/hub.ts",
-				"t": "grep -q \"'viewed'\" ws/src/hub.ts && pnpm test"
-			},
-			"fix_server_tests": {
-				"s": "The suite and the build are green again. Every call site of the changed signatures listed in the preamble is updated. Known breakage: src/lib/server/__tests__/chat.test.ts (send_msg/send_group_msg/get_messages/get_group_messages/get_message), src/lib/server/__tests__/chat-edit.test.ts (delete_msg gained a bucket arg and now writes a tombstone via set_payload + clear_payload instead of calling remove — rewrite those assertions against the new behaviour), src/routes/api/send/__tests__/server.test.ts, src/routes/api/messages/__tests__/server.test.ts, src/routes/api/messages/[id]/__tests__/server.test.ts. Change the tests to match the new contract; do not change the source to match old tests.",
-				"d": 0,
+			"green_again": {
+				"s": "The suite and the build are green for the first time since 9bf3cf6, which was committed knowingly red. Four parts:\n1. ws/src/hub.ts build_relay_payload needs a `viewed` case returning {type:'viewed', id, by, gone} — ALREADY DONE in the working tree, leave it.\n2. preview_of() in src/lib/server/chat.ts is a real regression: a file push used to read `📎 doc.pdf` and now reads `📎 file`. Put the filename back for a non-view-once file. The view-once branch must keep saying nothing.\n3. Update every call site of the signature changes in the preamble. Known red: src/lib/server/__tests__/chat.test.ts, src/lib/server/__tests__/chat-edit.test.ts (delete_msg gained a bucket arg and now writes a tombstone via set_payload + clear_payload instead of calling remove — rewrite those assertions against the new behaviour), src/routes/api/send/__tests__/server.test.ts, src/routes/api/messages/__tests__/server.test.ts, src/routes/api/messages/[id]/__tests__/server.test.ts.\n4. Change the tests to match the new contract. Never change the source to match an old test — except where the test caught a real regression, as in part 2.",
+				"d": 1,
 				"v": "grep -q 'export type Draft' src/lib/server/chat.ts",
-				"t": "pnpm test && pnpm build"
+				"t": "grep -q \"'viewed'\" ws/src/hub.ts && pnpm test && pnpm build"
 			}
 		}
 	},
 	"client_lib": {
 		"s": "the two pure client modules every component below imports",
+		"d": 0,
 		"t": "pnpm test && pnpm build",
 		"c": {
 			"upload_xhr": {
@@ -37,6 +33,7 @@
 	},
 	"components": {
 		"s": "the shared message surface — built once here, used by both chat pages",
+		"d": 0,
 		"t": "pnpm test && pnpm build",
 		"c": {
 			"attachment_chip": {
@@ -66,6 +63,7 @@
 	},
 	"wire_pages": {
 		"s": "replace the duplicated bubble in both chat pages with the shared one",
+		"d": 0,
 		"t": "pnpm test && pnpm build",
 		"c": {
 			"wire_dm": {
@@ -84,6 +82,7 @@
 	},
 	"verify": {
 		"s": "prove the whole thing, by machine and by eye",
+		"d": 0,
 		"t": "pnpm test && pnpm build",
 		"c": {
 			"sweep_dead_code": {

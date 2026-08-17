@@ -78,7 +78,7 @@ describe('conv_id', () => {
 
 describe('send_msg', () => {
 	it('stores the message with no vector at all (embedding deferred to backfill)', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', 'hi there');
+		const m = await send_msg(ENV, 'alice', 'bob', { text: 'hi there' });
 		expect(ensureMock).toHaveBeenCalledWith(ENV);
 		expect(embedMock).not.toHaveBeenCalled();
 		expect(m).toEqual({
@@ -96,7 +96,7 @@ describe('send_msg', () => {
 	});
 
 	it('stores short messages with no vector (no embed at send time)', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', 'ok');
+		const m = await send_msg(ENV, 'alice', 'bob', { text: 'ok' });
 		expect(embedMock).not.toHaveBeenCalled();
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:ok' } }
@@ -104,7 +104,7 @@ describe('send_msg', () => {
 	});
 
 	it('stores a reply_to reference as rp on the message', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', 'thanks', undefined, undefined, 'orig-1');
+		const m = await send_msg(ENV, 'alice', 'bob', { text: 'thanks', reply_to: 'orig-1' });
 		expect(m.rp).toBe('orig-1');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:thanks' } }
@@ -112,12 +112,12 @@ describe('send_msg', () => {
 	});
 
 	it('omits rp when no reply_to is given', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
+		const m = await send_msg(ENV, 'alice', 'bob', { text: 'hi' });
 		expect(m).not.toHaveProperty('rp');
 	});
 
 	it('stores a sticker id as sk on the message', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', '', undefined, undefined, undefined, 'wave');
+		const m = await send_msg(ENV, 'alice', 'bob', { text: '', sticker: 'wave' });
 		expect(m.sk).toBe('wave');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:' } }
@@ -125,22 +125,12 @@ describe('send_msg', () => {
 	});
 
 	it('omits sk when no sticker is given', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
+		const m = await send_msg(ENV, 'alice', 'bob', { text: 'hi' });
 		expect(m).not.toHaveProperty('sk');
 	});
 
 	it('stores a forwarded flag as fw on the message', async () => {
-		const m = await send_msg(
-			ENV,
-			'alice',
-			'bob',
-			'hi',
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			true
-		);
+		const m = await send_msg(ENV, 'alice', 'bob', { text: 'hi', forwarded: true });
 		expect(m.fw).toBe(true);
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi' } }
@@ -148,21 +138,21 @@ describe('send_msg', () => {
 	});
 
 	it('omits fw when not forwarded', async () => {
-		const m = await send_msg(ENV, 'alice', 'bob', 'hi');
+		const m = await send_msg(ENV, 'alice', 'bob', { text: 'hi' });
 		expect(m).not.toHaveProperty('fw');
 	});
 });
 
 describe('send_group_msg', () => {
 	it('stores the group message with no vector either', async () => {
-		const m = await send_group_msg(ENV, 'alice', 'g1', 'hi room');
+		const m = await send_group_msg(ENV, 'alice', 'g1', { text: 'hi room' });
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi room' } }
 		]);
 	});
 
 	it('stores a reply_to reference as rp on a group message too', async () => {
-		const m = await send_group_msg(ENV, 'alice', 'g1', 'me too', undefined, undefined, 'orig-2');
+		const m = await send_group_msg(ENV, 'alice', 'g1', { text: 'me too', reply_to: 'orig-2' });
 		expect(m.rp).toBe('orig-2');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:me too' } }
@@ -170,16 +160,7 @@ describe('send_group_msg', () => {
 	});
 
 	it('stores a sticker id as sk on a group message too', async () => {
-		const m = await send_group_msg(
-			ENV,
-			'alice',
-			'g1',
-			'',
-			undefined,
-			undefined,
-			undefined,
-			'heart-eyes'
-		);
+		const m = await send_group_msg(ENV, 'alice', 'g1', { text: '', sticker: 'heart-eyes' });
 		expect(m.sk).toBe('heart-eyes');
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:' } }
@@ -187,17 +168,7 @@ describe('send_group_msg', () => {
 	});
 
 	it('stores a forwarded flag as fw on a group message too', async () => {
-		const m = await send_group_msg(
-			ENV,
-			'alice',
-			'g1',
-			'hi',
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			true
-		);
+		const m = await send_group_msg(ENV, 'alice', 'g1', { text: 'hi', forwarded: true });
 		expect(m.fw).toBe(true);
 		expect(upsertMock).toHaveBeenCalledWith(ENV, [
 			{ id: m.id, vector: {}, payload: { ...m, x: 'enc:hi' } }
@@ -261,7 +232,7 @@ describe('get_group_messages', () => {
 			},
 			{ id: '1', payload: { s: 'm', c: group_conv_id('g1'), gr: 'g1', f: 'a', x: 'first', d: 100 } }
 		]);
-		const msgs = await get_group_messages(ENV, 'g1');
+		const msgs = await get_group_messages(ENV, 'g1', 'a');
 		expect(scrollMock).toHaveBeenCalledWith(
 			ENV,
 			f(eq('s', 'm'), eq('c', group_conv_id('g1'))),
@@ -274,7 +245,7 @@ describe('get_group_messages', () => {
 
 	it('pages older messages via start_from = before - 1', async () => {
 		scrollMock.mockResolvedValue([]);
-		await get_group_messages(ENV, 'g1', 100);
+		await get_group_messages(ENV, 'g1', 'a', 100);
 		expect(scrollMock).toHaveBeenCalledWith(
 			ENV,
 			f(eq('s', 'm'), eq('c', group_conv_id('g1'))),
@@ -288,12 +259,12 @@ describe('get_group_messages', () => {
 describe('get_message', () => {
 	it('returns null when the point is missing', async () => {
 		retrieveOneMock.mockResolvedValue(null);
-		expect(await get_message(ENV, 'm1')).toBeNull();
+		expect(await get_message(ENV, 'm1', 'alice')).toBeNull();
 	});
 
 	it('returns null for a point with the wrong discriminator', async () => {
 		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: { s: 'u', n: 'x' } });
-		expect(await get_message(ENV, 'm1')).toBeNull();
+		expect(await get_message(ENV, 'm1', 'alice')).toBeNull();
 	});
 
 	it('returns the decrypted message for a message point', async () => {
@@ -301,7 +272,7 @@ describe('get_message', () => {
 			id: 'm1',
 			payload: { id: 'm1', s: 'm', c: 'a|b', f: 'a', t: 'b', x: 'enc:hello', d: 100 }
 		});
-		expect(await get_message(ENV, 'm1')).toMatchObject({ id: 'm1', x: 'hello', d: 100 });
+		expect(await get_message(ENV, 'm1', 'alice')).toMatchObject({ id: 'm1', x: 'hello', d: 100 });
 	});
 });
 

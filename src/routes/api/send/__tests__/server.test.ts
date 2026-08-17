@@ -108,17 +108,15 @@ describe('POST /api/send — anonymous device send', () => {
 		ensureDeviceSessionMock.mockResolvedValue({ id: 'dev1', username: 'dev1' });
 		const res = await POST(event({ to: 'bob', text: 'hi' }, null));
 		expect(res.status).toBe(200);
-		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(),
-			'dev1',
-			'bob',
-			'hi',
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			undefined
-		);
+		expect(sendMsgMock).toHaveBeenCalledWith(expect.anything(), 'dev1', 'bob', {
+			text: 'hi',
+			image: undefined,
+			file: undefined,
+			reply_to: undefined,
+			sticker: undefined,
+			forwarded: undefined,
+			view_once: false
+		});
 		expect(guardMock).toHaveBeenCalledWith(undefined, 'RL_SEND', 'dev1');
 	});
 
@@ -151,18 +149,17 @@ describe('POST /api/send — validation', () => {
 			d: 1_700_000_000_000
 		});
 		const body = await (await POST(event({ to: 'bob', sticker: 'wave' }))).json();
-		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(),
-			'ada',
-			'bob',
-			'',
-			undefined,
-			undefined,
-			undefined,
-			'wave',
-			undefined
-		);
-		expect(body.m).toMatchObject({ sk: 'wave' });
+		expect(sendMsgMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob', {
+			text: '',
+			image: undefined,
+			file: undefined,
+			reply_to: undefined,
+			sticker: 'wave',
+			forwarded: undefined,
+			view_once: false
+		});
+		expect(body.m).toMatchObject({ id: 'm1', from: 'ada' });
+		expect(body.m).not.toHaveProperty('sk');
 	});
 
 	it('threads sticker into send_group_msg on a group send', async () => {
@@ -174,18 +171,17 @@ describe('POST /api/send — validation', () => {
 			d: 1_700_000_000_000
 		});
 		const body = await (await POST(event({ group: 'g1', sticker: 'heart-eyes' }))).json();
-		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(),
-			'ada',
-			'g1',
-			'',
-			undefined,
-			undefined,
-			undefined,
-			'heart-eyes',
-			undefined
-		);
-		expect(body.m).toMatchObject({ sk: 'heart-eyes' });
+		expect(sendGroupMsgMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'g1', {
+			text: '',
+			image: undefined,
+			file: undefined,
+			reply_to: undefined,
+			sticker: 'heart-eyes',
+			forwarded: undefined,
+			view_once: false
+		});
+		expect(body.m).toMatchObject({ id: 'm2', from: 'ada' });
+		expect(body.m).not.toHaveProperty('sk');
 	});
 
 	it('400s with neither to nor group', async () => {
@@ -249,14 +245,16 @@ describe('POST /api/send — a failed write is surfaced, not silently 200d', () 
 });
 
 describe('POST /api/send — response shape', () => {
-	it('returns the stored message to the sender for a 1:1 send', async () => {
+	it('confirms a 1:1 send with identity only, never a copy of the content', async () => {
 		const body = await (await POST(event({ to: 'bob', text: 'hi' }))).json();
-		expect(body.m).toMatchObject({ id: 'm1', from: 'ada', to: 'bob', text: 'hi' });
+		expect(body.m).toMatchObject({ id: 'm1', from: 'ada', to: 'bob' });
+		for (const k of ['text', 'image', 'file', 'sk']) expect(body.m).not.toHaveProperty(k);
 	});
 
-	it('returns the stored message to the sender for a group send', async () => {
+	it('confirms a group send the same way', async () => {
 		const body = await (await POST(event({ group: 'g1', text: 'hi all' }))).json();
-		expect(body.m).toMatchObject({ id: 'm2', from: 'ada', group: 'g1', text: 'hi' });
+		expect(body.m).toMatchObject({ id: 'm2', from: 'ada', group: 'g1' });
+		for (const k of ['text', 'image', 'file', 'sk']) expect(body.m).not.toHaveProperty(k);
 	});
 
 	it('threads reply_to into send_msg and returns rp on a 1:1 send', async () => {
@@ -269,17 +267,15 @@ describe('POST /api/send — response shape', () => {
 			d: 1_700_000_000_000
 		});
 		const body = await (await POST(event({ to: 'bob', text: 'hi', reply_to: 'orig-1' }))).json();
-		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(),
-			'ada',
-			'bob',
-			'hi',
-			undefined,
-			undefined,
-			'orig-1',
-			undefined,
-			undefined
-		);
+		expect(sendMsgMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob', {
+			text: 'hi',
+			image: undefined,
+			file: undefined,
+			reply_to: 'orig-1',
+			sticker: undefined,
+			forwarded: undefined,
+			view_once: false
+		});
 		expect(body.m).toMatchObject({ rp: 'orig-1' });
 	});
 
@@ -292,17 +288,15 @@ describe('POST /api/send — response shape', () => {
 			d: 1_700_000_000_000
 		});
 		const body = await (await POST(event({ group: 'g1', text: 'hi', reply_to: 'orig-2' }))).json();
-		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(),
-			'ada',
-			'g1',
-			'hi',
-			undefined,
-			undefined,
-			'orig-2',
-			undefined,
-			undefined
-		);
+		expect(sendGroupMsgMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'g1', {
+			text: 'hi',
+			image: undefined,
+			file: undefined,
+			reply_to: 'orig-2',
+			sticker: undefined,
+			forwarded: undefined,
+			view_once: false
+		});
 		expect(body.m).toMatchObject({ rp: 'orig-2' });
 	});
 
@@ -321,17 +315,15 @@ describe('POST /api/send — response shape', () => {
 			d: 1_700_000_000_000
 		});
 		const body = await (await POST(event({ to: 'bob', text: 'hi', forwarded: true }))).json();
-		expect(sendMsgMock).toHaveBeenCalledWith(
-			expect.anything(),
-			'ada',
-			'bob',
-			'hi',
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			true
-		);
+		expect(sendMsgMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'bob', {
+			text: 'hi',
+			image: undefined,
+			file: undefined,
+			reply_to: undefined,
+			sticker: undefined,
+			forwarded: true,
+			view_once: false
+		});
 		expect(body.m).toMatchObject({ fw: true });
 	});
 
@@ -344,17 +336,15 @@ describe('POST /api/send — response shape', () => {
 			d: 1_700_000_000_000
 		});
 		const body = await (await POST(event({ group: 'g1', text: 'hi', forwarded: true }))).json();
-		expect(sendGroupMsgMock).toHaveBeenCalledWith(
-			expect.anything(),
-			'ada',
-			'g1',
-			'hi',
-			undefined,
-			undefined,
-			undefined,
-			undefined,
-			true
-		);
+		expect(sendGroupMsgMock).toHaveBeenCalledWith(expect.anything(), 'ada', 'g1', {
+			text: 'hi',
+			image: undefined,
+			file: undefined,
+			reply_to: undefined,
+			sticker: undefined,
+			forwarded: true,
+			view_once: false
+		});
 		expect(body.m).toMatchObject({ fw: true });
 	});
 

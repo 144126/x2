@@ -1,15 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { ensureMock, upsertMock, retrieveOneMock, removeMock, embedMock, getGroupMock } = vi.hoisted(
-	() => ({
-		ensureMock: vi.fn(),
-		upsertMock: vi.fn(),
-		retrieveOneMock: vi.fn(),
-		removeMock: vi.fn(),
-		embedMock: vi.fn(),
-		getGroupMock: vi.fn()
-	})
-);
+const {
+	ensureMock,
+	upsertMock,
+	retrieveOneMock,
+	setPayloadMock,
+	clearPayloadMock,
+	embedMock,
+	getGroupMock
+} = vi.hoisted(() => ({
+	ensureMock: vi.fn(),
+	upsertMock: vi.fn(),
+	retrieveOneMock: vi.fn(),
+	setPayloadMock: vi.fn(),
+	clearPayloadMock: vi.fn(),
+	embedMock: vi.fn(),
+	getGroupMock: vi.fn()
+}));
 
 vi.mock('$lib/server/qdrant', async () => {
 	const actual = await vi.importActual<typeof import('$lib/server/qdrant')>('$lib/server/qdrant');
@@ -18,11 +25,12 @@ vi.mock('$lib/server/qdrant', async () => {
 		ensure: ensureMock,
 		upsert: upsertMock,
 		retrieve_one: retrieveOneMock,
-		remove: removeMock
+		set_payload: setPayloadMock,
+		clear_payload: clearPayloadMock
 	};
 });
 vi.mock('$lib/server/or', () => ({ embed: embedMock }));
-vi.mock('$lib/server/group', () => ({ get_group: getGroupMock }));
+vi.mock('$lib/server/group', () => ({ get_group: getGroupMock, is_member: vi.fn() }));
 vi.mock('$lib/server/msg_crypto', () => ({
 	encrypt_text: async (_env: unknown, text: string) => `enc:${text}`,
 	decrypt_text: async (_env: unknown, stored: string) =>
@@ -35,7 +43,8 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	ensureMock.mockResolvedValue(undefined);
 	upsertMock.mockResolvedValue(undefined);
-	removeMock.mockResolvedValue(undefined);
+	setPayloadMock.mockResolvedValue(undefined);
+	clearPayloadMock.mockResolvedValue(undefined);
 	embedMock.mockResolvedValue(new Array(4096).fill(0));
 });
 
@@ -76,34 +85,52 @@ describe('edit_msg', () => {
 });
 
 describe('delete_msg', () => {
+	const bucket = () => ({ delete: vi.fn().mockResolvedValue(undefined) }) as never;
+
 	it('author can delete their own message', async () => {
 		const msg = { s: 'm', id: 'm1', c: 'a|b', f: 'ada', t: 'bob', x: 'hi', d: 100 };
 		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });
-		const result = await delete_msg({} as never, 'ada', 'm1');
-		expect(result.media_key).toBeUndefined();
+		const result = await delete_msg({} as never, bucket(), 'ada', 'm1');
 		expect(result.c).toBe('a|b');
 		expect(result.f).toBe('ada');
 		expect(result.t).toBe('bob');
-		expect(removeMock).toHaveBeenCalledWith(expect.anything(), ['m1']);
+	});
+
+	it('leaves a tombstone rather than a hole, so the thread does not silently lose a row', async () => {
+		const msg = { s: 'm', id: 'm1', c: 'a|b', f: 'ada', t: 'bob', x: 'hi', d: 100 };
+		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });
+		await delete_msg({} as never, bucket(), 'ada', 'm1');
+		expect(setPayloadMock).toHaveBeenCalledWith(expect.anything(), 'm1', {
+			dx: expect.any(Number),
+			x: ''
+		});
+	});
+
+	it('takes the content off the record, not just the text', async () => {
+		const msg = { s: 'm', id: 'm1', c: 'a|b', f: 'ada', t: 'bob', x: 'hi', d: 100 };
+		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });
+		await delete_msg({} as never, bucket(), 'ada', 'm1');
+		const keys = clearPayloadMock.mock.calls[0][2] as string[];
+		for (const k of ['im', 'fl', 'sk', 'rx']) expect(keys).toContain(k);
 	});
 
 	it('room owner can delete any message in their room', async () => {
 		const msg = { s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 };
 		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });
 		getGroupMock.mockResolvedValue({ id: 'g1', owner: 'ada', members: ['ada', 'bob'] });
-		const result = await delete_msg({} as never, 'ada', 'm1');
-		expect(result.media_key).toBeUndefined();
+		const result = await delete_msg({} as never, bucket(), 'ada', 'm1');
 		expect(result.gr).toBe('g1');
-		expect(removeMock).toHaveBeenCalledWith(expect.anything(), ['m1']);
+		expect(setPayloadMock).toHaveBeenCalled();
 	});
 
 	it('rejects a non-author non-owner', async () => {
 		const msg = { s: 'm', id: 'm1', c: 'a|b', f: 'ada', t: 'bob', x: 'hi', d: 100 };
 		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });
-		await expect(delete_msg({} as never, 'bob', 'm1')).rejects.toThrow('not author');
+		await expect(delete_msg({} as never, bucket(), 'bob', 'm1')).rejects.toThrow('not author');
+		expect(setPayloadMock).not.toHaveBeenCalled();
 	});
 
-	it('returns the media key for attachment cleanup', async () => {
+	it('deletes the attachment out of R2, so the bytes go with the message', async () => {
 		const msg = {
 			s: 'm',
 			id: 'm1',
@@ -115,7 +142,10 @@ describe('delete_msg', () => {
 			im: 'ada/photo.png'
 		};
 		retrieveOneMock.mockResolvedValue({ id: 'm1', payload: msg, vector: null });
-		const result = await delete_msg({} as never, 'ada', 'm1');
-		expect(result.media_key).toBe('ada/photo.png');
+		const b = bucket();
+		await delete_msg({} as never, b, 'ada', 'm1');
+		expect((b as unknown as { delete: ReturnType<typeof vi.fn> }).delete).toHaveBeenCalledWith(
+			'ada/photo.png'
+		);
 	});
 });

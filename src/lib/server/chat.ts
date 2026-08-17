@@ -83,10 +83,11 @@ export async function send_group_msg(
 
 /** what the conversation list and a push notification are allowed to say about a message */
 export function preview_of(d: Draft): string {
-	if (d.view_once) return `view once ${KIND_LABEL[msg_kind({ im: d.image, fl: d.file, sk: d.sticker })]}`;
+	if (d.view_once)
+		return `view once ${KIND_LABEL[msg_kind({ im: d.image, fl: d.file, sk: d.sticker })]}`;
 	if (d.text) return d.text;
 	if (d.image) return '📷 image';
-	if (d.file) return d.file.type.startsWith('audio/') ? '🎤 voice note' : '📎 file';
+	if (d.file) return d.file.type.startsWith('audio/') ? '🎤 voice note' : `📎 ${d.file.name}`;
 	if (d.sticker) return 'sticker';
 	return 'message';
 }
@@ -95,7 +96,17 @@ export const PAGE = 50;
 
 /** the tombstone left where a message deleted for everyone used to be */
 function tomb(m: Message): Message {
-	return { s: 'm', id: m.id, c: m.c, f: m.f, t: m.t, ...(m.gr ? { gr: m.gr } : {}), x: '', d: m.d, dx: m.dx };
+	return {
+		s: 'm',
+		id: m.id,
+		c: m.c,
+		f: m.f,
+		t: m.t,
+		...(m.gr ? { gr: m.gr } : {}),
+		x: '',
+		d: m.d,
+		dx: m.dx
+	};
 }
 
 /**
@@ -156,11 +167,7 @@ export async function get_message_raw(env: QEnv, id: string): Promise<Message | 
 	return pt.payload as unknown as Message;
 }
 
-export async function get_message(
-	env: QEnv,
-	id: string,
-	uid: string
-): Promise<Message | null> {
+export async function get_message(env: QEnv, id: string, uid: string): Promise<Message | null> {
 	const m = await get_message_raw(env, id);
 	return m ? present(env, m, uid) : null;
 }
@@ -211,12 +218,7 @@ export async function toggle_reaction(
 }
 
 /** the one participation test — a room member, or one of the two people in a thread */
-export async function may_read(
-	env: QEnv,
-	ws: Fetcher,
-	m: Message,
-	uid: string
-): Promise<boolean> {
+export async function may_read(env: QEnv, ws: Fetcher, m: Message, uid: string): Promise<boolean> {
 	return m.gr ? is_member(env, ws, m.gr, uid) : m.f === uid || m.t === uid;
 }
 

@@ -422,6 +422,11 @@ function build_relay_payload(type: string, body: Record<string, unknown>): Recor
 	if (type === 'reaction') {
 		return { type: 'reaction', id: body.id, rx: body.rx };
 	}
+	// a view-once message was opened. Falling through to the 'msg' shape would turn a burn
+	// notice into a message and grow a phantom row in the thread.
+	if (type === 'viewed') {
+		return { type: 'viewed', id: body.id, by: body.by, gone: body.gone };
+	}
 	return {
 		type: 'msg',
 		id: body.id,

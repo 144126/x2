@@ -8,7 +8,7 @@ import { is_muted } from '$lib/server/mute';
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const g = await get_group(env, params.handle);
 	if (!g) throw error(404, 'no group');
-	const messages = await get_group_messages(env, params.handle, locals.user.id);
+	const messages = await get_group_messages(env, params.handle, locals.user?.id ?? '');
 	const ids = [...new Set([...messages.map((m) => m.f), ...g.members])];
 	const names = await get_user_names(env, ids);
 	const muted = locals.user

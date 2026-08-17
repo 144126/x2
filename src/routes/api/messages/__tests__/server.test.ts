@@ -45,7 +45,7 @@ describe('GET /api/messages', () => {
 
 	it('fetches a group thread by g, forwarding the cursor', async () => {
 		await GET(event('https://x/api/messages?g=room1&before=100'));
-		expect(getGroupMessagesMock).toHaveBeenCalledWith({}, 'room1', 100);
+		expect(getGroupMessagesMock).toHaveBeenCalledWith({}, 'room1', 'me', 100);
 		expect(getMessagesMock).not.toHaveBeenCalled();
 	});
 
