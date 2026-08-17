@@ -44,6 +44,13 @@ import type { GroupView } from '$lib/server/group';
 import type { Message } from '$lib/types';
 import Page from '../+page.svelte';
 
+// actions moved off a hover toolbar and into a menu on the bubble, so a test has to open the
+// menu the way a person does before it can pick anything
+async function pick(action: string, text = 'original text') {
+	await fireEvent.click(screen.getByText(text));
+	await fireEvent.click(screen.getByRole('menuitem', { name: action }));
+}
+
 const g = {
 	id: 'g1',
 	name: 'Ceramics Crew',
@@ -227,7 +234,7 @@ describe('replying', () => {
 		renderWith([
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
 		]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		const strip = screen.getByLabelText('cancel reply').parentElement!;
 		expect(strip).toHaveTextContent('original text');
 	});
@@ -240,14 +247,14 @@ describe('replying', () => {
 		renderWith([
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
 		]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		const input = screen.getByPlaceholderText(/say something to the room/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
 		expect(mockFetch).toHaveBeenCalledWith('/api/send', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ group: 'g1', text: 'my reply', image: undefined, reply_to: 'm1' })
+			body: JSON.stringify({ group: 'g1', text: 'my reply', view_once: false, reply_to: 'm1' })
 		});
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
 	});
@@ -261,7 +268,7 @@ describe('replying', () => {
 		renderWith([
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
 		]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		const input = screen.getByPlaceholderText(/say something to the room/);
 		await fireEvent.input(input, { target: { value: 'my reply' } });
 		await fireEvent.submit(input.closest('form')!);
@@ -277,7 +284,7 @@ describe('replying', () => {
 		renderWith([
 			{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'original text', d: 100 }
 		]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply' }));
+		await pick('reply');
 		await fireEvent.click(screen.getByLabelText('cancel reply'));
 		expect(screen.queryByLabelText('cancel reply')).toBeNull();
 		expect(mockFetch).not.toHaveBeenCalled();
@@ -335,13 +342,14 @@ describe('reply privately', () => {
 
 	it('navigates to a private chat with the author and the message id as reply param', async () => {
 		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi bob', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'reply privately' }));
+		await pick('reply privately', 'hi bob');
 		expect(goto).toHaveBeenCalledWith('/chat/bob?reply=m1');
 	});
 
-	it("is absent on the current user's own messages", () => {
+	it("is absent on the current user's own messages", async () => {
 		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'me', t: '', gr: 'g1', x: 'hi me', d: 100 }]);
-		expect(screen.queryByRole('button', { name: 'reply privately' })).toBeNull();
+		await fireEvent.click(screen.getByText('hi me'));
+		expect(screen.queryByRole('menuitem', { name: 'reply privately' })).toBeNull();
 	});
 });
 
@@ -371,7 +379,7 @@ describe('reactions', () => {
 		});
 		globalThis.fetch = mockFetch;
 		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'react' }));
+		await pick('react', 'hi');
 		const search = screen.getByPlaceholderText('search emoji…');
 		await fireEvent.input(search, { target: { value: 'thumbs up' } });
 		await fireEvent.click(screen.getByTitle('thumbs up'));
@@ -465,7 +473,7 @@ describe('stickers', () => {
 		]);
 		const img = screen.getByAltText('wave sticker');
 		expect(img).toHaveAttribute('src', '/stickers/basics/wave.svg');
-		const bubble = img.closest('div')!;
+		const bubble = img.closest('button')!;
 		expect(bubble.className).toContain('border-0');
 		expect(bubble.className).toContain('bg-transparent');
 	});
@@ -509,7 +517,7 @@ describe('forwarding', () => {
 	it('clicking forward opens the picker, lazy-loading conversations and rooms', async () => {
 		const mockFetch = stubTargets();
 		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await pick('forward', 'hi');
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
 		expect(mockFetch).toHaveBeenCalledWith('/api/conversations');
 		expect(mockFetch).toHaveBeenCalledWith('/api/groups?mine=1');
@@ -518,7 +526,7 @@ describe('forwarding', () => {
 	it('confirming a selection POSTs /api/send once per target with forwarded: true', async () => {
 		const mockFetch = stubTargets();
 		renderWith([{ s: 'm', id: 'm1', c: 'g:g1', f: 'bob', t: '', gr: 'g1', x: 'hi', d: 100 }]);
-		await fireEvent.click(screen.getByRole('button', { name: 'forward' }));
+		await pick('forward', 'hi');
 		await vi.waitFor(() => expect(screen.getByText('Design Club')).toBeInTheDocument());
 		await fireEvent.click(screen.getByRole('button', { name: 'Design Club' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'bob' }));

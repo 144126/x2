@@ -63,7 +63,7 @@
 	},
 	"wire_pages": {
 		"s": "replace the duplicated bubble in both chat pages with the shared one",
-		"d": 0,
+		"d": 1,
 		"t": "pnpm test && pnpm build",
 		"c": {
 			"wire_dm": {
@@ -74,7 +74,7 @@
 			},
 			"wire_room": {
 				"s": "src/routes/~[handle]/+page.svelte gets the same treatment as wire_dm, reusing every decision made there — read that file first and follow it rather than inventing a second shape. Two differences: the action list also carries `private` (reply privately, goto /chat/<from>?reply=<id>) for other people's messages, and delete_all is allowed when m.f === me OR g.owner === me. Group sends already pass {group: g.id}; keep that. This page currently uses upload_image and only supports images — move it to the new upload() so it accepts files and voice notes like the DM page does.",
-				"d": 0,
+				"d": 1,
 				"v": "grep -q MessageRow src/routes/chat/\\[id\\]/+page.svelte",
 				"t": "grep -q MessageRow src/routes/~\\[handle\\]/+page.svelte && ! grep -q upload_image src/routes/~\\[handle\\]/+page.svelte && pnpm test && pnpm build"
 			}
