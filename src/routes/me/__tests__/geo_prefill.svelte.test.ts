@@ -56,8 +56,11 @@ beforeEach(() => {
 	});
 });
 
+// a tag saves at once, so it is the cheapest way to make the page post its whole card
 async function save() {
-	await fireEvent.click(screen.getByRole('button', { name: 'save card' }));
+	const box = screen.getByLabelText('interests');
+	await fireEvent.input(box, { target: { value: 'chess' } });
+	await fireEvent.keyDown(box, { key: 'Enter' });
 	await waitFor(() => expect(posted).not.toBeNull());
 	return posted as Record<string, unknown>;
 }

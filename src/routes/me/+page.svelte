@@ -160,15 +160,31 @@
 
 	function addInterest() {
 		const t = interestInput.trim();
-		if (t && !interests.includes(t)) interests = [...interests, t];
 		interestInput = '';
+		if (!t || interests.includes(t)) return;
+		interests = [...interests, t];
+		save();
 	}
 
 	function removeInterest(t: string) {
 		interests = interests.filter((i) => i !== t);
+		save();
 	}
 
 	let phone_error = $state<string | null>(null);
+
+	// typing saves itself, but only once the typing stops — a tag is one deliberate act and
+	// saves at once, so it is left out of this
+	let started = false;
+	$effect(() => {
+		void [about, username, age, gender, country, region, city, whatsapp];
+		if (!started) {
+			started = true;
+			return;
+		}
+		const t = setTimeout(save, 2160);
+		return () => clearTimeout(t);
+	});
 
 	async function save() {
 		saved = false;
@@ -205,7 +221,7 @@
 		>view profile</a
 	>
 
-	<form onsubmit={(e) => (e.preventDefault(), save())} class="flex flex-col gap-2">
+	<form onsubmit={(e) => e.preventDefault()} class="flex flex-col gap-2">
 		<label class="eyebrow mt-4" for="p-username">username</label>
 		<input id="p-username" bind:value={username} placeholder="display handle" />
 
@@ -289,10 +305,7 @@
 			<p class="mt-1 text-[12pxpx] text-accent">{phone_error}</p>
 		{/if}
 
-		<div class="mt-5 flex items-center gap-3">
-			<button class="btn btn-amber" type="submit">save card</button>
-			{#if saved}<span class="text-[13px] tracking-[0.04em] text-accent">saved</span>{/if}
-		</div>
+		{#if saved}<p class="mt-5 text-[13px] tracking-[0.04em] text-accent">saved</p>{/if}
 	</form>
 	<div class="mt-4 rounded-[10px] border border-line bg-panel px-5 py-2.5">
 		<p class="text-[13.5px] leading-[1.55] text-ink-soft">
