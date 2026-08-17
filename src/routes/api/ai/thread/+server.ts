@@ -5,14 +5,8 @@ import { createUIMessageStream, createUIMessageStreamResponse, streamText } from
 import { get_messages, get_group_messages } from '$lib/server/chat';
 import { ensure } from '$lib/server/qdrant';
 import { deduct, credit } from '$lib/server/credit_client';
-import {
-	modal_model,
-	serialize_thread,
-	modal_cost_kobo,
-	MODAL_KOBO_PER_SEC,
-	MODAL_START_HOLD_KOBO,
-	MODAL_MAX_SECONDS
-} from '$lib/server/modal';
+import { thread_model, serialize_thread, THREAD_HOLD_KOBO } from '$lib/server/openrouter';
+import { thread_cost_kobo } from '$lib/server/pricing';
 import { guard } from '$lib/server/rl';
 
 export const POST: RequestHandler = async ({ request, locals, platform }) => {
@@ -22,6 +16,9 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!b?.conv || !b?.question?.trim()) throw error(400, 'conv and question required');
 
 	await guard(platform, 'RL_AI', uid);
+
+	const model = await thread_model(env);
+	if (!model) throw error(503, 'ai_unavailable');
 
 	await ensure(env);
 
@@ -37,31 +34,19 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const thread = serialize_thread(messages, uid);
 	thread.push({ role: 'user', content: b.question });
 
-	const holdResult = await deduct(locals.x2_ws, uid, MODAL_START_HOLD_KOBO);
-	if (!holdResult.ok) {
+	const hold = await deduct(locals.x2_ws, uid, THREAD_HOLD_KOBO);
+	if (!hold.ok) {
 		return new Response(JSON.stringify({ ok: false, reason: 'insufficient_credits' }), {
 			status: 402,
 			headers: { 'content-type': 'application/json' }
 		});
 	}
 
-	const budget_kobo = holdResult.balance + MODAL_START_HOLD_KOBO;
-	const max_seconds = Math.min(MODAL_MAX_SECONDS, Math.floor(budget_kobo / MODAL_KOBO_PER_SEC));
-
-	const controller = new AbortController();
-	let truncated = false;
-	const timer = setTimeout(() => {
-		truncated = true;
-		controller.abort();
-	}, max_seconds * 1000);
-	const start = Date.now();
-
 	const result = streamText({
-		model: await modal_model(env as never),
+		model,
 		system:
 			"You are a helpful assistant in a messaging app. Answer the user's question about the conversation thread concisely.",
 		messages: thread,
-		abortSignal: controller.signal,
 		maxRetries: 0
 	});
 
@@ -69,32 +54,33 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		execute: async ({ writer }) => {
 			writer.write({
 				type: 'data-billing',
-				data: { balance: budget_kobo, max_seconds, kobo_per_sec: MODAL_KOBO_PER_SEC },
+				data: { balance: hold.balance + THREAD_HOLD_KOBO },
 				transient: true
 			});
 			try {
-				const uiStream = result.toUIMessageStream({ sendReasoning: true });
-				const reader = uiStream.getReader();
-				while (true) {
+				const reader = result.toUIMessageStream({ sendReasoning: true }).getReader();
+				for (;;) {
 					const { done, value } = await reader.read();
 					if (done) break;
 					writer.write(value);
 				}
 			} finally {
-				clearTimeout(timer);
-				const cost = modal_cost_kobo((Date.now() - start) / 1000);
-				let final_balance = holdResult.balance;
-				if (cost > MODAL_START_HOLD_KOBO) {
-					const extra = cost - MODAL_START_HOLD_KOBO;
-					const r = await deduct(locals.x2_ws, uid, extra);
-					final_balance = r.ok ? r.balance : Math.max(0, r.balance);
-				} else if (cost < MODAL_START_HOLD_KOBO) {
-					const r = await credit(locals.x2_ws, uid, MODAL_START_HOLD_KOBO - cost);
-					final_balance = r.balance;
+				// tokens are only known once the stream ends, so the hold is settled here — a
+				// stream that died early still settles, because usage resolves either way
+				const usage = await result.usage.catch(() => null);
+				const cost = usage
+					? thread_cost_kobo(usage.inputTokens ?? 0, usage.outputTokens ?? 0)
+					: THREAD_HOLD_KOBO;
+				let balance = hold.balance;
+				if (cost > THREAD_HOLD_KOBO) {
+					const r = await deduct(locals.x2_ws, uid, cost - THREAD_HOLD_KOBO);
+					balance = Math.max(0, r.balance);
+				} else if (cost < THREAD_HOLD_KOBO) {
+					balance = (await credit(locals.x2_ws, uid, THREAD_HOLD_KOBO - cost)).balance;
 				}
 				writer.write({
 					type: 'data-billing',
-					data: { balance: final_balance, cost_kobo: cost, truncated },
+					data: { balance, cost_kobo: cost },
 					transient: true
 				});
 			}

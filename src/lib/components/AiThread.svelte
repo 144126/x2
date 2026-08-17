@@ -16,11 +16,8 @@
 	let open = $state(false);
 	let question = $state('');
 	let balance = $state<number | null>(null);
-	let koboPerSec = $state(0);
 	let costKobo = $state<number | null>(null);
-	let truncated = $state(false);
 	let done = $state(false);
-	let countdownInterval: ReturnType<typeof setInterval> | null = null;
 	let showReason = $state<Record<string, boolean>>({});
 
 	const chat = new Chat({
@@ -38,31 +35,11 @@
 		}),
 		onData: (dataPart) => {
 			if (dataPart.type !== 'data-billing') return;
-			const d = dataPart.data as {
-				balance?: number;
-				max_seconds?: number;
-				kobo_per_sec?: number;
-				cost_kobo?: number;
-				truncated?: boolean;
-			};
-			if (d.kobo_per_sec !== undefined) {
-				koboPerSec = d.kobo_per_sec;
-				balance = d.balance ?? null;
-				if (koboPerSec > 0 && !countdownInterval) {
-					countdownInterval = setInterval(() => {
-						if (balance !== null && balance > 0) {
-							balance = Math.max(0, balance - Math.round(koboPerSec));
-						}
-					}, 1000);
-				}
-			} else if (d.cost_kobo !== undefined) {
-				balance = d.balance ?? null;
-				costKobo = d.cost_kobo;
-				truncated = d.truncated ?? false;
-				done = true;
-				if (countdownInterval) clearInterval(countdownInterval);
-				countdownInterval = null;
-			}
+			const d = dataPart.data as { balance?: number; cost_kobo?: number };
+			balance = d.balance ?? null;
+			if (d.cost_kobo === undefined) return;
+			costKobo = d.cost_kobo;
+			done = true;
 		}
 	});
 
@@ -102,7 +79,6 @@
 		question = '';
 		done = false;
 		costKobo = null;
-		truncated = false;
 		await chat.sendMessage({ text: q });
 	}
 
@@ -171,9 +147,6 @@
 				<p class="flex items-center gap-2 text-[12px] text-mute">
 					<span>balance: {balanceDisplay(balance)}</span>
 					<span class="text-accent">&minus;{balanceDisplay(costKobo)}</span>
-					{#if truncated}
-						<span class="text-[#e2674c]">(ran out of credit capacity)</span>
-					{/if}
 				</p>
 			{/if}
 		</div>

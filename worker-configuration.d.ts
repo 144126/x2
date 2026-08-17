@@ -46,6 +46,7 @@ interface Env {
 	PAYSTACK_TEST?: string | SecretVal;
 	PAYSTACK_BASE_URL?: string | SecretVal;
 	GROQ?: string | SecretVal;
+	OPENROUTER?: string | SecretVal;
 	RL_SEND?: RateLimit;
 	RL_UPLOAD?: RateLimit;
 	RL_SEARCH?: RateLimit;
