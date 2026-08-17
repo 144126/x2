@@ -38,7 +38,7 @@
 		"c": {
 			"attachment_chip": {
 				"s": "Media stops previewing inline. Create src/lib/components/Attachment.svelte, props `{m: Row, me: string, onopen: () => void}`. It renders ONE compact chip — icon, name, size — for an image, a file, an audio note, or a view-once message of any kind, and nothing else. No <img>, no <audio>, no thumbnail. Use label() from $lib/msg for the text. States it must show: normal (clickable, calls onopen), in-flight (m.up — show `${m.up.pct}%` and a thin progress bar, dimmed), failed (m.up.st === 'e' — dimmed with 'not sent'), and burnt (greyed, 'opened', not clickable). Stickers are NOT attachments; they still render as images in the row and are out of scope here.",
-				"d": 0,
+				"d": 1,
 				"v": "test -f src/lib/msg.ts",
 				"t": "test -f src/lib/components/Attachment.svelte && ! grep -q '<img' src/lib/components/Attachment.svelte && pnpm test && pnpm build"
 			},
