@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { search_stickers, sticker_src, custom_id } from '$lib/stickers';
-	import { upload_image } from '$lib/attach';
+	import { upload } from '$lib/attach';
 	import { Plus, Trash2, LoaderCircle } from '@lucide/svelte';
 
 	let { onselect }: { onselect: (id: string) => void } = $props();
@@ -41,7 +41,7 @@
 		if (!file) return;
 		err = '';
 		busy = true;
-		const up = await upload_image(file);
+		const up = await upload(file).promise;
 		if (up.error || !up.key) {
 			busy = false;
 			err = up.error ?? 'upload failed';

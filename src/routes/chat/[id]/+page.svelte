@@ -5,7 +5,7 @@
 	import { ws_on, ws_send, ws_drop } from '$lib/ws';
 	import { profile_url } from '$lib/links';
 	import { confirm_sent, mark_failed } from '$lib/chat_optimistic';
-	import { upload_file, media_src, image_from_event } from '$lib/attach';
+	import { upload, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import { sync_badge } from '$lib/badge';
 	import { ctrlEnter } from '$lib/actions';
@@ -248,7 +248,7 @@
 		let file: FileAttach | undefined;
 		if (!retry && pendingFile) {
 			busy = true;
-			const r = await upload_file(pendingFile);
+			const r = await upload(pendingFile).promise;
 			busy = false;
 			if (r.error || !r.key) return;
 			if (pendingFile.type.startsWith('image/')) image = r.key;

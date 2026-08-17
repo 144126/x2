@@ -5,7 +5,7 @@
 	import { ws_on, ws_send } from '$lib/ws';
 	import { profile_url } from '$lib/links';
 	import { confirm_sent, mark_failed } from '$lib/chat_optimistic';
-	import { upload_image, media_src, image_from_event } from '$lib/attach';
+	import { upload, media_src, image_from_event } from '$lib/attach';
 	import { mark_first_send } from '$lib/notify-trigger';
 	import type { Message } from '$lib/types';
 	import { CallMesh, media_error, VIDEO_FALLBACK, type CallSignal } from '$lib/call';
@@ -301,7 +301,7 @@
 		let image: string | undefined;
 		if (!retry && pending) {
 			busy = true;
-			const r = await upload_image(pending);
+			const r = await upload(pending).promise;
 			busy = false;
 			if (r.error) return;
 			image = r.key;

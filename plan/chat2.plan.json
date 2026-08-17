@@ -20,7 +20,7 @@
 		"c": {
 			"upload_xhr": {
 				"s": "Uploads report progress and can be cancelled. Rewrite src/lib/attach.ts: replace upload_file/upload_image with one `upload(file: File, opts: {view_once?: boolean; onprogress?: (pct: number) => void}): {promise: Promise<UploadResult>; abort: () => void}`. Use XMLHttpRequest — fetch() has no upload progress. Wire xhr.upload.onprogress to a 0-100 integer. POST to /api/upload, adding ?vo=1 when view_once. UploadResult = {key?, name?, size?, type?, error?}. Keep media_src and image_from_event exactly as they are. Also add `view_once` support to src/routes/api/upload/+server.ts: read the vo query param and pass it as the last arg of put_image/put_file, which already accept it.",
-				"d": 0,
+				"d": 1,
 				"v": "grep -q 'export function image_from_event' src/lib/attach.ts",
 				"t": "grep -q XMLHttpRequest src/lib/attach.ts && grep -q 'vo' src/routes/api/upload/+server.ts && pnpm test && pnpm build"
 			},
