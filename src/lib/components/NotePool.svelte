@@ -156,7 +156,6 @@
 					<div class="truncate text-[13px] text-ink">{note.name ?? 'someone'}</div>
 					<div class="text-[11px] text-mute">answered today's question</div>
 				</div>
-				<!-- svelte-ignore a11y_media_has_caption -->
 				<audio
 					bind:this={audio}
 					src={media_src(note.k)}

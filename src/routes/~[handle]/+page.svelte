@@ -10,7 +10,6 @@
 	import MediaViewer from '$lib/components/MediaViewer.svelte';
 	import { failed, openable, pending, type Row, type Up } from '$lib/msg';
 	import { mark_first_send } from '$lib/notify-trigger';
-	import type { Message } from '$lib/types';
 	import { CallMesh, media_error, VIDEO_FALLBACK, type CallSignal } from '$lib/call';
 	import CallOverlay from '$lib/components/CallOverlay.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -33,7 +32,6 @@
 		Sticker
 	} from '@lucide/svelte';
 
-	type FileAttach = { key: string; name: string; size: number; type: string };
 	let { data } = $props();
 	let g = $state(data.g);
 	let messages = $state(data.messages as Row[]);
@@ -43,7 +41,8 @@
 	let pendingFiles = $state<File[]>([]);
 	let view_once = $state(false);
 	let viewing = $state<Row | null>(null);
-	const files = new Map<string, File>();
+	// cid -> the File, so a failed send can be retried from the row it left behind
+	let files: Record<string, File> = {};
 	let busy = $state(false);
 	let unsub: (() => void) | null = null;
 
@@ -311,7 +310,7 @@
 		const up: Up = { pct: 0, st: 'u', name: f.name, size: f.size, type: f.type, vo: once };
 		if (!messages.some((e) => e.cid === cid)) {
 			messages = [...messages, blank(cid, up)];
-			files.set(cid, f);
+			files[cid] = f;
 			scroll_down();
 		} else patch(cid, { up, err: false });
 
@@ -335,13 +334,13 @@
 		mark_first_send();
 		replyTo = null;
 		const { m } = await res.json();
-		files.delete(cid);
+		delete files[cid];
 		patch(cid, { id: m.id, d: m.ts, up: undefined, im: image, fl: file, vo: m.vo, vk: m.vk });
 	}
 
 	async function send(retry?: Row) {
 		if (retry?.cid) {
-			const f = files.get(retry.cid);
+			const f = files[retry.cid];
 			if (f) return send_file(f, !!retry.up?.vo || !!retry.vo, retry.cid);
 		}
 		const body = retry ? retry.x : text.trim();

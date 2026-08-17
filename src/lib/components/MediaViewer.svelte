@@ -66,6 +66,9 @@
 	const block = (e: Event) => m.vo && e.preventDefault();
 </script>
 
+<!-- the hrefs below are blob: and /media urls, which resolve() does not apply to -->
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
+
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />
 
 <div

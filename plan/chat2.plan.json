@@ -87,7 +87,7 @@
 		"c": {
 			"sweep_dead_code": {
 				"s": "Nothing is left over. Remove src/lib/chat_optimistic.ts if both pages have stopped importing confirm_sent/mark_failed, and delete any now-unused import, icon, or helper the two pages dropped. Run `pnpm format`. The gate proves the old inline bubble markup is gone from both pages: neither should still reference sticker_src, media_src or day_label directly if MessageRow owns them.",
-				"d": 0,
+				"d": 1,
 				"t": "pnpm format && pnpm test && pnpm build && rtk proxy pnpm exec eslint src/lib/components src/lib/msg.ts src/lib/attach.ts"
 			},
 			"browser_pass": {

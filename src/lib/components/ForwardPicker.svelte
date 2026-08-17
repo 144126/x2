@@ -2,12 +2,10 @@
 	import Checkbox from '$lib/components/Checkbox.svelte';
 	let {
 		data,
-		onforward,
-		onclose
+		onforward
 	}: {
 		data: { conversations: { peer: string }[]; rooms: { id: string; name: string }[] };
 		onforward: (targets: { to?: string; group?: string }[]) => void;
-		onclose: () => void;
 	} = $props();
 	let selected = $state<Set<string>>(new Set());
 

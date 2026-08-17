@@ -187,8 +187,8 @@
 	let pendingFiles = $state<File[]>([]);
 	let view_once = $state(false);
 	let viewing = $state<Msg | null>(null);
-	const uploads = new Map<string, () => void>();
-	const files = new Map<string, File>();
+	// cid -> the File, so a failed send can be retried from the row it left behind
+	let files: Record<string, File> = {};
 	let busy = $state(false);
 	let text = $state('');
 	let scheduleAt = $state('');
@@ -252,7 +252,7 @@
 		const up: Up = { pct: 0, st: 'u', name: f.name, size: f.size, type: f.type, vo: once };
 		if (!messages.some((e) => e.cid === cid)) {
 			add_msg({ s: 'm', id: '', cid, c: '', f: me!, t: data.peer, x: '', d: Date.now(), up });
-			files.set(cid, f);
+			files[cid] = f;
 		} else patch(cid, { up, err: false });
 
 		const h = upload(f, {
@@ -277,13 +277,13 @@
 		mark_first_send();
 		replyTo = null;
 		const { m } = await res.json();
-		files.delete(cid);
+		delete files[cid];
 		patch(cid, { id: m.id, d: m.ts, up: undefined, im: image, fl: file, vo: m.vo, vk: m.vk });
 	}
 
 	async function send(retry?: Msg) {
 		if (retry?.up || retry?.cid) {
-			const f = files.get(retry.cid!);
+			const f = files[retry.cid!];
 			if (f) return send_file(f, !!retry.up?.vo || !!retry.vo, retry.cid);
 		}
 		const body = retry ? retry.x : text.trim();

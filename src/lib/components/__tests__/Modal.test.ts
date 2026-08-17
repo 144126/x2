@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import ModalHost from './ModalHost.test.svelte';
-import Modal from '../Modal.svelte';
 import ModalWideHost from './ModalWideHost.test.svelte';
 
 // jsdom implements <dialog>, but guard so the suite fails loudly rather than mysteriously

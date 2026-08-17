@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { EMOJIS, GROUPS, search_emoji } from '$lib/emoji';
-	let { onselect, onclose }: { onselect: (emoji: string) => void; onclose: () => void } = $props();
+	let { onselect }: { onselect: (emoji: string) => void } = $props();
 	let q = $state('');
 	let activeGroup = $state<number | null>(null);
 	let recent = $state<string[]>([]);

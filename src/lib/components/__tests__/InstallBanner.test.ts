@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 
 const { watchMock, canInstallMock, installMock, hiddenMock, dismissMock } = vi.hoisted(() => ({
 	watchMock: vi.fn(),
