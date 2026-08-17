@@ -536,10 +536,14 @@
 		resetCall();
 	}
 
+	// the box only ever scrolls once it has stopped growing. Without this a phone scrolls the
+	// first line out of sight for the moment between the keystroke and the resize.
 	function grow(e: Event) {
 		const t = e.currentTarget as HTMLTextAreaElement;
 		t.style.height = 'auto';
-		t.style.height = Math.min(t.scrollHeight, 132) + 'px';
+		const h = Math.min(t.scrollHeight, 132);
+		t.style.height = h + 'px';
+		t.style.overflowY = t.scrollHeight > 132 ? 'auto' : 'hidden';
 	}
 
 	onDestroy(() => {
@@ -758,12 +762,12 @@
 			<Smile size={15} />
 		</button>
 		<textarea
-			class="max-h-[132px] min-w-0 flex-1 resize-none py-2 leading-[1.4]"
+			class="max-h-[132px] min-w-0 flex-1 resize-none overflow-y-hidden py-2 leading-[1.4]"
 			rows="1"
 			bind:this={composerInput}
 			bind:value={text}
 			oninput={grow}
-			placeholder="write something considered… ⌃⏎ to send"
+			placeholder="write something considered…"
 			autocomplete="off"
 			onpaste={(e) => {
 				const f = image_from_event(e);
