@@ -108,6 +108,14 @@
 	}
 </script>
 
+<svelte:head>
+	<title>x2 rooms — see what's live before you join</title>
+	<meta
+		name="description"
+		content="browse x2's live conversation rooms by topic. read or join one without an account — text, voice, and video rooms built around real interests."
+	/>
+</svelte:head>
+
 <section class="mb-8">
 	<div class="eyebrow">your rooms</div>
 	<h2 class="display mt-2 mb-5 text-[clamp(24px,4vw,34px)] leading-[0.98]">

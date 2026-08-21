@@ -30,6 +30,7 @@
 		"country-state-city": "^3.2.1",
 		"emojibase-data": "^17.0.0",
 		"libphonenumber-js": "1.13.9",
+		"marked": "^18.0.10",
 		"sqids": "^0.3.0"
 	},
 	"devDependencies": {

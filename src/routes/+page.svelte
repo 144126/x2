@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { dev } from '$app/environment';
 	import { ws_on, ws_send } from '$lib/ws';
 	import { CallMesh, media_error, type CallSignal } from '$lib/call';
@@ -11,6 +12,28 @@
 	import { Mic, LoaderCircle, MessageSquare, BellRing, Check } from '@lucide/svelte';
 
 	let { data } = $props();
+
+	let origin = $derived($page.url?.origin ?? '');
+
+	const ld = JSON.stringify([
+		{
+			'@context': 'https://schema.org',
+			'@type': 'WebSite',
+			name: 'x2',
+			url: origin + '/',
+			description:
+				'omegle alternative that matches you by what you are into — voice, rooms, and threads.'
+		},
+		{
+			'@context': 'https://schema.org',
+			'@type': 'WebApplication',
+			name: 'x2',
+			url: origin + '/',
+			applicationCategory: 'SocialApplication',
+			operatingSystem: 'Any',
+			offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }
+		}
+	]);
 
 	type Peer = { id: string; name: string; shared: string[]; conv: string };
 
@@ -233,6 +256,23 @@
 		name="description"
 		content="press one button and you are talking to a stranger picked by what you are into, not by luck. voice only, no profile to perform for."
 	/>
+	<link rel="canonical" href="{origin}/" />
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="x2" />
+	<meta property="og:title" content="x2 — talk to someone who gets it" />
+	<meta
+		property="og:description"
+		content="an omegle alternative that matches you by what you are into, not by luck. voice first, no signup wall before you talk."
+	/>
+	<meta property="og:url" content="{origin}/" />
+	<meta property="og:image" content="{origin}/icons/icon-512-maskable.png" />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="x2 — talk to someone who gets it" />
+	<meta
+		name="twitter:description"
+		content="an omegle alternative that matches you by what you are into — voice first, no signup wall."
+	/>
+	{@html '<script type="application/ld+json">' + ld + '</script>'}
 </svelte:head>
 
 <section class="flex h-full flex-col items-center justify-center py-6 text-center">
@@ -315,6 +355,15 @@
 				>
 				<p class="mt-1 text-[12.5px] leading-[1.5] text-ink-soft">
 					search by what someone is into, not by who is nearest.
+				</p>
+			</a>
+			<a class="card group" href="/blog">
+				<span
+					class="font-display text-[15px] font-medium transition-colors duration-300 group-hover:text-accent"
+					>read the guides</span
+				>
+				<p class="mt-1 text-[12.5px] leading-[1.5] text-ink-soft">
+					how random chat, omegle alternatives, and staying safe actually work.
 				</p>
 			</a>
 		</div>

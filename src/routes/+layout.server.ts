@@ -10,6 +10,7 @@ export const load: LayoutServerLoad = async ({ locals, url }): Promise<Data> => 
 	// are readable signed out, so a link shared with a stranger always lands somewhere real
 	const open =
 		['/', '/login', '/rooms', '/find'].includes(url.pathname) ||
+		url.pathname.startsWith('/blog') ||
 		url.pathname.startsWith('/~') ||
 		url.pathname.startsWith('/@') ||
 		// the 308 shims for the old room urls, which a stranger may still be holding

@@ -68,6 +68,14 @@
 	}
 </script>
 
+<svelte:head>
+	<title>x2 find — meet people who share your interests</title>
+	<meta
+		name="description"
+		content="search x2 by what someone is actually into — interests, age, and location — instead of the nearest stranger. no signup needed to look."
+	/>
+</svelte:head>
+
 <section>
 	<div class="eyebrow">find people</div>
 	<h2 class="display mt-2 mb-5 text-[clamp(24px,4vw,34px)] leading-[0.98]">

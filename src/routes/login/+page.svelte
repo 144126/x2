@@ -49,6 +49,14 @@
 	}
 </script>
 
+<svelte:head>
+	<title>x2 — sign in or join</title>
+	<meta
+		name="description"
+		content="sign in to x2 to keep your rooms and conversations across devices. you can start chatting without an account — link one any time."
+	/>
+</svelte:head>
+
 <section class="reveal mx-auto mt-[8vh] max-w-[380px]">
 	<div class="eyebrow">x2 · {mode === 'login' ? 'sign in' : 'join'}</div>
 	<h1 class="display mt-4 whitespace-pre-line text-[clamp(26px,5vw,38px)] leading-[0.96]">
