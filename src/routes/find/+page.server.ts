@@ -1,7 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user) throw error(401, 'auth');
+export const load: PageServerLoad = async () => {
+	// people search is readable signed out
 	return {};
 };

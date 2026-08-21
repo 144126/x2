@@ -18,8 +18,11 @@ beforeEach(() => {
 });
 
 describe('/rooms page server', () => {
-	it('401s when signed out', async () => {
-		await expect(load({ locals: { user: null } } as any)).rejects.toMatchObject({ status: 401 });
+	it('renders empty signed out', async () => {
+		const data = await load({ locals: { user: null } } as any);
+		expect(data.mine).toEqual([]);
+		expect(data.folders).toEqual([]);
+		expect(listGroupsMock).not.toHaveBeenCalled();
 	});
 
 	it('returns the rooms the user belongs to', async () => {

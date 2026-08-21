@@ -23,8 +23,8 @@ function event(uid: string | null = 'me') {
 }
 
 describe('GET /find — people search page', () => {
-	it('401s when signed out', async () => {
-		await expect(load(event(null))).rejects.toMatchObject({ status: 401 });
+	it('renders signed out', async () => {
+		expect(await load(event(null))).toEqual({});
 	});
 
 	it('does not call list_conversations', async () => {
