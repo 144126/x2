@@ -56,8 +56,16 @@ describe('bottom nav', () => {
 		expect(labels).toEqual(expect.arrayContaining(['talk', 'chats', 'rooms', 'find', 'me']));
 	});
 
-	it('renders no nav at all when signed out', () => {
+	it('renders nav without a sign-out button when signed out', () => {
 		render(Layout, { props: { data: { user: null }, children: () => '' } });
+		const links = screen.getAllByRole('link');
+		const labels = links.map((l) => l.textContent?.toLowerCase().trim());
+		expect(labels).toEqual(expect.arrayContaining(['talk', 'chats', 'rooms', 'find', 'me']));
+		expect(screen.queryByText(/sign out/)).toBeNull();
+	});
+
+	it('renders no nav at all on the lock screen', () => {
+		render(Layout, { props: { data: { user: null, pin_on: true }, children: () => '' } });
 		const links = screen.queryAllByRole('link');
 		const navLabels = links.filter((l) =>
 			['talk', 'chats', 'rooms', 'find', 'me'].includes(

@@ -49,6 +49,10 @@
 		{ href: '/me', label: 'me', icon: UserRound }
 	];
 	let here = $derived($page.url.pathname);
+
+	// the lock screen must reveal nothing about the account behind it, and /login owns
+	// the whole viewport — every other page, even signed-out ones, gets the nav
+	let bare = $derived(here === '/login' || (!data.user && !!data.pin_on));
 	const exact = ['/', '/find'];
 	const active = (href: string) => (exact.includes(href) ? here === href : here.startsWith(href));
 
@@ -63,7 +67,7 @@
 </script>
 
 <div class="flex h-[100dvh] flex-col overflow-hidden">
-	{#if data.user}
+	{#if !bare}
 		<header class="shrink-0 border-b border-line bg-base/80 backdrop-blur-md">
 			<nav class="wrap flex items-center justify-between gap-4 py-2.5">
 				<a href="/" class="shrink-0" aria-label="x2 home">
@@ -92,25 +96,27 @@
 							</a>
 						{/each}
 					</div>
-					<button
-						class="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-mute transition-colors duration-300 hover:text-ink"
-						onclick={sign_out}
-					>
-						<LogOut size={12} /> sign out
-					</button>
+					{#if data.user}
+						<button
+							class="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-mute transition-colors duration-300 hover:text-ink"
+							onclick={sign_out}
+						>
+							<LogOut size={12} /> sign out
+						</button>
+					{/if}
 				</div>
 			</nav>
 		</header>
-		{#if data.user.is_device}
-			<div
-				class="wrap flex shrink-0 flex-wrap items-center gap-2 border-b border-line bg-accent-soft py-1.5 text-[11.5px] text-ink-soft"
+	{/if}
+	{#if data.user?.is_device}
+		<div
+			class="wrap flex shrink-0 flex-wrap items-center gap-2 border-b border-line bg-accent-soft py-1.5 text-[11.5px] text-ink-soft"
+		>
+			<span>you're chatting without an account — link one so you don't lose access.</span>
+			<a href="/me#link-account" class="btn btn-amber ml-auto px-2.5 py-1 text-[11px]"
+				>link account</a
 			>
-				<span>you're chatting without an account — link one so you don't lose access.</span>
-				<a href="/me#link-account" class="btn btn-amber ml-auto px-2.5 py-1 text-[11px]"
-					>link account</a
-				>
-			</div>
-		{/if}
+		</div>
 	{/if}
 
 	<main class="min-h-0 flex-1 {fit ? 'overflow-hidden' : 'overflow-y-auto'}">
@@ -119,7 +125,7 @@
 		</div>
 	</main>
 
-	{#if data.user}
+	{#if !bare}
 		<nav
 			class="grid shrink-0 border-t border-line bg-base/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
 			style="grid-template-columns: repeat({nav.length}, minmax(0, 1fr))"
@@ -138,6 +144,8 @@
 				</a>
 			{/each}
 		</nav>
+	{/if}
+	{#if data.user}
 		<InstallBanner />
 		{#if vapid_key}
 			<NotifyPrompt {vapid_key} />
